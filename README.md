@@ -1,6 +1,6 @@
 # 🔥 MehrChain
 
-**"Light your own lamp. Brighten the world.**
+**Light your own lamp. Brighten the world.**
 
 تو مگو همه بِجَنگند و زِ صُلح من چه آید؟		تو یکی نه‌‌ای هزاری تو چراغِ خود بَراَفْروز
 
