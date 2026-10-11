@@ -2,6 +2,10 @@
 
 **"You, light your own lamp." — Rumi**
 
+تو مگو همه بِجَنگند و زِ صُلح من چه آید؟		تو یکی نه‌‌ای هزاری تو چراغِ خود بَراَفْروز
+
+که یکی چراغِ روشن زِ هزار مُرده بهتر		که بِهْ است یک قَدِ خوش زِ هزارْ قامَتِ کوز
+
 MehrChain is an open-source, mindful growth companion designed to help people commit to positive habits, nurture mental well-being, and spark supportive human connections through small, daily intentional actions.
 
 > 🚀 **Project Status:** v1.0.0 | Nx Monorepo | Angular 21 (Zoneless + Signals) & NestJS 11 | 233 Automated Tests (100% Green) | Cloudflare Pages + Render CI/CD
