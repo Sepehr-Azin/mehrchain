@@ -1,0 +1,12 @@
+{
+  "name": "mehrchain-icon-foreground-three",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node serve.cjs"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  }
+}

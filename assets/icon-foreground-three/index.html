@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080d0d" />
+    <title>مهرچین — مدل سه‌بعدی آیکون</title>
+    <link rel="stylesheet" href="./preview.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./node_modules/three/build/three.module.js",
+          "three/addons/": "./node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <span class="eyebrow" dir="ltr">MEHRCHAIN / THREE.JS</span>
+        <h1>یک آیکون، در سه بُعد</h1>
+      </div>
+      <span class="badge">مدل هندسی کامل</span>
+    </header>
+    <main>
+      <div id="comparison">
+        <div
+          id="viewport"
+          role="img"
+          aria-label="مدل سه‌بعدی سبز مهرچین با شکم و باله‌های نورانی زرد"
+        >
+          <p id="status" role="status">در حال آماده‌سازی مدل…</p>
+        </div>
+        <figure id="reference-panel" hidden>
+          <img src="../icon-foreground.png" alt="آیکون اصلی مهرچین برای مقایسه با مدل سه‌بعدی" />
+          <figcaption>تصویر مرجع — مقیاس یکسان</figcaption>
+        </figure>
+      </div>
+      <div class="moods" role="group" aria-label="حالت کاراکتر">
+        <button id="mood-reference" type="button" aria-pressed="true">حالت مرجع</button>
+        <button id="mood-happy" type="button" aria-pressed="false">خوشحال</button>
+        <button id="mood-sad" type="button" aria-pressed="false">ناراحت</button>
+      </div>
+      <aside aria-label="کنترل‌های مدل">
+        <button id="motion" type="button" aria-pressed="false">حرکت آرام</button>
+        <button id="rotate" type="button" aria-pressed="false">چرخش خودکار</button>
+        <button id="front" type="button">نمای اصلی</button>
+        <button id="background" type="button" aria-pressed="false">پس‌زمینه روشن</button>
+        <button id="reference" type="button" aria-pressed="false">تصویر مرجع</button>
+        <button id="export" type="button">ذخیره PNG شفاف</button>
+        <a id="download" download="mehrchain-mascot-three.png" hidden>دانلود PNG آماده</a>
+        <label for="glow"
+          >نور شکم <input id="glow" type="range" min="0" max="2" step="0.05" value="1"
+        /></label>
+      </aside>
+      <p class="hint">با کشیدن، مدل را بچرخانید؛ با اسکرول یا دو انگشت، نزدیک‌تر شوید.</p>
+    </main>
+    <script type="module">
+      import('./preview.js').catch((error) => {
+        document.getElementById('status').textContent =
+          'نمایش مدل ممکن نشد. وابستگی‌ها را با npm install نصب کنید و صفحه را با npm start باز کنید. مرورگر باید WebGL 2 را پشتیبانی کند.';
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>
