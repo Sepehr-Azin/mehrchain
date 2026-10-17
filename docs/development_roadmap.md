@@ -3,7 +3,8 @@
 > Updated: **2026-10-17 (Asia/Tehran)**. No committed deadline.
 > Goal: a small, reliable daily habit experience with quiet support and a kind return.
 > The owner reports a mostly successful two-person signup/Chain pilot, with proxy and server warm-up friction. Multi-day behavior and full acceptance still need testing.
-> This document plans the next implementation. GitHub synchronization remains deferred.
+> T00–T03 implementation is complete and pushed, as confirmed by the owner on October 17. T04 is the next feature task. Deployment and runtime acceptance evidence remain separate from code completion.
+> GitHub issue synchronization remains deferred.
 
 ## Product rules
 
@@ -18,54 +19,73 @@ People should have room to grow through choice, small steps and real support. A 
 - **Minimal UI:** one primary action per card, one completion check, secondary information in details. Desktop PWA content stays compact even in a maximized window.
 - **Honest feedback:** confirm saves before showing success; preserve input and allow retry on failure. Use short English copy, accessible controls and restrained feedback.
 
-Working defaults for the implementation proposal: persisted account IANA timezone; no missed-day penalty for a partial creation/restore date; Custom counts completed days; finite goals offer Continue or Archive when reached. Recommended color reward: one habit reaches 21 consecutive days, permanently earning the color option. Recommended heart limit: one sender per recipient habit per recipient day, regardless of multiple links. These edge choices remain proposals to resolve when their task starts; they are not additional planning tasks or claims of owner approval. Preserve historical UTC records explicitly during migration.
+Implemented in T02/T03: persisted account IANA timezone; no missed-day penalty for a partial creation/restore date; Custom counts completed days; finite goals offer Continue or Archive when reached. Existing accounts/history retain UTC, and signing in or changing device timezone does not change an account's zone. Recommended color reward: one habit reaches 21 consecutive days, permanently earning the color option. Recommended heart limit: one sender per recipient habit per recipient day, regardless of multiple links. The reward and heart-limit choices remain proposals to resolve in T06 and T04 respectively; they are not additional planning tasks or claims of owner approval. Preserve historical UTC records explicitly during migration.
 
 ## Implementation order
 
-Resolve **T00 (P0 — signup blocker)** before further feature work or inviting testers. Then follow **T01 → T02 → T03** before changing support/lifecycle behavior. T04–T07 build on that foundation. T08 can run independently after T00; its latency work does not replace fixing the signup contract. T09 verifies the integrated result. Each task includes its own focused checks; acceptance does not wait until the end to discover basic defects.
+**T00 → T03 are implemented and pushed. Continue with T04**, followed by T05–T07 on that foundation. T08 can run independently; its latency work does not replace verifying the signup contract. T09 verifies the integrated result. Carry the outstanding T00–T03 checks below into release validation; verify the deployed signup blocker is resolved before inviting testers. Each task includes its own focused checks; acceptance does not wait until the end to discover basic defects.
 
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs are local, not GitHub issue numbers. All tasks below are pending.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs are local, not GitHub issue numbers. Checked boxes record completed implementation, not proof of deployed acceptance. T04–T09 remain pending.
+
+| Task | Implementation | Commit | Acceptance evidence in repository |
+| --- | --- | --- | --- |
+| T00 | Complete / pushed | `784d1ed` | Focused tests and deployed auth flows not recorded |
+| T01 | Complete / pushed | `cfaf0fd` | Responsive/PWA and failure-state review not recorded |
+| T02 | Complete / pushed | `9643bda` | Migration rehearsal, daily-boundary and concurrency checks not recorded |
+| T03 | Complete / pushed | `2f1cff1` | Migration rehearsal, lifecycle/PWA and PostgreSQL race checks not recorded |
+
+The T00–T03 handoffs are historical implementation notes written before commit/push. Their working-tree/uncommitted wording is superseded by this status and the owner's confirmation; their unexecuted validation steps remain open unless later results are recorded.
 
 ### T00 — Restore signup by aligning the deployed timezone contract
 
-**Priority:** **P0 — first, ahead of T01–T09.** The reported signup failure blocks new users from saving their progress.
+**Priority:** **P0 for release verification.** Confirm the reported signup failure is resolved before inviting new testers.
 
-**Local implementation handoff (October 17):** release-build freshness, artifact revision reporting, production schema readiness checks and auth validation regression coverage are prepared for review in [T00 handoff](t00_review_handoff.md). No build, tests, database operations or deployment were run. The deployed cause and acceptance below remain unverified; T00 is still open.
+**Status:** implementation complete and pushed in `784d1ed`. Release-build freshness, artifact revision reporting, production schema readiness checks and auth validation regression coverage are documented in the [T00 handoff](t00_review_handoff.md). Deployed acceptance remains unrecorded; pushing code alone does not establish that the signup blocker is resolved.
+
+- [x] Retain the supported timezone DTOs and strict unknown-field validation; add focused HTTP regression coverage for email/Google timezone persistence, UTC fallback, invalid zones and existing accounts.
+- [x] Add a fresh Prisma/backend release build, embedded artifact revision/timestamp, uncached `/api/version` and production schema readiness checks.
+- [x] Update the isolated release-migration wrapper and document database/release verification.
+
+**Outstanding release verification (not unfinished implementation):**
 
 **Scope:** email registration and Google authentication, their request DTOs, Cloudflare Pages `/api/*` proxy, Render backend build/revision and the account-calendar database migration introduced by T02.
 
-**Evidence (October 17):** the signup screen reports `property timeZone should not exist`. Current frontend code sends `timeZone` in both registration and Google requests; current backend DTOs allow it. These changes were committed in `9643bda`. The local backend bundle in `dist/mehrchain-backend/main.js` is dated October 6 and lacks the field in both DTOs. This establishes a stale local build; an older deployed backend is the leading hypothesis, not a verified production finding. Direct online checks from the investigation environment failed to connect. Render's configured build generates Prisma Client and builds the backend but does not apply migrations.
+**Historical investigation evidence (October 17, before the T00 fix):** the signup screen reported `property timeZone should not exist`. Frontend code sent `timeZone` in both registration and Google requests; backend DTOs allowed it in `9643bda`. The investigated local backend bundle was dated October 6 and lacked the field in both DTOs. This established a stale local build; an older deployed backend remained a hypothesis, not a verified production finding. Direct online checks from that investigation failed to connect. The updated Render build generates Prisma Client and builds the backend but does not apply migrations.
 
 - [ ] Reproduce the deployed failure and record the endpoint, HTTP status and validation response without credentials or tokens. Compare Pages and Render deployed revisions, Render build/start logs and the proxy target; establish which backend artifact actually serves requests.
-- [ ] Verify the production database target and migration history. Back up and rehearse `20261017000000_account_calendar` on a disposable populated copy, preserving existing UTC history. Use the [database procedure](database_migration_procedure.md), [T02 handoff](t02_review_handoff.md) and `scripts/release-migrate.cjs` for the reviewed release chain. Inspect all pending migrations in the selected revision before applying it; do not deploy unrelated uncommitted lifecycle work.
+- [ ] Verify the production database target and migration history. Back up and rehearse both `20261017000000_account_calendar` and `20261017100000_habit_lifecycle` on a disposable populated copy, preserving existing UTC history. Use the [database procedure](database_migration_procedure.md), [T02 handoff](t02_review_handoff.md), [T03 handoff](t03_review_handoff.md) and `scripts/release-migrate.cjs` for the reviewed release chain. Inspect all pending migrations in the selected revision before applying it; the current backend includes and requires T03's lifecycle schema.
 - [ ] After the required schema is verified, generate Prisma Client, build and deploy the matching backend revision containing both timezone DTO changes. Check build-cache/artifact reuse if the served contract remains old. Preserve strict unknown-field validation and the account timezone behavior rather than hiding the mismatch by dropping `timeZone` or disabling validation globally.
-- [ ] Add focused regression coverage through the actual validation pipeline for registration and Google DTOs: a valid `timeZone` is accepted, omission retains the UTC default, and unrelated unknown fields remain rejected. Verify invalid IANA values follow the intended account-creation validation.
+- [ ] Run the added auth-contract and schema-readiness regression tests. Confirm a valid `timeZone` is accepted, omission retains UTC, unrelated fields are rejected and invalid IANA values fail validation.
 - [ ] Run deployed email signup through verification, Google signup/login, existing-account login and profile retrieval through the Pages proxy. Confirm new-account timezone persistence, existing-account compatibility and registration after a PWA update. Record tested frontend/backend revisions and migration status.
 
 **Acceptance:** the deployed email and Google flows no longer reject the supported `timeZone` field; a new Tehran account retains its account timezone and existing accounts/history remain intact. Required migrations are applied, the running backend matches the reviewed revision, and no missing-column errors replace the validation failure. Real deployed flow results are recorded; a local build or unit test alone does not close this blocker. T02's broader daily-boundary acceptance remains separate.
 
 ### T01 — Simplify the interface and desktop PWA
 
-**Scope:** `FE/app.html/.css`, global styles, dashboard, commitment-card, shared Mero, profile and onboarding copy. Ready to start.
+**Status:** implementation complete and pushed in `cfaf0fd`; visual/runtime acceptance remains unrecorded. See [T01 handoff](t01_review_handoff.md).
 
-- [ ] Introduce one centered responsive app shell. Start visual review around 480–560 CSS px on desktop; fill available width on mobile. Align bottom navigation, floating add button, banners and dialogs with it. Keep scrolling, short windows, keyboard visibility and safe areas usable.
-- [ ] Remove the dashboard-wide streak. Habit summary keeps title, own streak, daily action and quiet finite progress. Move category, why, reminders and sharing details to accessible details/menu. Remove misleading modulo week dots and the Endless 100% progress bar.
-- [ ] Show one check with “Completed”. Remove Spark pulse/spin and artificial 400ms delay; pending/disabled state follows the actual request, with retry on failure.
-- [ ] Make Mero static across pages and wrappers; remove nickname editing and cosmetic click affordances. Keep useful profile navigation labeled and reachable. Preserve existing named-color data for T06.
-- [ ] Correct obsolete “7, 14, or 21 days” onboarding copy to Endless/Custom. Remove pressure-oriented signup/login wording. Do not advertise new archive/day rules before they ship.
+**Scope:** `FE/app.html/.css`, global styles, dashboard, commitment-card, shared Mero, profile and onboarding copy.
+
+- [x] Introduce one centered responsive app shell. Start visual review around 480–560 CSS px on desktop; fill available width on mobile. Align bottom navigation, floating add button, banners and dialogs with it. Keep scrolling, short windows, keyboard visibility and safe areas usable.
+- [x] Remove the dashboard-wide streak. Habit summary keeps title, own streak, daily action and quiet finite progress. Move category, why, reminders and sharing details to accessible details/menu. Remove misleading modulo week dots and the Endless 100% progress bar.
+- [x] Show one check with “Completed”. Remove Spark pulse/spin and artificial 400ms delay; pending/disabled state follows the actual request, with retry on failure.
+- [x] Make Mero static across pages and wrappers; remove nickname editing and cosmetic click affordances. Keep useful profile navigation labeled and reachable. Preserve existing named-color data for T06.
+- [x] Correct obsolete “7, 14, or 21 days” onboarding copy to Endless/Custom. Remove pressure-oriented signup/login wording. Do not advertise new archive/day rules before they ship.
 
 **Acceptance:** all main routes work at 320/390 px and wide desktop sizes, including a maximized installed PWA, short windows, dialogs, both themes and 200% zoom. No stretched cards, detached controls, clipped actions or mascot movement. Slow/failed completion never appears successful.
 
-**Known cause:** the manifest already uses `standalone`; the root has no shared width-limited route wrapper and navigation is fixed to viewport edges. Content containment is under app control; native first-launch window size depends on browser/OS. Preserve normal resize/maximize controls.
+**Original cause addressed:** the manifest already used `standalone`; T01 added the missing shared width-limited route wrapper and aligned navigation with it. Content containment is under app control; native first-launch window size depends on browser/OS. Preserve normal resize/maximize controls.
 
 ### T02 — Make daily completion and streak correct
 
-**Scope:** `BE/commitments/`, account timezone, Prisma/shared types, frontend commitment store and resume/day-boundary refresh. Depends on the calendar defaults above.
+**Status:** implementation complete and pushed in `9643bda`; migration/runtime acceptance remains unrecorded. See [T02 handoff](t02_review_handoff.md).
 
-- [ ] Use one server-authoritative local-day calculation for completion, streak and missed full dates. Return current day/next boundary; derive streak on reads as well as completion.
-- [ ] Preserve same-day idempotency and transaction locking; enforce one persisted completion per habit day. Rehearse migration of existing UTC history without rewriting or losing effort.
-- [ ] Refresh after local midnight, foreground return and reconnect. A PWA left open overnight must unlock the next opportunity without reload. Device-clock changes cannot grant an extra completion.
-- [ ] Keep cumulative progress separate from streak. Custom targets stop at their goal and offer Continue or Archive; Endless has no artificial end.
+**Scope:** `BE/commitments/`, account timezone, Prisma/shared types, frontend commitment store and resume/day-boundary refresh. Uses the implemented calendar rules above.
+
+- [x] Use one server-authoritative local-day calculation for completion, streak and missed full dates. Return current day/next boundary; derive streak on reads as well as completion.
+- [x] Preserve same-day idempotency and transaction locking; enforce one persisted completion per habit day. Prepare the additive UTC-history migration and preservation/rehearsal procedure; execution remains in the verification checklist below.
+- [x] Refresh after local midnight, foreground return and reconnect. A PWA left open overnight must unlock the next opportunity without reload. Device-clock changes cannot grant an extra completion.
+- [x] Keep cumulative progress separate from streak. Custom targets stop at their goal and offer Continue or Archive; Endless has no artificial end.
 
 **Acceptance:** 08:00 → next 00:01 is valid; two devices/retries create one daily event; a one-day gap restarts at 1. Test Tehran, DST, year boundary, stale cache and explicit timezone-change policy. Failed refresh remains visibly stale.
 
@@ -73,10 +93,12 @@ Resolve **T00 (P0 — signup blocker)** before further feature work or inviting 
 
 **Scope:** commitment archive/restore, `BE/chain/`, relationship/invite data and archive UI. Depends on T02.
 
-- [ ] After two full missed dates, archive only the affected habit, preserving history/progress. Reconcile on reads/actions even if the server slept; cron is not required for correctness.
-- [ ] Atomically disconnect its attached reciprocal chains and invalidate outstanding invites. Apply the same lifecycle operation to manual archive; preserve unrelated habits and relationships.
-- [ ] Revalidate both habits during invite acceptance. Archived/private habits and stale links cannot create connections or receive support. Replace the old three-day DORMANT behavior with the agreed two-day rule.
-- [ ] Restore with a fresh inactivity anchor and restarted current streak. Require explicit new acceptance to reconnect; existing unique rows must not block legitimate re-invitation. Completed finite goals must not inactivity-archive while awaiting the user's choice.
+**Status:** implementation complete and pushed in `2f1cff1`; migration/runtime acceptance remains unrecorded. See [T03 handoff](t03_review_handoff.md) and [OpenSpec implementation/validation checklist](../openspec/changes/update-habit-chain-lifecycle/tasks.md).
+
+- [x] After two full missed dates, archive only the affected habit, preserving history/progress. Reconcile on reads/actions even if the server slept; cron is not required for correctness.
+- [x] Atomically disconnect its attached reciprocal chains and invalidate outstanding invites. Apply the same lifecycle operation to manual archive; preserve unrelated habits and relationships.
+- [x] Revalidate both habits during invite acceptance. Archived/private habits and stale links cannot create connections or receive support. Replace the old three-day DORMANT behavior with the agreed two-day rule.
+- [x] Restore with a fresh inactivity anchor and restarted current streak. Require explicit new acceptance to reconnect; existing unique rows must not block legitimate re-invitation. Completed finite goals must not inactivity-archive while awaiting the user's choice.
 
 **Acceptance:** Monday complete, Tuesday/Wednesday missed → archived Thursday 00:00, including after server sleep. One missed date stays active. Multi-partner archive, simultaneous completion/invite, manual archive and restore/reconnect preserve unrelated data and do not immediately rearchive.
 
@@ -146,10 +168,20 @@ References for implementation: [Render Free](https://render.com/docs/free), [Wor
 
 **Acceptance:** the core journey and requested return/support rules work in the intended environment; desktop installed PWA and mobile layouts pass. Untested paths stay explicit. A successful build or unit count alone does not prove acceptance.
 
+## Outstanding T00–T03 verification
+
+- [ ] Run builds/typechecks and the prepared focused tests; the handoffs explicitly record that they were not run during implementation. This roadmap update does not claim new execution results.
+- [ ] Rehearse and verify both `20261017000000_account_calendar` and `20261017100000_habit_lifecycle`, in order after the existing release baseline/daily-hearts migration. Record preservation, unique-index/default checks, repeat deploy, drift and snapshot recovery. The current backend requires both migrations; Render's build does not apply them, and its startup column probe does not verify migration history or the daily-event unique index.
+- [ ] Record matching direct/proxied backend artifact revisions and actual email/Google signup, existing-account and updated-PWA results. Source and remote-branch synchronization do not prove a running deployment.
+- [ ] Complete the T01 visual checks, T02 calendar/refresh checks and T03 lifecycle/restore/reconnect checks described above and in their handoffs, including real PostgreSQL concurrency and account isolation.
+- [ ] Run strict validation of `update-habit-chain-lifecycle` when the OpenSpec CLI is available; its handoff records this as not run.
+
+T04's idempotent hearts/recipient-day expiry, T05's private disconnect receipts and T06's durable color reward are still planned work. Their absence does not reopen the completed T00–T03 implementation.
+
 ## Scope and completion
 
 The active roadmap contains these ten tasks (T00–T09) only. Three.js, articles, localization, charity/community features, analytics, flexible schedules, store distribution and broader redesigns are outside this iteration. Revisit them after the daily loop is reliable rather than carrying speculative tasks into execution.
 
-Keep implementation changes small and reviewable, using the repository's OpenSpec workflow where behavior/schema changes require it. Each task is complete only after its acceptance is demonstrated. New data migrations require a backup, rehearsal and rollback plan. No production deployment or release tag follows automatically from this document.
+Keep implementation changes small and reviewable, using the repository's OpenSpec workflow where behavior/schema changes require it. Track implementation completion separately from acceptance: T00–T03 code is complete/pushed, while release readiness requires the outstanding evidence above. New data migrations require a backup, rehearsal and rollback plan. No production deployment or release tag follows automatically from this document.
 
 GitHub remains a later synchronization step: re-read current state, map these tasks to existing issues where appropriate, remove obsolete due dates and close confirmed duplicates. Do not recreate the old twenty-task backlog or mark pilot-only evidence as full acceptance.
