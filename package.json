@@ -7,6 +7,7 @@
     "start:backend": "nx serve mehrchain-backend",
     "dev": "nx run-many -t serve --parallel=2",
     "build": "nx build",
+    "build:backend:release": "prisma generate --schema=apps/mehrchain-backend/prisma/schema.prisma && nx build mehrchain-backend --skip-nx-cache",
     "watch": "nx build --watch --configuration development",
     "test": "nx test",
     "mobile:build": "nx build mehrchain-frontend && cap sync",

@@ -6,10 +6,17 @@ if (!['prepare', 'status', 'deploy', 'resolve-baseline'].includes(action)) {
   console.error('Usage: node scripts/release-migrate.cjs prepare|status|deploy|resolve-baseline');
   process.exit(1);
 }
-const prisma = path.resolve('apps/mehrchain-backend/prisma');
+const prisma = path.resolve(__dirname, '../apps/mehrchain-backend/prisma');
 const work = path.join(prisma, '.release-prisma');
 fs.mkdirSync(work, { recursive: true });
 fs.copyFileSync(path.join(prisma, 'schema.prisma'), path.join(work, 'schema.prisma'));
+// Never retain migrations copied from a different revision (for example T03
+// when an operator checks out the earlier T02 release for the signup repair).
+const preparedMigrations = path.resolve(work, 'migrations');
+if (path.dirname(preparedMigrations) !== work) {
+  throw new Error('Prepared migration directory must stay inside .release-prisma.');
+}
+fs.rmSync(preparedMigrations, { recursive: true, force: true });
 fs.cpSync(path.join(prisma, 'release-migrations'), path.join(work, 'migrations'), {
   recursive: true,
 });
@@ -35,7 +42,7 @@ if (action === 'resolve-baseline') {
   const drift = spawnSync(
     process.execPath,
     [
-      path.resolve('node_modules/prisma/build/index.js'),
+      path.resolve(__dirname, '../node_modules/prisma/build/index.js'),
       'migrate',
       'diff',
       '--from-schema-datasource',
@@ -54,7 +61,7 @@ if (action === 'resolve-baseline') {
 const result = spawnSync(
   process.execPath,
   [
-    path.resolve('node_modules/prisma/build/index.js'),
+    path.resolve(__dirname, '../node_modules/prisma/build/index.js'),
     ...command,
     '--schema',
     path.join(work, 'schema.prisma'),

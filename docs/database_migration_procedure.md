@@ -21,7 +21,31 @@ The old `20261004210000_production_baseline` history record has a checksum that 
 
 ## Release migration chain
 
-`prisma/release-migrations/20261005000000_release_baseline/migration.sql` is a full baseline generated from the current schema. The wrapper copies the canonical schema and this isolated chain into ignored `.release-prisma/` and invokes Prisma. Historical migrations remain unchanged for audit. Future migrations belong in `release-migrations` and must be generated/reviewed against a disposable database; never regenerate or edit an applied release baseline.
+### October 17 account calendar and lifecycle additions
+
+The baseline remains the October 5 schema; it is not regenerated when the
+canonical schema changes. Current `main` also requires the additive release
+migrations `20261017000000_account_calendar` and
+`20261017100000_habit_lifecycle`, after October 6 daily hearts. See the
+[T00 release sequence](t00_review_handoff.md) and
+[T02 populated-copy preservation checks](t02_review_handoff.md).
+These additions have not been rehearsed/applied by the T00 implementation.
+
+For an already release-baselined target, review all pending SQL, back up, rehearse
+and use the release wrapper before building/deploying the matching backend.
+Production startup now refuses readiness when required calendar/lifecycle
+columns are missing; it does not migrate the database automatically.
+
+The legacy procedure below describes the earlier schema. Its zero-drift checks
+now compare against the expanded canonical schema. A legacy adoption rehearsal
+must account for all later additive SQL and record each already-applied release
+migration through Prisma with its real checksum before deploy. Do not mark only
+the baseline and then replay later ADD COLUMN statements that have already been
+applied. Stop if the inspected target/history does not match the chosen path.
+
+### Isolated chain and historical audit
+
+`prisma/release-migrations/20261005000000_release_baseline/migration.sql` is the full October 5 baseline. The wrapper copies the canonical schema and this isolated chain into ignored `.release-prisma/` and invokes Prisma. It replaces the prepared migration directory each time to avoid retaining files from another revision. Historical migrations remain unchanged for audit. Future migrations belong in `release-migrations` and must be generated/reviewed against a disposable database; never regenerate or edit an applied release baseline.
 
 The old chain is not replayable: the first two migrations create then drop the old Commitment table; the October baseline recreates Category and does not upgrade an existing commitments table. The new chain avoids replaying those operations. `deploy` is only for an empty database or one already baselined through the procedure below.
 

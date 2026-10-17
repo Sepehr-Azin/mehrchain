@@ -4,8 +4,9 @@ services:
     env: node
     plan: free
     region: frankfurt
-    buildCommand: npm ci --legacy-peer-deps && npx prisma generate --schema=apps/mehrchain-backend/prisma/schema.prisma && NX_DAEMON=false npx nx build mehrchain-backend
+    buildCommand: npm ci --legacy-peer-deps && NX_DAEMON=false npm run build:backend:release
     startCommand: node dist/mehrchain-backend/main.js
+    healthCheckPath: /api/version
     envVars:
       - key: NODE_ENV
         value: production

@@ -30,6 +30,8 @@ Resolve **T00 (P0 — signup blocker)** before further feature work or inviting 
 
 **Priority:** **P0 — first, ahead of T01–T09.** The reported signup failure blocks new users from saving their progress.
 
+**Local implementation handoff (October 17):** release-build freshness, artifact revision reporting, production schema readiness checks and auth validation regression coverage are prepared for review in [T00 handoff](t00_review_handoff.md). No build, tests, database operations or deployment were run. The deployed cause and acceptance below remain unverified; T00 is still open.
+
 **Scope:** email registration and Google authentication, their request DTOs, Cloudflare Pages `/api/*` proxy, Render backend build/revision and the account-calendar database migration introduced by T02.
 
 **Evidence (October 17):** the signup screen reports `property timeZone should not exist`. Current frontend code sends `timeZone` in both registration and Google requests; current backend DTOs allow it. These changes were committed in `9643bda`. The local backend bundle in `dist/mehrchain-backend/main.js` is dated October 6 and lacks the field in both DTOs. This establishes a stale local build; an older deployed backend is the leading hypothesis, not a verified production finding. Direct online checks from the investigation environment failed to connect. Render's configured build generates Prisma Client and builds the backend but does not apply migrations.

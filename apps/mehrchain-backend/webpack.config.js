@@ -1,5 +1,20 @@
 const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
 const { join } = require('path');
+const { execFileSync } = require('node:child_process');
+const { DefinePlugin } = require('webpack');
+
+function buildRevision() {
+  if (process.env.RENDER_GIT_COMMIT) return process.env.RENDER_GIT_COMMIT;
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: __dirname,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 module.exports = {
   output: {
@@ -10,6 +25,12 @@ module.exports = {
     }),
   },
   plugins: [
+    new DefinePlugin({
+      __BACKEND_BUILD__: JSON.stringify({
+        revision: buildRevision(),
+        builtAt: new Date().toISOString(),
+      }),
+    }),
     new NxAppWebpackPlugin({
       target: 'node',
       compiler: 'tsc',

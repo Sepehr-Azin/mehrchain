@@ -1,8 +1,10 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
 import { AllExceptionsFilter } from './app/common/filters/all-exceptions.filter';
+import { createRequestValidationPipe } from './app/common/request-validation';
+import { backendBuild } from './app/backend-build';
 
 async function bootstrap() {
   // Guard: Fail fast in production if JWT_SECRET is not configured
@@ -43,13 +45,7 @@ async function bootstrap() {
   });
 
   // Global request validation pipeline
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  app.useGlobalPipes(createRequestValidationPipe());
 
   // Global standardized exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
@@ -69,6 +65,7 @@ async function bootstrap() {
 
   const port = process.env['PORT'] || 3000;
   await app.listen(port);
+  Logger.log(`Backend revision: ${backendBuild.revision}; built: ${backendBuild.builtAt}`);
   Logger.log(`🚀 MehrChain Backend is running on: http://localhost:${port}/${globalPrefix}`);
   Logger.log(`📚 Swagger API Docs available at: http://localhost:${port}/${globalPrefix}/docs`);
 }
