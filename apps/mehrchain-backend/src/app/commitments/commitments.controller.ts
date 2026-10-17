@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,10 +24,18 @@ export class CommitmentsController {
   constructor(private readonly commitmentsService: CommitmentsService) {}
 
   @Get()
+  @Header('Cache-Control', 'private, no-store')
   @ApiOperation({ summary: 'Get all active commitments for the current user' })
   @ApiResponse({ status: 200, description: 'List of commitments' })
   getUserCommitments(@CurrentUser() user: { id: string }) {
     return this.commitmentsService.getUserCommitments(user.id);
+  }
+
+  @Get('sync')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: 'Refresh habits and the server-authoritative account calendar' })
+  syncCommitments(@CurrentUser() user: { id: string }) {
+    return this.commitmentsService.syncCommitments(user.id);
   }
 
   @Post()
@@ -50,6 +68,7 @@ export class CommitmentsController {
   }
 
   @Get('archived')
+  @Header('Cache-Control', 'private, no-store')
   @ApiOperation({ summary: 'Get all archived commitments for the current user' })
   @ApiResponse({ status: 200, description: 'List of archived commitments' })
   getArchivedCommitments(@CurrentUser() user: { id: string }) {
@@ -77,4 +96,3 @@ export class CommitmentsController {
     return this.commitmentsService.hardDeleteCommitment(user.id, id);
   }
 }
-

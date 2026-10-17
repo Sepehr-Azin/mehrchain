@@ -1,3 +1,15 @@
+export interface CommitmentCalendar {
+  timeZone: string;
+  currentDayKey: string;
+  serverNow: string;
+  nextDayAt: string;
+}
+
+export interface CommitmentSync {
+  commitments: Commitment[];
+  calendar: CommitmentCalendar;
+}
+
 export interface Commitment {
   id: string;
   title: string;
@@ -5,6 +17,9 @@ export interface Commitment {
   currentDay: number;
   currentStreak: number;
   isCompletedToday: boolean;
+  isGoalReached?: boolean;
+  calendar?: CommitmentCalendar;
+  consecutiveMissedDays?: number;
   category: 'health' | 'growth' | 'community' | 'environment';
   why?: string;
   rippleEffects?: string[];

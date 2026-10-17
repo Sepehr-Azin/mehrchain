@@ -96,28 +96,54 @@
   }
 
   <div [attr.aria-busy]="pending()">
-    <button
-      type="button"
-      (click)="handleSpark()"
-      [disabled]="pending() || commitment().isCompletedToday"
-      [attr.aria-describedby]="errorMessage() ? 'habit-error-' + commitment().id : null"
-      class="w-full min-h-11 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-      [class.spark-btn]="!pending() && !commitment().isCompletedToday"
-      [ngClass]="
-        pending() || commitment().isCompletedToday
-          ? 'bg-muted/80 text-foreground'
-          : 'bg-primary text-primary-foreground hover:bg-accent'
-      "
-    >
-      @if (pending()) {
-        <span>Saving...</span>
-      } @else if (commitment().isCompletedToday) {
-        <lucide-icon name="check" class="w-4 h-4 text-primary" aria-hidden="true"></lucide-icon>
-        <span>Completed</span>
-      } @else {
-        <span>{{ errorMessage() ? 'Try again' : 'Complete today' }}</span>
-      }
-    </button>
+    @if (goalReached()) {
+      <p class="mb-2 text-sm text-foreground" role="status">
+        Goal reached. Your completed days are saved.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="onContinue.emit(commitment().id)"
+          [disabled]="pending() || stale()"
+          class="min-h-11 flex-1 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+        >
+          {{ pending() ? 'Saving...' : 'Continue as Endless' }}
+        </button>
+        <button
+          type="button"
+          (click)="onArchive.emit(commitment().id)"
+          [disabled]="pending() || stale()"
+          class="min-h-11 px-4 rounded-xl bg-muted text-foreground text-sm disabled:opacity-50"
+        >
+          Archive
+        </button>
+      </div>
+    } @else {
+      <button
+        type="button"
+        (click)="handleSpark()"
+        [disabled]="pending() || stale() || commitment().isCompletedToday"
+        [attr.aria-describedby]="errorMessage() ? 'habit-error-' + commitment().id : null"
+        class="w-full min-h-11 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+        [class.spark-btn]="!pending() && !stale() && !commitment().isCompletedToday"
+        [ngClass]="
+          pending() || stale() || commitment().isCompletedToday
+            ? 'bg-muted/80 text-foreground'
+            : 'bg-primary text-primary-foreground hover:bg-accent'
+        "
+      >
+        @if (pending()) {
+          <span>Saving...</span>
+        } @else if (stale()) {
+          <span>Refresh required</span>
+        } @else if (commitment().isCompletedToday) {
+          <lucide-icon name="check" class="w-4 h-4 text-primary" aria-hidden="true"></lucide-icon>
+          <span>Completed</span>
+        } @else {
+          <span>{{ errorMessage() ? 'Try again' : 'Complete today' }}</span>
+        }
+      </button>
+    }
   </div>
   @if (errorMessage()) {
     <p

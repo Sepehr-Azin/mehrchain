@@ -41,6 +41,7 @@ model User {
   name                      String?
   passwordHash              String
   role                      String    @default("USER")
+  timeZone                  String    @default("UTC") // Fixed at signup; legacy accounts keep UTC
   isEmailVerified           Boolean   @default(false)
   verificationCode          String?
   verificationCodeExpiresAt DateTime?
@@ -106,10 +107,13 @@ model CommitmentLog {
   commitment   Commitment @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
 
   completedAt DateTime @default(now())
+  dayKey      String? // Null only for surplus historical duplicates; never for new completions
+  timeZone    String   @default("UTC")
   note        String?
   metadata    Json? // Future metrics (e.g. mood, energy level)
 
   @@index([commitmentId])
+  @@unique([commitmentId, dayKey])
   @@map("commitment_logs")
 }
 

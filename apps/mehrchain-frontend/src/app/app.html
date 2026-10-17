@@ -1,5 +1,29 @@
 <div class="app-shell" [class.has-navigation]="showNavbar()">
   <app-cold-start-banner />
+  @if (
+    showNavbar() &&
+    commitmentService.activeUserId() &&
+    (commitmentService.isStale() || commitmentService.syncError())
+  ) {
+    <div class="px-5 pt-4 text-sm text-muted-foreground" role="status" aria-live="polite">
+      <p>
+        {{
+          commitmentService.syncError() ||
+            (commitmentService.isLoading()
+              ? 'Refreshing daily status...'
+              : 'Saved daily status may be out of date.')
+        }}
+      </p>
+      <button
+        type="button"
+        (click)="commitmentService.syncWithBackend()"
+        [disabled]="commitmentService.isLoading()"
+        class="mt-1 min-h-11 px-3 rounded-xl bg-muted text-foreground disabled:opacity-50"
+      >
+        Refresh
+      </button>
+    </div>
+  }
   <router-outlet />
 </div>
 

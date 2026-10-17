@@ -15,6 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
+import { accountTimeZone } from '../commitments/commitment-calendar';
 
 @Injectable()
 export class AuthService {
@@ -28,6 +29,7 @@ export class AuthService {
    * Registers a new user account with unique username, generates an OTP verification code, and sends email.
    */
   async register(dto: RegisterDto) {
+    const timeZone = accountTimeZone(dto.timeZone);
     const cleanEmail = dto.email.trim().toLowerCase();
     const cleanUsername = dto.username.trim().toLowerCase();
     const displayName = (dto.name || dto.username).trim();
@@ -74,6 +76,7 @@ export class AuthService {
       // Create fresh unverified user record
       await this.prisma.user.create({
         data: {
+          timeZone,
           username: cleanUsername,
           name: displayName,
           email: cleanEmail,
@@ -138,6 +141,7 @@ export class AuthService {
         name: true,
         email: true,
         role: true,
+        timeZone: true,
         createdAt: true,
       },
     });
@@ -234,6 +238,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        timeZone: user.timeZone,
         createdAt: user.createdAt,
       },
       accessToken,
@@ -331,6 +336,7 @@ export class AuthService {
 
       user = await this.prisma.user.create({
         data: {
+          timeZone: accountTimeZone(dto.timeZone),
           email: cleanEmail,
           username: candidateUsername,
           name: name || candidateUsername,
@@ -353,6 +359,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        timeZone: user.timeZone,
         createdAt: user.createdAt,
       },
       accessToken,
@@ -368,6 +375,7 @@ export class AuthService {
         name: true,
         email: true,
         role: true,
+        timeZone: true,
         createdAt: true,
       },
     });

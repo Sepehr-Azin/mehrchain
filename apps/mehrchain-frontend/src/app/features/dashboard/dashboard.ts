@@ -144,10 +144,38 @@ export class DashboardComponent {
   }
 
   async handleArchive(id: string) {
+    if (this.completingIds().has(id)) return;
+    this.completingIds.update((ids) => new Set([...ids, id]));
     try {
       await this.commitmentService.removeCommitment(id);
     } catch (error) {
       this.showToast(error instanceof Error ? error.message : 'Could not archive habit.');
+    } finally {
+      this.completingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async handleContinue(id: string) {
+    if (this.completingIds().has(id)) return;
+    this.completingIds.update((ids) => new Set([...ids, id]));
+    this.completionErrors.update((errors) => ({ ...errors, [id]: '' }));
+    try {
+      await this.commitmentService.updateCommitment(id, { totalDays: -1 });
+    } catch (error) {
+      this.completionErrors.update((errors) => ({
+        ...errors,
+        [id]: error instanceof Error ? error.message : 'Could not continue habit. Try again.',
+      }));
+    } finally {
+      this.completingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(id);
+        return next;
+      });
     }
   }
 

@@ -6,6 +6,7 @@ describe('CommitmentsService (Unit Tests)', () => {
   let service: CommitmentsService;
 
   const mockPrisma: any = {
+    user: { findUnique: jest.fn().mockResolvedValue({ timeZone: 'UTC' }) },
     $queryRaw: jest.fn().mockResolvedValue([]),
     $transaction: jest.fn(),
     commitment: {
@@ -31,7 +32,7 @@ describe('CommitmentsService (Unit Tests)', () => {
   });
 
   describe('createCommitment', () => {
-    it('should create a commitment with initial day 1 and streak 0', async () => {
+    it('should create a commitment with initial day 0 and streak 0', async () => {
       const mockCreated = {
         id: 'comm-1',
         userId: 'user-1',
@@ -40,6 +41,8 @@ describe('CommitmentsService (Unit Tests)', () => {
         totalDays: 21,
         currentDay: 0,
         currentStreak: 0,
+        startDate: new Date(),
+        lastCompletedDate: null,
       };
 
       mockPrisma.commitment.create.mockResolvedValue(mockCreated);
@@ -97,7 +100,14 @@ describe('CommitmentsService (Unit Tests)', () => {
         totalDays: 21,
         lastCompletedDate: new Date(Date.now() - 3 * 86400000),
       });
-      mockPrisma.commitment.update.mockResolvedValue({ id: 'comm-gap' });
+      mockPrisma.commitment.update.mockResolvedValue({
+        id: 'comm-gap',
+        startDate: new Date(),
+        lastCompletedDate: new Date(),
+        currentStreak: 1,
+        currentDay: 13,
+        totalDays: 21,
+      });
       await service.completeCommitment('user-1', 'comm-gap');
       expect(mockPrisma.commitment.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -268,6 +278,8 @@ describe('CommitmentsService (Unit Tests)', () => {
         id: 'comm-1',
         title: 'Updated Yoga',
         why: 'More strength',
+        startDate: new Date(),
+        lastCompletedDate: null,
       });
 
       const result = await service.updateCommitment('user-1', 'comm-1', {
@@ -288,7 +300,13 @@ describe('CommitmentsService (Unit Tests)', () => {
   describe('getArchivedCommitments', () => {
     it('should return only archived commitments', async () => {
       mockPrisma.commitment.findMany.mockResolvedValue([
-        { id: 'comm-archived', title: 'Old Habit', isArchived: true },
+        {
+          id: 'comm-archived',
+          title: 'Old Habit',
+          isArchived: true,
+          startDate: new Date(),
+          lastCompletedDate: null,
+        },
       ]);
 
       const result = await service.getArchivedCommitments('user-1');
@@ -307,6 +325,8 @@ describe('CommitmentsService (Unit Tests)', () => {
       mockPrisma.commitment.update.mockResolvedValue({
         id: 'comm-archived',
         isArchived: false,
+        startDate: new Date(),
+        lastCompletedDate: null,
       });
 
       const result = await service.restoreCommitment('user-1', 'comm-archived');

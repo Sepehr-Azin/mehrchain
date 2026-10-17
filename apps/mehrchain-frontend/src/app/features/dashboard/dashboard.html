@@ -1,6 +1,3 @@
-@if (commitmentService.syncError()) {
-  <p role="alert" class="text-red-500">{{ commitmentService.syncError() }}</p>
-}
 <div class="app-page bg-background pb-24 px-5 safe-top font-sans">
   <!-- Header with Mero avatar and Quick Theme Toggle -->
   <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
@@ -62,11 +59,13 @@
           [commitment]="c"
           [supportersCount]="chainService.getSupportersCount(c.id)"
           [pending]="completingIds().has(c.id)"
+          [stale]="commitmentService.isStale()"
           [errorMessage]="completionErrors()[c.id] || null"
           (onComplete)="handleComplete($event)"
           (onDelete)="promptDelete($event)"
           (onArchive)="handleArchive($event)"
           (onEdit)="openEdit($event)"
+          (onContinue)="handleContinue($event)"
         >
         </app-commitment-card>
       }

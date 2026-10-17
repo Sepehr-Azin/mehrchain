@@ -40,6 +40,10 @@
   }
 
   <!-- Mero keeps a fixed name; existing named-color preferences remain available. -->
+  <p class="mb-5 text-xs text-muted-foreground">
+    Habit days follow {{ currentUser()?.timeZone || 'UTC' }} and reset at midnight. Your account
+    timezone stays fixed when you travel or change device settings.
+  </p>
   <div class="bg-card rounded-3xl p-5 border border-border/70 shadow-sm mb-6 text-center">
     <app-mero size="lg" [showGlow]="true" />
     <h2 class="mt-2 text-xl font-bold text-foreground">Mero</h2>

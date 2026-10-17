@@ -3,11 +3,20 @@ import { IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-vali
 import { IsValidEmail } from '../validators/is-valid-email.decorator';
 
 export class RegisterDto {
+  @ApiPropertyOptional({
+    example: 'Asia/Tehran',
+    description: 'Fixed account IANA timezone; defaults to UTC',
+  })
+  @IsString()
+  @IsOptional()
+  timeZone?: string;
+
   @ApiProperty({ example: 'farzad', description: 'Unique username (3-20 characters)' })
   @IsString()
   @IsNotEmpty()
   @Matches(/^[a-zA-Z0-9_]{3,20}$/, {
-    message: 'Username must be 3-20 characters and contain only English letters, numbers, and underscores.',
+    message:
+      'Username must be 3-20 characters and contain only English letters, numbers, and underscores.',
   })
   username!: string;
 

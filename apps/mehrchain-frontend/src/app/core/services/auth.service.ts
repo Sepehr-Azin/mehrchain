@@ -11,6 +11,7 @@ export interface UserProfile {
   name?: string;
   email: string;
   role?: string;
+  timeZone?: string;
   isEmailVerified?: boolean;
   createdAt: string;
 }
@@ -106,7 +107,11 @@ export class AuthService {
       await Promise.resolve();
       try {
         const user = await firstValueFrom(
-          this.http.get<UserProfile>(`${this.API_URL}/me`).pipe(timeout(60000)),
+          this.http
+            .get<UserProfile>(`${this.API_URL}/me`, {
+              params: { 'ngsw-bypass': 'true' },
+            })
+            .pipe(timeout(60000)),
         );
         if (this.getToken() !== token) return;
         localStorage.setItem(this.AUTH_KEY, JSON.stringify(user));
@@ -174,6 +179,7 @@ export class AuthService {
         name: cleanName,
         email: cleanEmail,
         password: password || '',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       };
 
       return await firstValueFrom(
@@ -339,7 +345,10 @@ export class AuthService {
   async googleLogin(idToken: string): Promise<UserProfile> {
     try {
       const res = await firstValueFrom(
-        this.http.post<AuthResponse>(`${this.API_URL}/google`, { idToken }),
+        this.http.post<AuthResponse>(`${this.API_URL}/google`, {
+          idToken,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        }),
       );
 
       localStorage.setItem(this.AUTH_KEY, JSON.stringify(res.user));

@@ -234,7 +234,10 @@ describe('AuthService (Frontend)', () => {
 
     const req = httpMock.expectOne('http://localhost:3000/api/auth/google');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ idToken: 'sample_google_id_token' });
+    expect(req.request.body).toEqual({
+      idToken: 'sample_google_id_token',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    });
     req.flush({
       user: mockUser,
       accessToken: 'google_jwt_token_xyz',
@@ -253,7 +256,7 @@ describe('AuthService (Frontend)', () => {
     expect(service.isAuthenticated()).toBe(false);
     await Promise.resolve();
     httpMock
-      .expectOne('http://localhost:3000/api/auth/me')
+      .expectOne('http://localhost:3000/api/auth/me?ngsw-bypass=true')
       .flush({}, { status: 401, statusText: 'Unauthorized' });
     await resume;
     expect(service.isAuthenticated()).toBe(false);

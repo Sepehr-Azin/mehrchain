@@ -20,6 +20,8 @@ export class CommitmentService {
   readonly archivedCommitments = this.store.archivedCommitments;
   readonly isLoading = this.store.isLoading;
   readonly syncError = this.store.syncError;
+  readonly isStale = this.store.isStale;
+  readonly activeUserId = this.store.activeUserId;
 
   // Actions
   loadForUser(userId: string): void {

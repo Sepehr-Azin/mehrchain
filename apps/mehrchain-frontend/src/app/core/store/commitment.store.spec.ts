@@ -217,13 +217,21 @@ describe('CommitmentStore (@ngrx/signals)', () => {
     store.loadForUser('user-a');
     localStorage.setItem('mehrchain_auth_token_v1', 'remote_jwt');
     const refresh = store.syncWithBackend();
-    const read = httpMock.expectOne('http://localhost:3000/api/commitments');
+    const read = httpMock.expectOne('http://localhost:3000/api/commitments/sync?ngsw-bypass=true');
     const create = store.addCommitment({ title: 'New habit', category: 'health' });
     httpMock
       .expectOne('http://localhost:3000/api/commitments')
       .flush({ id: 'saved-id', title: 'New habit' });
     await create;
-    read.flush([]);
+    read.flush({
+      commitments: [],
+      calendar: {
+        timeZone: 'UTC',
+        currentDayKey: '2026-10-17',
+        serverNow: '2026-10-17T12:00:00.000Z',
+        nextDayAt: '2026-10-18T00:00:00.000Z',
+      },
+    });
     await refresh;
     expect(store.commitments().map((c) => c.id)).toEqual(['saved-id']);
   });
