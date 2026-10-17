@@ -1,6 +1,6 @@
 # MehrChain — Next iteration
 
-> Updated: **2026-10-14 (Asia/Tehran)**. No committed deadline.
+> Updated: **2026-10-17 (Asia/Tehran)**. No committed deadline.
 > Goal: a small, reliable daily habit experience with quiet support and a kind return.
 > The owner reports a mostly successful two-person signup/Chain pilot, with proxy and server warm-up friction. Multi-day behavior and full acceptance still need testing.
 > This document plans the next implementation. GitHub synchronization remains deferred.
@@ -22,9 +22,25 @@ Working defaults for the implementation proposal: persisted account IANA timezon
 
 ## Implementation order
 
-Start with **T01**. Then complete T02 → T03 before changing support/lifecycle behavior. T04–T07 build on that foundation. T08 can run independently; T09 verifies the integrated result. Each task includes its own focused checks; acceptance does not wait until the end to discover basic defects.
+Resolve **T00 (P0 — signup blocker)** before further feature work or inviting testers. Then follow **T01 → T02 → T03** before changing support/lifecycle behavior. T04–T07 build on that foundation. T08 can run independently after T00; its latency work does not replace fixing the signup contract. T09 verifies the integrated result. Each task includes its own focused checks; acceptance does not wait until the end to discover basic defects.
 
 `FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs are local, not GitHub issue numbers. All tasks below are pending.
+
+### T00 — Restore signup by aligning the deployed timezone contract
+
+**Priority:** **P0 — first, ahead of T01–T09.** The reported signup failure blocks new users from saving their progress.
+
+**Scope:** email registration and Google authentication, their request DTOs, Cloudflare Pages `/api/*` proxy, Render backend build/revision and the account-calendar database migration introduced by T02.
+
+**Evidence (October 17):** the signup screen reports `property timeZone should not exist`. Current frontend code sends `timeZone` in both registration and Google requests; current backend DTOs allow it. These changes were committed in `9643bda`. The local backend bundle in `dist/mehrchain-backend/main.js` is dated October 6 and lacks the field in both DTOs. This establishes a stale local build; an older deployed backend is the leading hypothesis, not a verified production finding. Direct online checks from the investigation environment failed to connect. Render's configured build generates Prisma Client and builds the backend but does not apply migrations.
+
+- [ ] Reproduce the deployed failure and record the endpoint, HTTP status and validation response without credentials or tokens. Compare Pages and Render deployed revisions, Render build/start logs and the proxy target; establish which backend artifact actually serves requests.
+- [ ] Verify the production database target and migration history. Back up and rehearse `20261017000000_account_calendar` on a disposable populated copy, preserving existing UTC history. Use the [database procedure](database_migration_procedure.md), [T02 handoff](t02_review_handoff.md) and `scripts/release-migrate.cjs` for the reviewed release chain. Inspect all pending migrations in the selected revision before applying it; do not deploy unrelated uncommitted lifecycle work.
+- [ ] After the required schema is verified, generate Prisma Client, build and deploy the matching backend revision containing both timezone DTO changes. Check build-cache/artifact reuse if the served contract remains old. Preserve strict unknown-field validation and the account timezone behavior rather than hiding the mismatch by dropping `timeZone` or disabling validation globally.
+- [ ] Add focused regression coverage through the actual validation pipeline for registration and Google DTOs: a valid `timeZone` is accepted, omission retains the UTC default, and unrelated unknown fields remain rejected. Verify invalid IANA values follow the intended account-creation validation.
+- [ ] Run deployed email signup through verification, Google signup/login, existing-account login and profile retrieval through the Pages proxy. Confirm new-account timezone persistence, existing-account compatibility and registration after a PWA update. Record tested frontend/backend revisions and migration status.
+
+**Acceptance:** the deployed email and Google flows no longer reject the supported `timeZone` field; a new Tehran account retains its account timezone and existing accounts/history remain intact. Required migrations are applied, the running backend matches the reviewed revision, and no missing-column errors replace the validation failure. Real deployed flow results are recorded; a local build or unit test alone does not close this blocker. T02's broader daily-boundary acceptance remains separate.
 
 ### T01 — Simplify the interface and desktop PWA
 
@@ -130,7 +146,7 @@ References for implementation: [Render Free](https://render.com/docs/free), [Wor
 
 ## Scope and completion
 
-The active roadmap contains these nine tasks only. Three.js, articles, localization, charity/community features, analytics, flexible schedules, store distribution and broader redesigns are outside this iteration. Revisit them after the daily loop is reliable rather than carrying speculative tasks into execution.
+The active roadmap contains these ten tasks (T00–T09) only. Three.js, articles, localization, charity/community features, analytics, flexible schedules, store distribution and broader redesigns are outside this iteration. Revisit them after the daily loop is reliable rather than carrying speculative tasks into execution.
 
 Keep implementation changes small and reviewable, using the repository's OpenSpec workflow where behavior/schema changes require it. Each task is complete only after its acceptance is demonstrated. New data migrations require a backup, rehearsal and rollback plan. No production deployment or release tag follows automatically from this document.
 

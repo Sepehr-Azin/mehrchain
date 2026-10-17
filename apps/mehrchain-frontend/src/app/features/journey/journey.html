@@ -96,8 +96,8 @@
           <lucide-icon name="archive" class="w-4 h-4"></lucide-icon>
         </div>
         <div>
-          <h3 class="font-bold text-sm text-foreground">Archived Flames</h3>
-          <p class="text-[11px] text-muted-foreground">Paused habits and past sparks</p>
+          <h3 class="font-bold text-sm text-foreground">Archived habits</h3>
+          <p class="text-[11px] text-muted-foreground">Your history and progress are preserved.</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -113,6 +113,10 @@
 
     @if (showArchived()) {
       <div class="mt-4 pt-3 border-t border-border/40 space-y-2.5 animate-fade-in">
+        <p class="text-xs text-muted-foreground">
+          Habits archive after two fully missed days. Restore starts a fresh streak. Reconnecting a
+          Chain needs a new invitation and acceptance.
+        </p>
         @if (commitmentService.archivedCommitments().length === 0) {
           <div class="text-center py-6 text-xs text-muted-foreground">
             No archived habits found. All your active flames are burning bright!
@@ -134,7 +138,12 @@
               </div>
 
               <div class="flex items-center gap-2">
-                <mc-button variant="outline" size="sm" (clicked)="restoreHabit(habit.id)">
+                <mc-button
+                  variant="outline"
+                  size="sm"
+                  [loading]="restoringIds().has(habit.id)"
+                  (clicked)="restoreHabit(habit.id)"
+                >
                   <lucide-icon name="rotate-ccw" class="w-3.5 h-3.5 text-primary"></lucide-icon>
                   <span>Restore</span>
                 </mc-button>
@@ -142,6 +151,7 @@
                 <button
                   type="button"
                   (click)="permanentDeleteHabit(habit.id)"
+                  [disabled]="restoringIds().has(habit.id)"
                   class="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                   title="Permanently delete from database"
                 >

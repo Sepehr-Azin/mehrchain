@@ -20,7 +20,7 @@
     </div>
 
     <!-- Title -->
-    <h3 class="text-xl font-bold text-foreground mb-2">Let this flame go?</h3>
+    <h3 class="text-xl font-bold text-foreground mb-2">Archive this habit?</h3>
 
     <!-- Habit Title -->
     <p class="text-sm font-semibold text-primary mb-4">
@@ -40,14 +40,11 @@
         </p>
         <p class="text-sm font-semibold text-foreground italic">“{{ commitment().why }}”</p>
       </div>
-      <p class="text-xs text-muted-foreground mb-6">
-        Do you still want to remove this commitment and its current streak?
-      </p>
-    } @else {
-      <p class="text-xs text-muted-foreground mb-6">
-        All streak progress and logs for this habit will be permanently deleted. Are you sure?
-      </p>
     }
+    <p class="text-xs text-muted-foreground mb-6">
+      Your history and progress stay saved. Linked Chains will disconnect and invitations will
+      expire. You can restore this habit from Journey and reconnect with a new invitation.
+    </p>
 
     <!-- Action Buttons -->
     <div class="flex flex-col gap-2.5">
@@ -57,7 +54,7 @@
 
       <mc-button variant="danger" size="md" [fullWidth]="true" (clicked)="confirm.emit()">
         <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-        <span>Delete Anyway</span>
+        <span>Archive habit</span>
       </mc-button>
     </div>
   </div>

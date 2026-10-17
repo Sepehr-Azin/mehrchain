@@ -1,54 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { ChainStatus } from '@prisma/client';
-import { chainState } from './chain-state';
+import { CommitmentLifecycleService } from '../commitments/commitment-lifecycle.service';
 
 @Injectable()
 export class ChainCronService {
   private readonly logger = new Logger(ChainCronService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lifecycle: CommitmentLifecycleService,
+  ) {}
 
-  /**
-   * Daily midnight check: evaluate chain connections for missed days.
-   *
-   * Rules from chain_feature_spec.md:
-   * - 1 day missed  → RESTING
-   * - 2 days missed → FADING (nudge window opens)
-   * - 3+ days missed → DORMANT (auto-archived)
-   */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'UTC' })
+  /** Best-effort sweep only; reads/actions reconcile independently after server sleep. */
+  @Cron(CronExpression.EVERY_HOUR)
   async handleDailyChainFreeze() {
-    this.logger.log('Running daily chain freeze check...');
-
-    const activeConnections = await this.prisma.chainConnection.findMany({
-      where: {
-        status: { in: [ChainStatus.ACTIVE, ChainStatus.RESTING, ChainStatus.FADING] },
-      },
-      include: {
-        partnerCommitment: { select: { lastCompletedDate: true } },
-      },
+    const users = await this.prisma.user.findMany({
+      where: { commitments: { some: { isArchived: false } } },
+      select: { id: true },
     });
-
-    let updatedCount = 0;
-    for (const connection of activeConnections) {
-      const state = chainState(connection);
-      if (
-        !state ||
-        (state.status === connection.status &&
-          state.consecutiveMissedDays === connection.consecutiveMissedDays)
-      )
-        continue;
-      await this.prisma.chainConnection.update({
-        where: { id: connection.id },
-        data: {
-          ...state,
-          ...(state.status === ChainStatus.DORMANT ? { archivedAt: new Date() } : {}),
-        },
-      });
-      updatedCount++;
+    for (const user of users) {
+      try {
+        await this.lifecycle.reconcileUser(user.id);
+      } catch (error) {
+        this.logger.error(`Habit lifecycle sweep failed for account ${user.id}`, error);
+      }
     }
-    this.logger.log(`Daily chain freeze check complete. Updated ${updatedCount} connections.`);
   }
 }

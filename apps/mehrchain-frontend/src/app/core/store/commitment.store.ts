@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { computed, DestroyRef, effect, inject } from '@angular/core';
 import { Commitment, CommitmentCalendar, CommitmentSync } from '@mehrchain/shared-data';
 import {
@@ -82,6 +82,18 @@ export const CommitmentStore = signalStore(
         )
           throw new Error('Your session changed. Please reload.');
         return result;
+      } catch (error) {
+        if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
+          const message = error.error.message as string;
+          if (
+            session === sessionVersion &&
+            store.activeUserId() === user &&
+            message.startsWith('Restore this habit')
+          )
+            void methods.refreshCalendar();
+          throw new Error(message);
+        }
+        throw error;
       } finally {
         coldStart.finishRequest();
       }
@@ -177,6 +189,9 @@ export const CommitmentStore = signalStore(
                 Date.parse(data.calendar.nextDayAt) - Date.parse(data.calendar.serverNow);
               patchState(store, {
                 commitments: data.commitments,
+                ...(Array.isArray(data.archivedCommitments) && {
+                  archivedCommitments: data.archivedCommitments,
+                }),
                 calendar: data.calendar,
                 isStale: expired,
               });
@@ -321,15 +336,14 @@ export const CommitmentStore = signalStore(
       },
       async removeCommitment(id: string): Promise<void> {
         const target = store.commitments().find((c) => c.id === id);
-        if (remote()) await confirmed(() => firstValueFrom(http.delete(`${API}/${id}`)));
+        const archived = remote()
+          ? record(await confirmed(() => firstValueFrom(http.delete<Commitment>(`${API}/${id}`))))
+          : target && { ...target, isArchived: true, currentStreak: 0 };
         mutationVersion++;
         patchState(store, {
           commitments: store.commitments().filter((c) => c.id !== id),
-          archivedCommitments: target
-            ? [
-                { ...target, isArchived: true },
-                ...store.archivedCommitments().filter((c) => c.id !== id),
-              ]
+          archivedCommitments: archived
+            ? [archived, ...store.archivedCommitments().filter((c) => c.id !== id)]
             : store.archivedCommitments(),
         });
       },
@@ -344,7 +358,11 @@ export const CommitmentStore = signalStore(
           ),
         );
         if (!Array.isArray(data)) throw new Error('Unable to load archived habits.');
-        if (version === mutationVersion) patchState(store, { archivedCommitments: data });
+        if (version === mutationVersion)
+          patchState(store, {
+            archivedCommitments: data,
+            commitments: store.commitments().filter((c) => !data.some((a) => a.id === c.id)),
+          });
         return data;
       },
       async restoreCommitment(id: string): Promise<void> {
@@ -355,7 +373,12 @@ export const CommitmentStore = signalStore(
                 firstValueFrom(http.patch<Commitment>(`${API}/${id}/restore`, {})),
               ),
             )
-          : target;
+          : target && {
+              ...target,
+              inactivityAnchorAt: new Date().toISOString(),
+              currentStreak: 0,
+              consecutiveMissedDays: 0,
+            };
         mutationVersion++;
         applyCalendar(saved?.calendar);
         patchState(store, {

@@ -1,134 +1,137 @@
-@if (sessionError()) {
-  <p role="alert" class="text-red-500 p-3">{{ sessionError() }}</p>
-}
 <div
   appSwipe
   (swipeLeft)="onSwipeLeft()"
   (swipeRight)="onSwipeRight()"
-  class="min-h-[100dvh] flex flex-col items-center gap-4 px-4 sm:px-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] safe-top-sm bg-background relative font-sans"
+  class="onboarding-page bg-background font-sans"
 >
-  <!-- Floating Back Button -->
-  @if (step() > 0) {
-    <button
-      type="button"
-      (click)="prevStep()"
-      class="absolute top-[calc(env(safe-area-inset-top,0px)+0.75rem)] sm:top-[calc(env(safe-area-inset-top,0px)+1.5rem)] left-3 sm:left-6 z-50 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-card/85 backdrop-blur-md border border-border/60 shadow-soft flex items-center justify-center text-foreground hover:bg-card active:scale-90 transition-all"
-      aria-label="Previous step"
-    >
-      <lucide-icon name="arrow-left" class="w-4 h-4 sm:w-5 sm:h-5"></lucide-icon>
-    </button>
-  }
+  <div class="onboarding-flow">
+    @if (sessionError()) {
+      <p role="alert" class="text-red-500 text-sm">{{ sessionError() }}</p>
+    }
 
-  <!-- Top Section: Mascot & Hero Title (Proportional & Auto Centered) -->
-  <div class="flex flex-col items-center justify-center w-full max-w-md pt-12 pb-2">
+    <!-- Keep back navigation and Mero next to the card, within the same flow. -->
+    @if (step() > 0) {
+      <div class="onboarding-header">
+        <button
+          type="button"
+          (click)="prevStep()"
+          class="w-11 h-11 rounded-2xl bg-card border border-border/60 shadow-soft flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          aria-label="Previous step"
+        >
+          <lucide-icon name="arrow-left" class="w-4 h-4 sm:w-5 sm:h-5"></lucide-icon>
+        </button>
+        <app-mero size="sm" [showGlow]="true" />
+      </div>
+    } @else {
+      <div class="onboarding-welcome text-center">
+        <app-mero size="lg" [showGlow]="true" />
+        <div class="space-y-2 sm:space-y-4">
+          <h1
+            class="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight"
+          >
+            Small Acts.<br />
+            <span class="text-primary">Big Change.</span>
+          </h1>
+          <p class="text-muted-foreground text-sm sm:text-lg max-w-xs mx-auto leading-relaxed">
+            Your journey to making the world a little kinder begins right here.
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- A shared minimum height steadies desktop steps without limiting overflow. -->
     <div
-      class="relative flex items-center justify-center"
-      [class.mb-4]="step() === 0"
-      [class.mb-0]="step() > 0"
+      class="onboarding-card bg-card rounded-3xl shadow-soft border border-border/50"
+      [class.onboarding-card--welcome]="step() === 0"
     >
-      <app-mero [size]="step() === 0 ? 'lg' : 'sm'" [showGlow]="true" />
+      @switch (step()) {
+        @case (0) {
+          <app-welcome-step (next)="nextStep()" (openLogin)="openLoginModal()" />
+        }
+        @case (1) {
+          <app-why-choose-step (next)="nextStep()" />
+        }
+        @case (2) {
+          <app-meaning-step (next)="nextStep()" />
+        }
+        @case (3) {
+          <app-chains-step (next)="nextStep()" />
+        }
+        @case (4) {
+          <app-category-step
+            [categories]="categories"
+            (categorySelected)="selectCategory($event)"
+          />
+        }
+        @case (5) {
+          <app-habit-step
+            [selectedCategory]="selectedCategory()!"
+            [habits]="habitsMock"
+            [isCustomHabit]="isCustomHabit()"
+            (habitSelected)="selectHabit($event)"
+            (enableCustom)="enableCustomHabit()"
+            (cancelCustom)="cancelCustomHabit()"
+            (confirmCustom)="confirmCustomHabit($event)"
+          />
+        }
+        @case (6) {
+          <app-details-step
+            [selectedDuration]="selectedDuration()"
+            [isCustomDuration]="isCustomDuration()"
+            [customDurationText]="customDurationText()"
+            [durationErrorMessage]="durationErrorMessage()"
+            [whyText]="whyText()"
+            [reminderTime]="reminderTime()"
+            [isPublic]="isHabitPublic()"
+            (standardDurationSelected)="selectStandardDuration($event)"
+            (endlessDurationSelected)="selectEndlessDuration()"
+            (openCustom)="openCustomDuration()"
+            (customDurationChanged)="onCustomDurationChange($event)"
+            (whyTextChanged)="whyText.set($event)"
+            (reminderTimeChanged)="updateReminderTime($event)"
+            (isPublicChanged)="isHabitPublic.set($event)"
+            (proceedToSignUp)="proceedToSignUp()"
+          />
+        }
+        @case (7) {
+          <app-signup-step
+            [signUpUsername]="signUpUsername()"
+            [signUpEmail]="signUpEmail()"
+            [signUpPassword]="signUpPassword()"
+            [signUpError]="signUpError()"
+            [isDuplicateEmailError]="isDuplicateEmailError()"
+            [isNetworkError]="isNetworkSignUpError() && allowDemoMode"
+            [showSignUpPassword]="showSignUpPassword()"
+            [isSubmitting]="isSigningUp()"
+            (usernameChange)="onSignUpUsernameChange($event)"
+            (emailChange)="onSignUpEmailChange($event)"
+            (passwordChange)="signUpPassword.set($event)"
+            (togglePassword)="toggleSignUpPassword()"
+            (signUp)="handleSignUp()"
+            (googleSignIn)="handleGoogleSignIn()"
+            (useDemoMode)="handleUseDemoMode()"
+            (switchToLogin)="switchToLoginWithEmail()"
+            (openLoginWithForgot)="openLoginModal(); toggleForgotPassword(true)"
+          />
+        }
+      }
     </div>
 
-    @if (step() === 0) {
-      <div class="text-center animate-fade-in space-y-2 sm:space-y-4 mt-2">
-        <h1
-          class="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight"
-        >
-          Small Acts.<br />
-          <span class="text-primary">Big Change.</span>
-        </h1>
-        <p class="text-muted-foreground text-sm sm:text-lg max-w-xs mx-auto leading-relaxed">
-          Your journey to making the world a little kinder begins right here.
-        </p>
+    <!-- Progress stays attached to the card and remains readable without color. -->
+    @if (step() > 0) {
+      <div class="onboarding-progress">
+        <p class="sr-only" role="status">Step {{ step() }} of 7</p>
+        <div class="flex gap-2" aria-hidden="true">
+          @for (s of [1, 2, 3, 4, 5, 6, 7]; track s) {
+            <div
+              class="h-1.5 rounded-full transition-all duration-500 ease-out"
+              [class]="s <= step() ? 'w-5 sm:w-7 bg-primary' : 'w-1.5 bg-muted-foreground/30'"
+            ></div>
+          }
+        </div>
       </div>
     }
   </div>
-
-  <!-- Bottom Floating Card (Proportional content-driven height with overflow containment) -->
-  <div
-    class="w-full max-w-md bg-card rounded-3xl shadow-soft p-4 sm:p-6 flex flex-col justify-between relative border border-border/50"
-  >
-    @switch (step()) {
-      @case (0) {
-        <app-welcome-step (next)="nextStep()" (openLogin)="openLoginModal()" />
-      }
-      @case (1) {
-        <app-why-choose-step (next)="nextStep()" />
-      }
-      @case (2) {
-        <app-meaning-step (next)="nextStep()" />
-      }
-      @case (3) {
-        <app-chains-step (next)="nextStep()" />
-      }
-      @case (4) {
-        <app-category-step [categories]="categories" (categorySelected)="selectCategory($event)" />
-      }
-      @case (5) {
-        <app-habit-step
-          [selectedCategory]="selectedCategory()!"
-          [habits]="habitsMock"
-          [isCustomHabit]="isCustomHabit()"
-          (habitSelected)="selectHabit($event)"
-          (enableCustom)="enableCustomHabit()"
-          (cancelCustom)="cancelCustomHabit()"
-          (confirmCustom)="confirmCustomHabit($event)"
-        />
-      }
-      @case (6) {
-        <app-details-step
-          [selectedDuration]="selectedDuration()"
-          [isCustomDuration]="isCustomDuration()"
-          [customDurationText]="customDurationText()"
-          [durationErrorMessage]="durationErrorMessage()"
-          [whyText]="whyText()"
-          [reminderTime]="reminderTime()"
-          [isPublic]="isHabitPublic()"
-          (standardDurationSelected)="selectStandardDuration($event)"
-          (endlessDurationSelected)="selectEndlessDuration()"
-          (openCustom)="openCustomDuration()"
-          (customDurationChanged)="onCustomDurationChange($event)"
-          (whyTextChanged)="whyText.set($event)"
-          (reminderTimeChanged)="updateReminderTime($event)"
-          (isPublicChanged)="isHabitPublic.set($event)"
-          (proceedToSignUp)="proceedToSignUp()"
-        />
-      }
-      @case (7) {
-        <app-signup-step
-          [signUpUsername]="signUpUsername()"
-          [signUpEmail]="signUpEmail()"
-          [signUpPassword]="signUpPassword()"
-          [signUpError]="signUpError()"
-          [isDuplicateEmailError]="isDuplicateEmailError()"
-          [isNetworkError]="isNetworkSignUpError() && allowDemoMode"
-          [showSignUpPassword]="showSignUpPassword()"
-          [isSubmitting]="isSigningUp()"
-          (usernameChange)="onSignUpUsernameChange($event)"
-          (emailChange)="onSignUpEmailChange($event)"
-          (passwordChange)="signUpPassword.set($event)"
-          (togglePassword)="toggleSignUpPassword()"
-          (signUp)="handleSignUp()"
-          (googleSignIn)="handleGoogleSignIn()"
-          (useDemoMode)="handleUseDemoMode()"
-          (switchToLogin)="switchToLoginWithEmail()"
-          (openLoginWithForgot)="openLoginModal(); toggleForgotPassword(true)"
-        />
-      }
-    }
-  </div>
-
-  <!-- Bottom Dots Indicator (Optimized margins to prevent viewport overflow) -->
-  @if (step() > 0) {
-    <div class="flex gap-2 mt-2 sm:mt-4 mb-1 shrink-0">
-      @for (s of [1, 2, 3, 4, 5, 6, 7]; track s) {
-        <div
-          class="h-1.5 rounded-full transition-all duration-500 ease-out"
-          [class]="s <= step() ? 'w-5 sm:w-7 bg-primary' : 'w-1.5 bg-muted-foreground/30'"
-        ></div>
-      }
-    </div>
-  }
 
   <!-- Sign In (Login) Modal -->
   @if (isLoginModalOpen()) {

@@ -30,7 +30,7 @@ export class App {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: any) => {
-        this.showNavbar.set(event.urlAfterRedirects !== '/');
+        this.showNavbar.set(event.urlAfterRedirects.split(/[?#]/, 1)[0] !== '/');
       });
   }
 }

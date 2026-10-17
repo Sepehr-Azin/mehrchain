@@ -51,6 +51,7 @@ export function commitmentCalendar(timeZone: string, now = new Date()): Commitme
 export function dailyCommitmentState<
   T extends {
     lastCompletedDate: Date | null;
+    inactivityAnchorAt?: Date | null;
     startDate: Date;
     currentStreak: number;
     currentDay: number;
@@ -62,7 +63,13 @@ export function dailyCommitmentState<
     ? localDay(commitment.lastCompletedDate, calendar.timeZone)
     : null;
   const gap = lastDay ? dayDistance(lastDay, calendar.currentDayKey) : null;
-  const anchor = lastDay ?? localDay(commitment.startDate, calendar.timeZone);
+  const freshAnchor = commitment.inactivityAnchorAt ?? commitment.startDate;
+  const anchor = localDay(
+    commitment.lastCompletedDate && commitment.lastCompletedDate > freshAnchor
+      ? commitment.lastCompletedDate
+      : freshAnchor,
+    calendar.timeZone,
+  );
   return {
     ...commitment,
     currentStreak:

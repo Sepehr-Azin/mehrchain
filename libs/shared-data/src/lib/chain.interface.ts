@@ -17,6 +17,7 @@ export interface ChainPartnerCommitment {
   title: string;
   category: 'health' | 'growth' | 'community' | 'environment' | string;
   consecutiveMissedDays?: number;
+  isCompletedToday?: boolean;
   lastCompletedDate?: string | Date | null;
 }
 

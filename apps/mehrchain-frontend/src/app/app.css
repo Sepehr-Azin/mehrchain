@@ -18,6 +18,12 @@
   padding-bottom: var(--app-navigation-height);
 }
 
+.onboarding-shell {
+  --app-shell-width: 37rem;
+  max-width: none;
+  border-inline: 0;
+}
+
 .app-navigation {
   position: fixed;
   bottom: 0;

@@ -1,4 +1,6 @@
-<div class="chain-card relative p-4 bg-card rounded-2xl border border-border/80 shadow-xs hover:border-primary/40 transition-all duration-200">
+<div
+  class="chain-card relative p-4 bg-card rounded-2xl border border-border/80 shadow-xs hover:border-primary/40 transition-all duration-200"
+>
   <!-- Card Header -->
   <div class="flex items-center justify-between gap-3">
     <!-- Partner Info -->
@@ -11,9 +13,7 @@
       </div>
       <div class="min-w-0">
         <div class="flex items-center gap-1.5">
-          <p class="font-semibold text-foreground text-sm truncate">
-            @{{ partnerUsername() }}
-          </p>
+          <p class="font-semibold text-foreground text-sm truncate">&#64;{{ partnerUsername() }}</p>
         </div>
         <p class="text-xs text-muted-foreground truncate" [title]="partnerHabitTitle()">
           {{ partnerHabitTitle() }}
@@ -34,7 +34,11 @@
         >
           <lucide-icon
             name="heart"
-            [class]="isHeartSent() ? 'w-5 h-5 text-rose-500 fill-rose-500 transition-transform scale-110' : 'w-5 h-5 transition-colors'"
+            [class]="
+              isHeartSent()
+                ? 'w-5 h-5 text-rose-500 fill-rose-500 transition-transform scale-110'
+                : 'w-5 h-5 transition-colors'
+            "
           ></lucide-icon>
         </button>
       }
@@ -64,10 +68,15 @@
           >
             <!-- Linked Habit Info -->
             <div class="px-2.5 py-2 text-xs border-b border-border/60">
-              <span class="text-muted-foreground block text-[10px] font-medium uppercase tracking-wider">
+              <span
+                class="text-muted-foreground block text-[10px] font-medium uppercase tracking-wider"
+              >
                 Linked Habit
               </span>
-              <span class="font-medium text-foreground truncate block mt-0.5" [title]="myHabitTitle()">
+              <span
+                class="font-medium text-foreground truncate block mt-0.5"
+                [title]="myHabitTitle()"
+              >
                 {{ myHabitTitle() }}
               </span>
             </div>
@@ -87,14 +96,16 @@
     </div>
   </div>
 
-  <!-- Status Section (5 States) -->
+  <!-- Current partner habit state -->
   @if (connection().heartReceived) {
     <p class="mt-3 flex items-center gap-2 text-xs text-rose-600" aria-live="polite">
       <lucide-icon name="heart" class="w-4 h-4"></lucide-icon>
       <span>{{ partnerDisplayName() }} supported your habit today</span>
     </p>
   }
-  <div class="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between gap-2 text-xs">
+  <div
+    class="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between gap-2 text-xs"
+  >
     <!-- State 1: Completed Today -->
     @if (visualState() === 'COMPLETED_TODAY') {
       <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium">
@@ -106,7 +117,9 @@
     <!-- State 2: Waiting for Today's Spark -->
     @if (visualState() === 'WAITING') {
       <div class="flex items-center gap-2 text-muted-foreground">
-        <span class="w-2 h-2 rounded-full border border-muted-foreground/60 bg-transparent shrink-0"></span>
+        <span
+          class="w-2 h-2 rounded-full border border-muted-foreground/60 bg-transparent shrink-0"
+        ></span>
         <span>Waiting for today's spark</span>
       </div>
     }
@@ -116,31 +129,6 @@
       <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
         <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
         <span>Resting today</span>
-      </div>
-    }
-
-    <!-- State 4: Fading (2 days missed) -->
-    @if (visualState() === 'FADING') {
-      <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-medium">
-        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
-        <span>2 days away</span>
-      </div>
-
-      <button
-        type="button"
-        (click)="handleNudge()"
-        [disabled]="nudgeSent()"
-        class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-95 disabled:opacity-60 disabled:pointer-events-none transition-all cursor-pointer"
-      >
-        <lucide-icon name="bell" class="w-3.5 h-3.5"></lucide-icon>
-        <span>{{ nudgeSent() ? 'Reminder Sent' : 'Send Gentle Reminder' }}</span>
-      </button>
-    }
-
-    @if (visualState() === 'DORMANT') {
-      <div class="flex items-center gap-2 text-muted-foreground">
-        <span class="w-2 h-2 rounded-full bg-muted-foreground/60 shrink-0"></span>
-        <span>Taking a break</span>
       </div>
     }
 

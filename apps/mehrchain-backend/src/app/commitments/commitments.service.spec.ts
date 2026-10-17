@@ -1,373 +1,203 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Category } from '@prisma/client';
 import { CommitmentsService } from './commitments.service';
+import { CommitmentLifecycleService } from './commitment-lifecycle.service';
 
-describe('CommitmentsService (Unit Tests)', () => {
+describe('CommitmentsService', () => {
+  const now = new Date('2026-10-14T21:00:00Z');
+  const base = {
+    id: 'habit',
+    userId: 'owner',
+    title: 'Read',
+    category: Category.growth,
+    user: { timeZone: 'Asia/Tehran' },
+    startDate: new Date('2026-10-01T12:00:00Z'),
+    lastCompletedDate: new Date('2026-10-13T12:00:00Z'),
+    inactivityAnchorAt: null as Date | null,
+    currentDay: 12,
+    currentStreak: 8,
+    totalDays: -1,
+    isPublic: true,
+    isArchived: false,
+    history: ['2026-10-13'],
+    consecutiveMissedDays: 0,
+  };
+  let habit: typeof base | null;
+  const prisma: any = {
+    $transaction: jest.fn(),
+    $queryRaw: jest.fn(),
+    user: { findUnique: jest.fn() },
+    commitment: { findMany: jest.fn(), update: jest.fn(), create: jest.fn(), delete: jest.fn() },
+    commitmentLog: { create: jest.fn() },
+    chainConnection: { updateMany: jest.fn() },
+    chainInvite: { updateMany: jest.fn() },
+  };
+  const notification = { notifyChainPartners: jest.fn() };
   let service: CommitmentsService;
 
-  const mockPrisma: any = {
-    user: { findUnique: jest.fn().mockResolvedValue({ timeZone: 'UTC' }) },
-    $queryRaw: jest.fn().mockResolvedValue([]),
-    $transaction: jest.fn(),
-    commitment: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    commitmentLog: {
-      create: jest.fn(),
-    },
-  };
-
-  const mockChainNotification = {
-    notifyChainPartners: jest.fn().mockResolvedValue(undefined),
-  };
-
   beforeEach(() => {
-    service = new CommitmentsService(mockPrisma as any, mockChainNotification as any);
-    jest.clearAllMocks();
-    mockPrisma.$transaction.mockImplementation((fn: any) => fn(mockPrisma));
-  });
-
-  describe('createCommitment', () => {
-    it('should create a commitment with initial day 0 and streak 0', async () => {
-      const mockCreated = {
-        id: 'comm-1',
-        userId: 'user-1',
-        title: 'Drink Water',
-        category: Category.health,
-        totalDays: 21,
-        currentDay: 0,
-        currentStreak: 0,
-        startDate: new Date(),
-        lastCompletedDate: null,
+    jest.resetAllMocks();
+    jest.useFakeTimers().setSystemTime(now);
+    habit = { ...base, history: [...base.history] };
+    prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
+    prisma.$queryRaw.mockResolvedValue([]);
+    prisma.user.findUnique.mockResolvedValue({ timeZone: 'Asia/Tehran' });
+    prisma.commitment.findMany.mockImplementation(async ({ where }: any) => {
+      if (!habit) return [];
+      if (where.isArchived !== undefined && habit.isArchived !== where.isArchived) return [];
+      return [{ ...habit }];
+    });
+    prisma.commitment.update.mockImplementation(async ({ data }: any) => {
+      const { history, ...attributes } = data;
+      habit = {
+        ...habit!,
+        ...attributes,
+        history: history ? [...habit!.history, history.push] : habit!.history,
       };
+      return { ...habit };
+    });
+    service = new CommitmentsService(
+      prisma,
+      notification as any,
+      new CommitmentLifecycleService(prisma),
+    );
+  });
+  afterEach(() => jest.useRealTimers());
 
-      mockPrisma.commitment.create.mockResolvedValue(mockCreated);
+  it('creates a new habit without progress and trims input', async () => {
+    prisma.commitment.create.mockResolvedValue({
+      ...base,
+      currentDay: 0,
+      currentStreak: 0,
+      startDate: now,
+      lastCompletedDate: null,
+    });
+    const created = await service.createCommitment('owner', {
+      title: ' Read ',
+      category: Category.growth,
+      totalDays: -1,
+    });
+    expect(created.currentDay).toBe(0);
+    expect(prisma.commitment.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ title: 'Read', currentDay: 0 }) }),
+    );
+  });
 
-      const result = await service.createCommitment('user-1', {
-        title: 'Drink Water',
-        category: Category.health,
-        totalDays: 21,
-        why: 'Stay healthy',
-      });
-
-      expect(result.currentStreak).toBe(0);
-      expect(result.currentDay).toBe(0);
-      expect(mockPrisma.commitment.create).toHaveBeenCalled();
+  it('returns auto-archived habits in the same sync snapshot', async () => {
+    habit!.lastCompletedDate = new Date('2026-10-12T12:00:00Z');
+    const snapshot = await service.syncCommitments('owner');
+    expect(snapshot.commitments).toEqual([]);
+    expect(snapshot.archivedCommitments[0]).toMatchObject({
+      id: 'habit',
+      currentDay: 12,
+      isArchived: true,
     });
   });
 
-  describe('getUserCommitments', () => {
-    it('should mark isCompletedToday as true when lastCompletedDate is today', async () => {
-      const today = new Date();
-      mockPrisma.commitment.findMany.mockResolvedValue([
-        {
-          id: 'comm-1',
-          title: 'Daily Stretch',
-          lastCompletedDate: today,
-        },
-      ]);
-
-      const result = await service.getUserCommitments('user-1');
-      expect(result[0].isCompletedToday).toBe(true);
+  it('restarts after one missed date and preserves cumulative progress', async () => {
+    const result = await service.completeCommitment('owner', 'habit', ' done ');
+    expect(result).toMatchObject({ currentStreak: 1, currentDay: 13, isCompletedToday: true });
+    expect(prisma.commitmentLog.create).toHaveBeenCalledWith({
+      data: {
+        commitmentId: 'habit',
+        completedAt: now,
+        dayKey: '2026-10-15',
+        timeZone: 'Asia/Tehran',
+        note: 'done',
+      },
     });
-
-    it('should mark isCompletedToday as false when lastCompletedDate is yesterday', async () => {
-      const yesterday = new Date(Date.now() - 86400000);
-      mockPrisma.commitment.findMany.mockResolvedValue([
-        {
-          id: 'comm-2',
-          title: 'Daily Read',
-          lastCompletedDate: yesterday,
-        },
-      ]);
-
-      const result = await service.getUserCommitments('user-1');
-      expect(result[0].isCompletedToday).toBe(false);
-    });
+    expect(notification.notifyChainPartners).toHaveBeenCalledWith('habit');
   });
 
-  describe('completeCommitment', () => {
-    it('restarts the streak after a missed UTC day while preserving total progress', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-gap',
-        userId: 'user-1',
-        currentStreak: 8,
-        currentDay: 12,
-        totalDays: 21,
-        lastCompletedDate: new Date(Date.now() - 3 * 86400000),
-      });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-gap',
-        startDate: new Date(),
-        lastCompletedDate: new Date(),
-        currentStreak: 1,
-        currentDay: 13,
-        totalDays: 21,
-      });
-      await service.completeCommitment('user-1', 'comm-gap');
-      expect(mockPrisma.commitment.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ currentStreak: 1, currentDay: 13 }),
-        }),
-      );
-    });
-    it('should record a log and increment streak on first completion today', async () => {
-      const yesterday = new Date(Date.now() - 86400000);
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-        currentStreak: 2,
-        currentDay: 3,
-        totalDays: 21,
-        lastCompletedDate: yesterday,
-      });
-
-      mockPrisma.commitmentLog.create.mockResolvedValue({ id: 'log-1' });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-        currentStreak: 3,
-        currentDay: 4,
-        totalDays: 21,
-        lastCompletedDate: new Date(),
-      });
-
-      const result = await service.completeCommitment('user-1', 'comm-1', 'Felt great!');
-      expect(mockPrisma.commitmentLog.create).toHaveBeenCalled();
-      expect(mockPrisma.commitment.update).toHaveBeenCalled();
-      expect((result as any).isCompletedToday).toBe(true);
-    });
-
-    it('should correctly increment currentDay beyond normal limit for Endless Journey (totalDays = -1)', async () => {
-      const yesterday = new Date(Date.now() - 86400000);
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-endless',
-        userId: 'user-1',
-        currentStreak: 45,
-        currentDay: 45,
-        totalDays: -1,
-        lastCompletedDate: yesterday,
-      });
-
-      mockPrisma.commitmentLog.create.mockResolvedValue({ id: 'log-endless' });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-endless',
-        userId: 'user-1',
-        currentStreak: 46,
-        currentDay: 46,
-        totalDays: -1,
-        lastCompletedDate: new Date(),
-      });
-
-      const result = await service.completeCommitment('user-1', 'comm-endless');
-      expect(mockPrisma.commitment.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            currentDay: 46,
-          }),
-        }),
-      );
-      expect((result as any).isCompletedToday).toBe(true);
-    });
-
-    it('should not double-increment streak if already completed today', async () => {
-      const today = new Date();
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-        currentStreak: 5,
-        currentDay: 5,
-        totalDays: 21,
-        lastCompletedDate: today,
-      });
-
-      const result = await service.completeCommitment('user-1', 'comm-1');
-      expect(mockPrisma.commitmentLog.create).not.toHaveBeenCalled();
-      expect(mockPrisma.commitment.update).not.toHaveBeenCalled();
-      expect(result.currentStreak).toBe(5);
-    });
-
-    it('should call notifyChainPartners after a successful new completion', async () => {
-      const yesterday = new Date(Date.now() - 86400000);
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-        currentStreak: 1,
-        currentDay: 1,
-        totalDays: 21,
-        lastCompletedDate: yesterday,
-      });
-      mockPrisma.commitmentLog.create.mockResolvedValue({ id: 'log-1' });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-        currentStreak: 2,
-        currentDay: 2,
-        totalDays: 21,
-        lastCompletedDate: new Date(),
-      });
-
-      await service.completeCommitment('user-1', 'comm-1');
-
-      expect(mockChainNotification.notifyChainPartners).toHaveBeenCalledWith('comm-1');
-    });
-
-    it('should NOT call notifyChainPartners if commitment was already completed today', async () => {
-      const today = new Date();
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-        currentStreak: 3,
-        currentDay: 3,
-        totalDays: 21,
-        lastCompletedDate: today,
-      });
-
-      await service.completeCommitment('user-1', 'comm-1');
-
-      expect(mockChainNotification.notifyChainPartners).not.toHaveBeenCalled();
-    });
-
-    it('should throw ForbiddenException if commitment belongs to another user', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'different-user',
-      });
-
-      await expect(service.completeCommitment('user-1', 'comm-1')).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
-
-    it('should throw NotFoundException if commitment does not exist', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue(null);
-
-      await expect(service.completeCommitment('user-1', 'nonexistent-id')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
+  it('keeps same-day completion idempotent', async () => {
+    habit!.lastCompletedDate = now;
+    await service.completeCommitment('owner', 'habit');
+    expect(prisma.commitmentLog.create).not.toHaveBeenCalled();
+    expect(prisma.commitment.update).not.toHaveBeenCalled();
+    expect(notification.notifyChainPartners).not.toHaveBeenCalled();
   });
 
-  describe('deleteCommitment', () => {
-    it('should archive the commitment', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-      });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-1',
-        isArchived: true,
-      });
-
-      const result = await service.deleteCommitment('user-1', 'comm-1');
-      expect(result.isArchived).toBe(true);
-    });
+  it('archives before rejecting a completion after two missed full dates', async () => {
+    habit!.lastCompletedDate = new Date('2026-10-12T12:00:00Z');
+    await expect(service.completeCommitment('owner', 'habit')).rejects.toThrow(ForbiddenException);
+    expect(habit!.isArchived).toBe(true);
+    expect(prisma.commitmentLog.create).not.toHaveBeenCalled();
   });
 
-  describe('updateCommitment', () => {
-    it('should update commitment fields successfully', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-      });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-1',
-        title: 'Updated Yoga',
-        why: 'More strength',
-        startDate: new Date(),
-        lastCompletedDate: null,
-      });
-
-      const result = await service.updateCommitment('user-1', 'comm-1', {
-        title: 'Updated Yoga',
-        why: 'More strength',
-      });
-      expect(result.title).toBe('Updated Yoga');
-      expect(mockPrisma.commitment.update).toHaveBeenCalledWith({
-        where: { id: 'comm-1' },
-        data: {
-          title: 'Updated Yoga',
-          why: 'More strength',
-        },
-      });
+  it('stops at a finite goal and gives Continue a fresh inactivity anchor', async () => {
+    habit!.totalDays = habit!.currentDay;
+    habit!.lastCompletedDate = new Date('2026-09-01T12:00:00Z');
+    await expect(service.completeCommitment('owner', 'habit')).rejects.toThrow('Goal reached');
+    expect(habit!.isArchived).toBe(false);
+    const result = await service.updateCommitment('owner', 'habit', { totalDays: -1 });
+    expect(result).toMatchObject({
+      inactivityAnchorAt: now,
+      currentDay: 12,
+      currentStreak: 0,
+      consecutiveMissedDays: 0,
     });
+    expect(await service.getUserCommitments('owner')).toHaveLength(1);
   });
 
-  describe('getArchivedCommitments', () => {
-    it('should return only archived commitments', async () => {
-      mockPrisma.commitment.findMany.mockResolvedValue([
-        {
-          id: 'comm-archived',
-          title: 'Old Habit',
-          isArchived: true,
-          startDate: new Date(),
-          lastCompletedDate: null,
-        },
-      ]);
-
-      const result = await service.getArchivedCommitments('user-1');
-      expect(result.length).toBe(1);
-      expect(result[0].id).toBe('comm-archived');
-    });
+  it('does not allow a goal below completed days', async () => {
+    await expect(service.updateCommitment('owner', 'habit', { totalDays: 3 })).rejects.toThrow(
+      'cannot be lower',
+    );
   });
 
-  describe('restoreCommitment', () => {
-    it('should restore an archived commitment to active', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-archived',
-        userId: 'user-1',
-        isArchived: true,
-      });
-      mockPrisma.commitment.update.mockResolvedValue({
-        id: 'comm-archived',
-        isArchived: false,
-        startDate: new Date(),
-        lastCompletedDate: null,
-      });
-
-      const result = await service.restoreCommitment('user-1', 'comm-archived');
-      expect(result.isArchived).toBe(false);
-      expect(mockPrisma.commitment.update).toHaveBeenCalledWith({
-        where: { id: 'comm-archived' },
-        data: { isArchived: false },
-      });
-    });
+  it('detaches reciprocal relationships when a habit becomes private', async () => {
+    await service.updateCommitment('owner', 'habit', { isPublic: false, title: ' Read more ' });
+    expect(habit).toMatchObject({ isPublic: false, title: 'Read more' });
+    expect(prisma.chainConnection.updateMany).toHaveBeenCalled();
+    expect(prisma.chainInvite.updateMany).toHaveBeenCalled();
   });
 
-  describe('hardDeleteCommitment', () => {
-    it('should permanently delete the commitment', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'user-1',
-      });
-      mockPrisma.commitment.delete = jest.fn().mockResolvedValue({ id: 'comm-1' });
-
-      const result = await service.hardDeleteCommitment('user-1', 'comm-1');
-      expect(result.success).toBe(true);
-      expect(mockPrisma.commitment.delete).toHaveBeenCalledWith({ where: { id: 'comm-1' } });
+  it('manual archive preserves history and progress', async () => {
+    await service.deleteCommitment('owner', 'habit');
+    expect(habit).toMatchObject({
+      isArchived: true,
+      currentStreak: 0,
+      currentDay: 12,
+      history: base.history,
     });
+    expect(prisma.chainConnection.updateMany).toHaveBeenCalled();
+    expect(await service.getArchivedCommitments('owner')).toHaveLength(1);
+  });
 
-    it('should throw ForbiddenException if user does not own commitment', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue({
-        id: 'comm-1',
-        userId: 'other-user',
-      });
-
-      await expect(service.hardDeleteCommitment('user-1', 'comm-1')).rejects.toThrow(
-        ForbiddenException,
-      );
+  it('restores with a fresh anchor, resets streak and keeps historical dates', async () => {
+    habit!.isArchived = true;
+    const restored = await service.restoreCommitment('owner', 'habit');
+    expect(restored).toMatchObject({
+      isArchived: false,
+      inactivityAnchorAt: now,
+      currentStreak: 0,
+      currentDay: 12,
+      consecutiveMissedDays: 0,
     });
+    expect(restored.startDate).toEqual(base.startDate);
+    expect(restored.lastCompletedDate).toEqual(base.lastCompletedDate);
+    expect(prisma.chainConnection.updateMany).toHaveBeenCalled(); // Cleanup, never a reconnect.
+    prisma.commitment.update.mockClear();
+    await service.restoreCommitment('owner', 'habit');
+    expect(prisma.commitment.update).not.toHaveBeenCalled();
+  });
 
-    it('should throw NotFoundException if commitment not found', async () => {
-      mockPrisma.commitment.findUnique.mockResolvedValue(null);
+  it('requires ownership for archive, restore, complete, edit and hard delete', async () => {
+    for (const action of [
+      () => service.deleteCommitment('other', 'habit'),
+      () => service.restoreCommitment('other', 'habit'),
+      () => service.completeCommitment('other', 'habit'),
+      () => service.updateCommitment('other', 'habit', { title: 'No' }),
+      () => service.hardDeleteCommitment('other', 'habit'),
+    ])
+      await expect(action()).rejects.toThrow(ForbiddenException);
+    expect(prisma.commitment.delete).not.toHaveBeenCalled();
+  });
 
-      await expect(service.hardDeleteCommitment('user-1', 'nonexistent-id')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
+  it('reports a missing habit and allows the owner to hard delete', async () => {
+    await service.hardDeleteCommitment('owner', 'habit');
+    expect(prisma.commitment.delete).toHaveBeenCalledWith({ where: { id: 'habit' } });
+    habit = null;
+    await expect(service.restoreCommitment('owner', 'habit')).rejects.toThrow(NotFoundException);
   });
 });

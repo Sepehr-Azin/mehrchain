@@ -10,12 +10,14 @@ import { CreateCommitmentDto } from './dto/create-commitment.dto';
 import { UpdateCommitmentDto } from './dto/update-commitment.dto';
 import { ChainNotificationService } from '../chain/chain-notification.service';
 import { commitmentCalendar, dailyCommitmentState } from './commitment-calendar';
+import { CommitmentLifecycleService } from './commitment-lifecycle.service';
 
 @Injectable()
 export class CommitmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly chainNotification: ChainNotificationService,
+    private readonly lifecycle: CommitmentLifecycleService,
   ) {}
 
   /**
@@ -29,34 +31,50 @@ export class CommitmentsService {
     return (await this.syncCommitments(userId)).commitments;
   }
 
-  private async calendarForUser(userId: string, db: Pick<PrismaService, 'user'> = this.prisma) {
+  private async calendarForUser(
+    userId: string,
+    db: Pick<PrismaService, 'user'> = this.prisma,
+    now = new Date(),
+  ) {
     const user = await db.user.findUnique({
       where: { id: userId },
       select: { timeZone: true },
     });
     if (!user) throw new NotFoundException('Account not found.');
-    return commitmentCalendar(user.timeZone);
+    return commitmentCalendar(user.timeZone, now);
   }
 
   async syncCommitments(userId: string) {
-    const commitments = await this.prisma.commitment.findMany({
-      where: {
-        userId,
-        isArchived: false,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        logs: {
-          orderBy: { completedAt: 'desc' },
-          take: 14,
+    return this.lifecycle.withUserCommitments(userId, async (tx, habits, now) => {
+      const ids = habits.map((h) => h.id);
+      const commitments = await tx.commitment.findMany({
+        where: {
+          userId,
+          id: { in: ids },
+          isArchived: false,
         },
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          logs: {
+            orderBy: { completedAt: 'desc' },
+            take: 14,
+          },
+        },
+      });
 
-    const calendar = await this.calendarForUser(userId);
-    return { calendar, commitments: commitments.map((c) => dailyCommitmentState(c, calendar)) };
+      const calendar = await this.calendarForUser(userId, tx, now);
+      const archived = await tx.commitment.findMany({
+        where: { userId, id: { in: ids }, isArchived: true },
+        orderBy: { updatedAt: 'desc' },
+      });
+      return {
+        calendar,
+        commitments: commitments.map((c) => dailyCommitmentState(c, calendar)),
+        archivedCommitments: archived.map((c) => dailyCommitmentState(c, calendar)),
+      };
+    });
   }
 
   /**
@@ -99,61 +117,62 @@ export class CommitmentsService {
    */
   async completeCommitment(userId: string, commitmentId: string, note?: string) {
     let newlyCompleted = false;
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Serialize competing completions before reading today's state.
-      await tx.$queryRaw`SELECT "id" FROM "commitments" WHERE "id" = ${commitmentId} FOR UPDATE`;
-      const commitment = await tx.commitment.findUnique({
-        where: { id: commitmentId },
-      });
+    const result = await this.lifecycle.withCommitments(
+      [commitmentId],
+      async (tx, habits, today) => {
+        const commitment = habits.find((h) => h.id === commitmentId);
 
-      if (!commitment) {
-        throw new NotFoundException('Commitment not found.');
-      }
+        if (!commitment) {
+          return new NotFoundException('Commitment not found.');
+        }
 
-      if (commitment.isArchived)
-        throw new ForbiddenException('Restore this habit before completing it.');
-      if (commitment.userId !== userId) {
-        throw new ForbiddenException('Access denied to this commitment.');
-      }
+        if (commitment.userId !== userId) {
+          return new ForbiddenException('Access denied to this commitment.');
+        }
+        if (commitment.isArchived)
+          return new ForbiddenException('Restore this habit before completing it.');
 
-      const user = await tx.user.findUnique({ where: { id: userId }, select: { timeZone: true } });
-      if (!user) throw new NotFoundException('Account not found.');
-      // Capture server time after acquiring the lock, so a midnight wait uses the new date.
-      const today = new Date();
-      const calendar = commitmentCalendar(user.timeZone, today);
-      const state = dailyCommitmentState(commitment, calendar);
-      if (state.isCompletedToday) return state;
-      if (state.isGoalReached) {
-        throw new ConflictException('Goal reached. Continue as Endless or archive this habit.');
-      }
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { timeZone: true },
+        });
+        if (!user) throw new NotFoundException('Account not found.');
+        // Capture server time after acquiring the lock, so a midnight wait uses the new date.
+        const calendar = commitmentCalendar(user.timeZone, today);
+        const state = dailyCommitmentState(commitment, calendar);
+        if (state.isCompletedToday) return state;
+        if (state.isGoalReached) {
+          return new ConflictException('Goal reached. Continue as Endless or archive this habit.');
+        }
 
-      // Create persistent activity log
-      await tx.commitmentLog.create({
-        data: {
-          commitmentId: commitment.id,
-          completedAt: today,
-          dayKey: calendar.currentDayKey,
-          timeZone: calendar.timeZone,
-          note: note?.trim(),
-        },
-      });
+        // Create persistent activity log
+        await tx.commitmentLog.create({
+          data: {
+            commitmentId: commitment.id,
+            completedAt: today,
+            dayKey: calendar.currentDayKey,
+            timeZone: calendar.timeZone,
+            note: note?.trim(),
+          },
+        });
 
-      // Update streak and current day
-      const updated = await tx.commitment.update({
-        where: { id: commitment.id },
-        data: {
-          currentStreak: state.currentStreak + 1,
-          currentDay: commitment.currentDay + 1,
-          lastCompletedDate: today,
-          consecutiveMissedDays: 0,
-          history: { push: calendar.currentDayKey },
-        },
-      });
+        // Update streak and current day
+        const updated = await tx.commitment.update({
+          where: { id: commitment.id },
+          data: {
+            currentStreak: state.currentStreak + 1,
+            currentDay: commitment.currentDay + 1,
+            lastCompletedDate: today,
+            consecutiveMissedDays: 0,
+            history: { push: calendar.currentDayKey },
+          },
+        });
 
-      newlyCompleted = true;
+        newlyCompleted = true;
 
-      return dailyCommitmentState(updated, calendar);
-    });
+        return dailyCommitmentState(updated, calendar);
+      },
+    );
     if (newlyCompleted) await this.chainNotification.notifyChainPartners(commitmentId);
     return result;
   }
@@ -169,28 +188,30 @@ export class CommitmentsService {
    * @throws {ForbiddenException} If commitment belongs to a different user.
    */
   async updateCommitment(userId: string, commitmentId: string, dto: UpdateCommitmentDto) {
-    return this.prisma.$transaction(async (tx) => {
-      // Target edits and completion share the same lock; lowering a goal must not race a save.
-      await tx.$queryRaw`SELECT "id" FROM "commitments" WHERE "id" = ${commitmentId} FOR UPDATE`;
-      const commitment = await tx.commitment.findUnique({
-        where: { id: commitmentId },
-      });
+    return this.lifecycle.withCommitments([commitmentId], async (tx, habits, now) => {
+      const commitment = habits.find((h) => h.id === commitmentId);
 
       if (!commitment) {
-        throw new NotFoundException('Commitment not found.');
+        return new NotFoundException('Commitment not found.');
       }
 
       if (commitment.userId !== userId) {
-        throw new ForbiddenException('Access denied.');
+        return new ForbiddenException('Access denied.');
       }
+      if (commitment.isArchived)
+        return new ForbiddenException('Restore this habit before editing it.');
 
       if (
         dto.totalDays !== undefined &&
         dto.totalDays !== -1 &&
         dto.totalDays < commitment.currentDay
       ) {
-        throw new BadRequestException('The goal cannot be lower than your completed days.');
+        return new BadRequestException('The goal cannot be lower than your completed days.');
       }
+
+      const calendar = commitmentCalendar(commitment.user.timeZone, now);
+      const state = dailyCommitmentState(commitment, calendar);
+      if (dto.isPublic === false) await this.lifecycle.detach(tx, [commitmentId], now);
 
       const updated = await tx.commitment.update({
         where: { id: commitmentId },
@@ -201,9 +222,18 @@ export class CommitmentsService {
           ...(dto.totalDays !== undefined && { totalDays: dto.totalDays }),
           ...(dto.reminderTime !== undefined && { reminderTime: dto.reminderTime }),
           ...(dto.isPublic !== undefined && { isPublic: dto.isPublic }),
+          // Waiting at a finite goal is exempt from inactivity. Continuing starts
+          // a fresh grace date, even if the choice was made weeks after finishing.
+          ...(state.isGoalReached &&
+            dto.totalDays !== undefined &&
+            (dto.totalDays === -1 || dto.totalDays > commitment.currentDay) && {
+              inactivityAnchorAt: now,
+              currentStreak: state.currentStreak,
+              consecutiveMissedDays: 0,
+            }),
         },
       });
-      return dailyCommitmentState(updated, await this.calendarForUser(userId, tx));
+      return dailyCommitmentState(updated, calendar);
     });
   }
 
@@ -218,21 +248,12 @@ export class CommitmentsService {
    * @throws {ForbiddenException} If user does not have permission.
    */
   async deleteCommitment(userId: string, commitmentId: string) {
-    const commitment = await this.prisma.commitment.findUnique({
-      where: { id: commitmentId },
-    });
-
-    if (!commitment) {
-      throw new NotFoundException('Commitment not found.');
-    }
-
-    if (commitment.userId !== userId) {
-      throw new ForbiddenException('Access denied.');
-    }
-
-    return this.prisma.commitment.update({
-      where: { id: commitmentId },
-      data: { isArchived: true },
+    return this.lifecycle.withCommitments([commitmentId], async (tx, habits, now) => {
+      const habit = habits.find((h) => h.id === commitmentId);
+      if (!habit) return new NotFoundException('Commitment not found.');
+      if (habit.userId !== userId) return new ForbiddenException('Access denied.');
+      const archived = await this.lifecycle.archive(tx, commitmentId, now);
+      return dailyCommitmentState(archived, commitmentCalendar(habit.user.timeZone, now));
     });
   }
 
@@ -243,18 +264,21 @@ export class CommitmentsService {
    * @returns Array of archived commitments ordered by latest updated date.
    */
   async getArchivedCommitments(userId: string) {
-    const commitments = await this.prisma.commitment.findMany({
-      where: {
-        userId,
-        isArchived: true,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
+    return this.lifecycle.withUserCommitments(userId, async (tx, habits, now) => {
+      const commitments = await tx.commitment.findMany({
+        where: {
+          userId,
+          id: { in: habits.map((h) => h.id) },
+          isArchived: true,
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      });
 
-    const calendar = await this.calendarForUser(userId);
-    return commitments.map((c) => dailyCommitmentState(c, calendar));
+      const calendar = await this.calendarForUser(userId, tx, now);
+      return commitments.map((c) => dailyCommitmentState(c, calendar));
+    });
   }
 
   /**
@@ -267,23 +291,24 @@ export class CommitmentsService {
    * @throws {ForbiddenException} If user does not have permission.
    */
   async restoreCommitment(userId: string, commitmentId: string) {
-    const commitment = await this.prisma.commitment.findUnique({
-      where: { id: commitmentId },
+    return this.lifecycle.withCommitments([commitmentId], async (tx, habits, now) => {
+      const habit = habits.find((h) => h.id === commitmentId);
+      if (!habit) return new NotFoundException('Commitment not found.');
+      if (habit.userId !== userId) return new ForbiddenException('Access denied.');
+      const calendar = commitmentCalendar(habit.user.timeZone, now);
+      // A retry must not extend the grace date or reset an already active streak.
+      if (!habit.isArchived) return dailyCommitmentState(habit, calendar);
+      const restored = await tx.commitment.update({
+        where: { id: commitmentId },
+        data: {
+          isArchived: false,
+          inactivityAnchorAt: now,
+          currentStreak: 0,
+          consecutiveMissedDays: 0,
+        },
+      });
+      return dailyCommitmentState(restored, calendar);
     });
-
-    if (!commitment) {
-      throw new NotFoundException('Commitment not found.');
-    }
-
-    if (commitment.userId !== userId) {
-      throw new ForbiddenException('Access denied.');
-    }
-
-    const restored = await this.prisma.commitment.update({
-      where: { id: commitmentId },
-      data: { isArchived: false },
-    });
-    return dailyCommitmentState(restored, await this.calendarForUser(userId));
   }
 
   /**
@@ -296,25 +321,12 @@ export class CommitmentsService {
    * @throws {ForbiddenException} If commitment belongs to a different user.
    */
   async hardDeleteCommitment(userId: string, commitmentId: string) {
-    const commitment = await this.prisma.commitment.findUnique({
-      where: { id: commitmentId },
+    return this.lifecycle.withCommitments([commitmentId], async (tx, habits) => {
+      const commitment = habits.find((h) => h.id === commitmentId);
+      if (!commitment) return new NotFoundException('Commitment not found.');
+      if (commitment.userId !== userId) return new ForbiddenException('Access denied.');
+      await tx.commitment.delete({ where: { id: commitmentId } });
+      return { success: true, message: 'Commitment permanently deleted from database.' };
     });
-
-    if (!commitment) {
-      throw new NotFoundException('Commitment not found.');
-    }
-
-    if (commitment.userId !== userId) {
-      throw new ForbiddenException('Access denied.');
-    }
-
-    await this.prisma.commitment.delete({
-      where: { id: commitmentId },
-    });
-
-    return {
-      success: true,
-      message: 'Commitment permanently deleted from database.',
-    };
   }
 }

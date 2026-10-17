@@ -5,13 +5,26 @@ describe('ChainNotificationService (Unit Tests)', () => {
   let service: ChainNotificationService;
 
   const mockPrisma = {
+    $queryRaw: jest.fn().mockResolvedValue([]),
     chainConnection: {
       updateMany: jest.fn(),
     },
   };
 
   beforeEach(() => {
-    service = new ChainNotificationService(mockPrisma as any);
+    const lifecycle = {
+      withCommitments: (_ids: string[], work: any) =>
+        work(
+          mockPrisma,
+          [
+            { id: 'comm-1', isArchived: false, isPublic: true },
+            { id: 'comm-no-chains', isArchived: false, isPublic: true },
+            { id: 'comm-dormant', isArchived: false, isPublic: true },
+          ],
+          new Date(),
+        ),
+    };
+    service = new ChainNotificationService(lifecycle as any);
     jest.clearAllMocks();
   });
 
@@ -24,6 +37,7 @@ describe('ChainNotificationService (Unit Tests)', () => {
       expect(mockPrisma.chainConnection.updateMany).toHaveBeenCalledWith({
         where: {
           partnerCommitmentId: 'comm-1',
+          userCommitment: { isArchived: false, isPublic: true },
           status: {
             in: [ChainStatus.ACTIVE, ChainStatus.RESTING, ChainStatus.FADING],
           },

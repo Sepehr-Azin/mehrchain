@@ -55,6 +55,30 @@ describe('Journey', () => {
     expect(text).not.toContain('Signed In');
   });
 
+  it('keeps archived effort in the calendar and recent activities', () => {
+    patchState(store, {
+      commitments: [],
+      archivedCommitments: [
+        {
+          id: 'archived',
+          title: 'Read',
+          category: 'growth',
+          totalDays: -1,
+          currentDay: 2,
+          currentStreak: 0,
+          isCompletedToday: false,
+          isArchived: true,
+          startDate: '2026-10-01T00:00:00Z',
+          history: ['2026-10-02', '2026-10-03'],
+        },
+      ],
+    });
+    expect(component.activeCommitmentsCount()).toBe(0);
+    expect(component.allHistory()).toEqual(['2026-10-02', '2026-10-03']);
+    expect(component.totalActivities()).toBe(2);
+    expect(component.recentActivities()).toHaveLength(2);
+  });
+
   it('should toggle archived flames section', () => {
     expect(component.showArchived()).toBe(false);
     component.toggleArchived();

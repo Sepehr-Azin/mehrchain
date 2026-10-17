@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { ChainStatus } from '@prisma/client';
+import { CommitmentLifecycleService } from '../commitments/commitment-lifecycle.service';
 
 /**
  * Thin notification service responsible for propagating habit completion events
@@ -12,7 +12,7 @@ import { ChainStatus } from '@prisma/client';
 export class ChainNotificationService {
   private readonly logger = new Logger(ChainNotificationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly lifecycle: CommitmentLifecycleService) {}
 
   /**
    * Updates `lastPartnerActivityAt` for all active chain connections where the
@@ -26,19 +26,31 @@ export class ChainNotificationService {
    */
   async notifyChainPartners(commitmentId: string): Promise<void> {
     try {
-      const result = await this.prisma.chainConnection.updateMany({
-        where: {
-          partnerCommitmentId: commitmentId,
-          status: {
-            in: [ChainStatus.ACTIVE, ChainStatus.RESTING, ChainStatus.FADING],
-          },
+      const result = await this.lifecycle.withCommitments(
+        [commitmentId],
+        async (tx, habits, now) => {
+          const habit = habits.find((h) => h.id === commitmentId);
+          if (!habit || habit.isArchived || !habit.isPublic) return { count: 0 };
+          await tx.$queryRaw`
+          SELECT "id" FROM "chain_connections" WHERE "partnerCommitmentId" = ${commitmentId}
+          ORDER BY "id" FOR UPDATE
+        `;
+          return tx.chainConnection.updateMany({
+            where: {
+              partnerCommitmentId: commitmentId,
+              userCommitment: { isArchived: false, isPublic: true },
+              status: {
+                in: [ChainStatus.ACTIVE, ChainStatus.RESTING, ChainStatus.FADING],
+              },
+            },
+            data: {
+              lastPartnerActivityAt: now,
+              status: ChainStatus.ACTIVE,
+              consecutiveMissedDays: 0,
+            },
+          });
         },
-        data: {
-          lastPartnerActivityAt: new Date(),
-          status: ChainStatus.ACTIVE,
-          consecutiveMissedDays: 0,
-        },
-      });
+      );
 
       if (result.count > 0) {
         this.logger.debug(

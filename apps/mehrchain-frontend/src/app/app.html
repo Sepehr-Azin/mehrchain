@@ -1,4 +1,8 @@
-<div class="app-shell" [class.has-navigation]="showNavbar()">
+<div
+  class="app-shell"
+  [class.has-navigation]="showNavbar()"
+  [class.onboarding-shell]="!showNavbar()"
+>
   <app-cold-start-banner />
   @if (
     showNavbar() &&

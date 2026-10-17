@@ -1,48 +1,25 @@
-import { ChainStatus } from '@prisma/client';
 import { ChainCronService } from './chain-cron.service';
 
-describe('Chain calendar catch-up', () => {
-  const prisma = { chainConnection: { findMany: jest.fn(), update: jest.fn() } };
+describe('Habit lifecycle sweep', () => {
+  const prisma = { user: { findMany: jest.fn() } };
+  const lifecycle = { reconcileUser: jest.fn() };
   let service: ChainCronService;
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers().setSystemTime(new Date('2026-10-06T00:00:00Z'));
-    service = new ChainCronService(prisma as any);
+    jest.resetAllMocks();
+    service = new ChainCronService(prisma as any, lifecycle as any);
   });
-  afterEach(() => jest.useRealTimers());
-  it('catches up a sleeping service without incrementing on a repeated run', async () => {
-    let row = {
-      id: 'c',
-      createdAt: new Date('2026-10-01T10:00:00Z'),
-      status: ChainStatus.ACTIVE,
-      consecutiveMissedDays: 0,
-      partnerCommitment: { lastCompletedDate: new Date('2026-10-03T20:00:00Z') },
-    };
-    prisma.chainConnection.findMany.mockImplementation(async () => [row]);
-    prisma.chainConnection.update.mockImplementation(async ({ data }) => {
-      row = { ...row, ...data };
-      return row;
-    });
+
+  it('uses the same reconciliation as request paths, including solo accounts', async () => {
+    prisma.user.findMany.mockResolvedValue([{ id: 'solo' }, { id: 'linked' }]);
     await service.handleDailyChainFreeze();
-    expect(row.status).toBe(ChainStatus.FADING);
-    expect(row.consecutiveMissedDays).toBe(2);
-    await service.handleDailyChainFreeze();
-    expect(prisma.chainConnection.update).toHaveBeenCalledTimes(1);
+    expect(lifecycle.reconcileUser.mock.calls).toEqual([['solo'], ['linked']]);
   });
-  it('restores active state after yesterday completion', async () => {
-    prisma.chainConnection.findMany.mockResolvedValue([
-      {
-        id: 'c',
-        createdAt: new Date('2026-10-01T10:00:00Z'),
-        status: ChainStatus.RESTING,
-        consecutiveMissedDays: 1,
-        partnerCommitment: { lastCompletedDate: new Date('2026-10-05T20:00:00Z') },
-      },
-    ]);
+
+  it('continues other accounts after one account fails', async () => {
+    prisma.user.findMany.mockResolvedValue([{ id: 'a' }, { id: 'b' }]);
+    lifecycle.reconcileUser.mockRejectedValueOnce(new Error('temporary database failure'));
     await service.handleDailyChainFreeze();
-    expect(prisma.chainConnection.update).toHaveBeenCalledWith({
-      where: { id: 'c' },
-      data: { status: ChainStatus.ACTIVE, consecutiveMissedDays: 0 },
-    });
+    expect(lifecycle.reconcileUser).toHaveBeenCalledWith('b');
   });
 });

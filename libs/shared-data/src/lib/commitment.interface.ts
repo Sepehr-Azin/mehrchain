@@ -7,6 +7,7 @@ export interface CommitmentCalendar {
 
 export interface CommitmentSync {
   commitments: Commitment[];
+  archivedCommitments?: Commitment[];
   calendar: CommitmentCalendar;
 }
 
@@ -24,6 +25,7 @@ export interface Commitment {
   why?: string;
   rippleEffects?: string[];
   startDate: string;
+  inactivityAnchorAt?: string | null;
   lastCompletedDate?: string;
   history?: string[];
   reminderTime?: string;

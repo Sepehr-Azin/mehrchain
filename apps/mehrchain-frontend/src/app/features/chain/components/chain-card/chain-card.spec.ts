@@ -127,10 +127,7 @@ describe('ChainCardComponent', () => {
     expect(compiled.textContent).toContain('Resting today');
   });
 
-  it('should render FADING state and allow sending gentle reminder', () => {
-    let emittedId: string | undefined;
-    component.nudge.subscribe((id) => (emittedId = id));
-
+  it('does not show the obsolete two-day reminder', () => {
     fixture.componentRef.setInput('connection', {
       ...baseConnection,
       status: 'FADING',
@@ -138,20 +135,9 @@ describe('ChainCardComponent', () => {
     });
     fixture.detectChanges();
 
-    expect(component.visualState()).toBe('FADING');
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('2 days away');
-    expect(compiled.textContent).toContain('Send Gentle Reminder');
-
-    // Click nudge button
-    const nudgeButton = compiled.querySelector('button.bg-rose-500\\/10') as HTMLButtonElement;
-    expect(nudgeButton).toBeTruthy();
-    nudgeButton.click();
-    fixture.detectChanges();
-
-    expect(emittedId).toBe('conn-123');
-    expect(component.nudgeSent()).toBe(true);
-    expect(compiled.textContent).toContain('Reminder Sent');
+    expect(compiled.textContent).not.toContain('2 days away');
+    expect(compiled.textContent).not.toContain('Send Gentle Reminder');
   });
 
   it('should render JOURNEY_COMPLETED state and allow congratulating partner', () => {
@@ -227,13 +213,17 @@ describe('ChainCardComponent', () => {
     expect(component.isMenuOpen()).toBe(false);
   });
 
-  it('does not offer an unavailable reminder for dormant connections', () => {
+  it('uses server day state rather than the device UTC date', () => {
     fixture.componentRef.setInput('connection', {
-      ...baseConnection, status: 'DORMANT', consecutiveMissedDays: 3,
+      ...baseConnection,
+      partnerCommitment: {
+        ...baseConnection.partnerCommitment,
+        isCompletedToday: false,
+        lastCompletedDate: new Date().toISOString(),
+      },
     });
     fixture.detectChanges();
-    expect(component.visualState()).toBe('DORMANT');
-    expect(fixture.nativeElement.textContent).toContain('Taking a break');
+    expect(component.visualState()).toBe('WAITING');
     expect(fixture.nativeElement.textContent).not.toContain('Send Gentle Reminder');
   });
 });

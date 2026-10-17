@@ -235,4 +235,35 @@ describe('CommitmentStore (@ngrx/signals)', () => {
     await refresh;
     expect(store.commitments().map((c) => c.id)).toEqual(['saved-id']);
   });
+
+  it('applies automatic archive to active and archive collections together', async () => {
+    const archived = {
+      id: 'old',
+      title: 'Read',
+      currentDay: 12,
+      currentStreak: 0,
+      totalDays: -1,
+      isCompletedToday: false,
+      isArchived: true,
+      category: 'growth',
+      startDate: '2026-10-01T00:00:00Z',
+      history: ['2026-10-12'],
+    };
+    store.loadForUser('owner');
+    localStorage.setItem('mehrchain_auth_token_v1', 'remote_jwt');
+    const refresh = store.syncWithBackend();
+    httpMock.expectOne('http://localhost:3000/api/commitments/sync?ngsw-bypass=true').flush({
+      commitments: [],
+      archivedCommitments: [archived],
+      calendar: {
+        timeZone: 'UTC',
+        currentDayKey: '2026-10-15',
+        serverNow: '2026-10-15T00:00:00Z',
+        nextDayAt: '2026-10-16T00:00:00Z',
+      },
+    });
+    await refresh;
+    expect(store.commitments()).toEqual([]);
+    expect(store.archivedCommitments()).toEqual([archived]);
+  });
 });

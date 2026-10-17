@@ -28,6 +28,7 @@ export class Journey implements OnInit {
 
   errorMessage = signal<string | null>(null);
   showArchived = signal(false);
+  restoringIds = signal<ReadonlySet<string>>(new Set());
 
   ngOnInit(): void {
     void this.commitmentService
@@ -40,15 +41,24 @@ export class Journey implements OnInit {
   }
 
   async restoreHabit(id: string): Promise<void> {
+    if (this.restoringIds().has(id)) return;
+    this.restoringIds.update((ids) => new Set([...ids, id]));
     try {
       await this.commitmentService.restoreCommitment(id);
       this.errorMessage.set(null);
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'Could not restore habit.');
+    } finally {
+      this.restoringIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
   async permanentDeleteHabit(id: string): Promise<void> {
+    if (this.restoringIds().has(id)) return;
     if (confirm('Are you sure you want to permanently delete this habit and all its history?')) {
       try {
         await this.commitmentService.permanentDeleteCommitment(id);
@@ -63,7 +73,7 @@ export class Journey implements OnInit {
 
   recentActivities = computed(() => {
     const logs: ActivityLog[] = [];
-    const commitments = this.commitmentService.commitments();
+    const commitments = this.historyCommitments();
 
     commitments.forEach((c) => {
       if (c.history) {
@@ -92,7 +102,7 @@ export class Journey implements OnInit {
   }
 
   allHistory = computed(() => {
-    const commitments = this.commitmentService.commitments();
+    const commitments = this.historyCommitments();
     let allDates: string[] = [];
 
     commitments.forEach((c) => {
@@ -105,5 +115,14 @@ export class Journey implements OnInit {
   });
 
   totalActivities = computed(() => this.allHistory().length);
+  private historyCommitments = computed(() => {
+    const byId = new Map(
+      [
+        ...this.commitmentService.archivedCommitments(),
+        ...this.commitmentService.commitments(),
+      ].map((h) => [h.id, h]),
+    );
+    return [...byId.values()];
+  });
   longestStreak = this.commitmentService.overallStreak;
 }

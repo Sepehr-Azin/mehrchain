@@ -1,13 +1,11 @@
-<div class="animate-fade-in h-full flex flex-col">
-  <h2 class="text-2xl font-bold mb-6 text-center text-foreground">
-    Where do you want to shine?
-  </h2>
+<div class="animate-fade-in flex-1 flex flex-col">
+  <h2 class="text-2xl font-bold mb-6 text-center text-foreground">Where do you want to shine?</h2>
 
   <div class="grid grid-cols-2 gap-4 flex-1">
     @for (cat of categories(); track cat.id) {
       <button
         (click)="categorySelected.emit(cat.id)"
-        class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-transparent bg-muted/50 hover:bg-card hover:border-primary/30 hover:shadow-md transition-all duration-300 group active:scale-95 aspect-square"
+        class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-transparent bg-muted/50 hover:bg-card hover:border-primary/30 hover:shadow-md transition-all duration-300 group active:scale-95 min-h-32"
       >
         <div
           [class]="
@@ -18,10 +16,9 @@
           <lucide-icon [name]="cat.icon" [class]="'w-7 h-7 ' + cat.color"></lucide-icon>
         </div>
 
-        <span
-          class="font-semibold text-foreground group-hover:text-primary transition-colors"
-          >{{ cat.label }}</span
-        >
+        <span class="font-semibold text-foreground group-hover:text-primary transition-colors">{{
+          cat.label
+        }}</span>
       </button>
     }
   </div>

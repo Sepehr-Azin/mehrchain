@@ -3,13 +3,7 @@ import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { ChainConnection } from '@mehrchain/shared-data';
 
-export type ChainCardVisualState =
-  | 'COMPLETED_TODAY'
-  | 'WAITING'
-  | 'RESTING'
-  | 'FADING'
-  | 'DORMANT'
-  | 'JOURNEY_COMPLETED';
+export type ChainCardVisualState = 'COMPLETED_TODAY' | 'WAITING' | 'RESTING' | 'JOURNEY_COMPLETED';
 
 @Component({
   selector: 'app-chain-card',
@@ -66,21 +60,13 @@ export class ChainCardComponent {
     }
     const lastCompleted = conn.partnerCommitment?.lastCompletedDate;
     if (
-      lastCompleted &&
-      new Date(lastCompleted).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10)
+      conn.partnerCommitment?.isCompletedToday === true ||
+      (conn.partnerCommitment?.isCompletedToday === undefined &&
+        lastCompleted &&
+        new Date(lastCompleted).toISOString().slice(0, 10) ===
+          new Date().toISOString().slice(0, 10))
     ) {
       return 'COMPLETED_TODAY';
-    }
-    if (
-      conn.status === 'DORMANT' || (conn.consecutiveMissedDays ?? 0) >= 3
-    ) {
-      return 'DORMANT';
-    }
-    if (
-      conn.status === 'FADING' ||
-      (conn.consecutiveMissedDays && conn.consecutiveMissedDays >= 2)
-    ) {
-      return 'FADING';
     }
     if (conn.status === 'RESTING' || conn.consecutiveMissedDays === 1) {
       return 'RESTING';

@@ -74,9 +74,10 @@ model Commitment {
   totalDays             Int
   currentDay            Int       @default(0)
   currentStreak         Int       @default(0)
-  consecutiveMissedDays Int       @default(0) // Used for Chain freeze logic
+  consecutiveMissedDays Int       @default(0)
   startDate             DateTime  @default(now())
   lastCompletedDate     DateTime?
+  inactivityAnchorAt    DateTime? // Fresh grace date after restore or continuing a reached goal
   reminderTime          String?
   isPublic              Boolean   @default(false)
   isArchived            Boolean   @default(false)

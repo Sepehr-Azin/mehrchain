@@ -72,15 +72,21 @@ export class ChainService {
 
   // Active connections (excluding disconnected)
   readonly activeConnections = computed(() =>
-    this._connections().filter((c) => c.status !== 'DISCONNECTED'),
+    this._connections().filter(
+      (c) =>
+        c.status !== 'DISCONNECTED' &&
+        c.status !== 'DORMANT' &&
+        c.status !== 'FADING' &&
+        this.publicCommitments().some((h) => h.id === c.userCommitmentId),
+    ),
   );
 
   // Backwards compatibility for components still referencing friendChains
   readonly friendChains = computed<HabitChain[]>(() => {
     return this.activeConnections().map((conn) => {
       const partnerLastCompleted = conn.partnerCommitment?.lastCompletedDate;
-      let completedToday = false;
-      if (partnerLastCompleted) {
+      let completedToday = conn.partnerCommitment?.isCompletedToday ?? false;
+      if (conn.partnerCommitment?.isCompletedToday === undefined && partnerLastCompleted) {
         const compDate = new Date(partnerLastCompleted).toISOString().split('T')[0];
         const todayStr = new Date().toISOString().split('T')[0];
         completedToday = compDate === todayStr;
@@ -144,6 +150,26 @@ export class ChainService {
       if (pubList.length > 0 && (!current || !pubList.some((c) => c.id === current))) {
         this.selectedCommitmentId.set(pubList[0].id);
       }
+      if (!pubList.length) this.selectedCommitmentId.set('');
+    });
+
+    // Discard confirmed unavailable local endpoints, including cached rows. A later
+    // restore must not make those connections visible again before new acceptance.
+    effect(() => {
+      const unavailable = new Set([
+        ...this.commitmentService.archivedCommitments().map((h) => h.id),
+        ...this.commitmentService
+          .commitments()
+          .filter((h) => !h.isPublic)
+          .map((h) => h.id),
+      ]);
+      const current = this._connections();
+      const kept = current.filter((c) => !unavailable.has(c.userCommitmentId));
+      if (kept.length !== current.length)
+        untracked(() => {
+          this._connections.set(kept);
+          this.saveLocalCache(kept);
+        });
     });
   }
 
@@ -185,7 +211,9 @@ export class ChainService {
     this.coldStartService.startRequest();
     try {
       const res = await firstValueFrom(
-        this.http.get<ChainConnection[]>(`${environment.apiUrl}/chain/connections`),
+        this.http.get<ChainConnection[]>(`${environment.apiUrl}/chain/connections`, {
+          params: { 'ngsw-bypass': 'true' },
+        }),
       );
       if (this.authService.currentUser()?.id !== userId || this.authService.getToken() !== token)
         return [];
@@ -285,7 +313,9 @@ export class ChainService {
     if (!code) throw new Error('Invalid invite link.');
     // Invite lookup is a public route, including before a user signs in.
     return firstValueFrom(
-      this.http.get<ChainInvite>(`${environment.apiUrl}/chain/invite/${encodeURIComponent(code)}`),
+      this.http.get<ChainInvite>(`${environment.apiUrl}/chain/invite/${encodeURIComponent(code)}`, {
+        params: { 'ngsw-bypass': 'true' },
+      }),
     );
   }
 

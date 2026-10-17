@@ -66,7 +66,7 @@ describe('ChainService (Frontend Hybrid)', () => {
 
     const loadPromise = service.loadConnections();
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/chain/connections`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/chain/connections?ngsw-bypass=true`);
     expect(req.request.method).toBe('GET');
     req.flush(mockConnections);
 
@@ -149,6 +149,19 @@ describe('ChainService (Frontend Hybrid)', () => {
   });
 
   it('should disconnect connection after confirmation and call API', async () => {
+    vi.spyOn(TestBed.inject(CommitmentService), 'commitments').mockReturnValue([
+      {
+        id: 'comm-1',
+        title: 'Read',
+        totalDays: -1,
+        currentDay: 1,
+        currentStreak: 1,
+        isCompletedToday: false,
+        category: 'growth',
+        startDate: new Date().toISOString(),
+        isPublic: true,
+      },
+    ]);
     vi.spyOn(authService, 'getToken').mockReturnValue('jwt_valid_remote_token');
     vi.spyOn(authService, 'currentUser').mockReturnValue({
       id: 'user-1',

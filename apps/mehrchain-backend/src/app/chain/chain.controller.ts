@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Header } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ChainService } from './chain.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -22,6 +22,7 @@ export class ChainController {
 
   @ApiOperation({ summary: 'Get invite details (public, for accepting)' })
   @Get('invite/:code')
+  @Header('Cache-Control', 'private, no-store')
   getInvite(@Param('code') code: string) {
     return this.chainService.getInvite(code);
   }
@@ -42,6 +43,7 @@ export class ChainController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'List active chain connections' })
   @Get('connections')
+  @Header('Cache-Control', 'private, no-store')
   getConnections(@CurrentUser() user: { id: string }) {
     return this.chainService.getConnections(user.id);
   }
