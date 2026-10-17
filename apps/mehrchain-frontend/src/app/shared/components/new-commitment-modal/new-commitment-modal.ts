@@ -1,3 +1,4 @@
+import { DialogAccessibilityDirective } from '../../directives/dialog-accessibility.directive';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +10,7 @@ import {
 
 @Component({
   selector: 'app-new-commitment-modal',
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [DialogAccessibilityDirective, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './new-commitment-modal.html',
   styleUrl: './new-commitment-modal.css',
 })

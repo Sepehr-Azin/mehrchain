@@ -1,13 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  computed,
-  inject,
-  input,
-  OnInit,
-  output,
-} from '@angular/core';
-import { MeroService, MeroState } from '../../../core/services/mero.service';
+import { Component, computed, inject, input } from '@angular/core';
 import { MeroCustomizationService } from '../../../core/services/mero-customization.service';
 
 export type MeroSize = 'xs' | 'sm' | 'md' | 'lg' | 'hero';
@@ -18,25 +10,13 @@ export type MeroSize = 'xs' | 'sm' | 'md' | 'lg' | 'hero';
   templateUrl: './mero.html',
   styleUrl: './mero.css',
 })
-export class MeroComponent implements OnInit {
-  private meroService = inject(MeroService);
+export class MeroComponent {
   private customizationService = inject(MeroCustomizationService, { optional: true });
 
   // Inputs
   size = input<MeroSize>('md');
-  interactive = input<boolean>(true);
   showGlow = input<boolean>(true);
-  floating = input<boolean>(false);
-  state = input<MeroState | null>(null);
   customGradient = input<string | null>(null);
-
-  // Outputs
-  onTap = output<void>();
-
-  // Computed state (uses explicit state input or falls back to MeroService)
-  effectiveState = computed<MeroState>(() => {
-    return this.state() ?? this.meroService.state();
-  });
 
   // Effective glow gradient
   effectiveGradient = computed<string>(() => {
@@ -66,17 +46,4 @@ export class MeroComponent implements OnInit {
         return 'w-20 h-20';
     }
   });
-
-  ngOnInit(): void {
-    // Initialization without artificial blinking overlays
-  }
-
-  /**
-   * Handle user tap / click
-   */
-  handleClick(e: MouseEvent): void {
-    if (!this.interactive()) return;
-    e.stopPropagation();
-    this.onTap.emit();
-  }
 }

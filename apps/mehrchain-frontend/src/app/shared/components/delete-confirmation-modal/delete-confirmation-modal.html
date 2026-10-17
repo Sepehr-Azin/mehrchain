@@ -1,4 +1,4 @@
-<div class="fixed inset-0 z-50 flex items-center justify-center p-5 animate-fade-in">
+<div class="app-overlay">
   <!-- Backdrop -->
   <div
     class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -7,7 +7,10 @@
 
   <!-- Dialog Card -->
   <div
-    class="relative w-full max-w-sm bg-card rounded-[2rem] p-6 shadow-2xl border border-border/50 text-center animate-scale-in"
+    appDialog
+    aria-label="Remove habit"
+    (dialogDismiss)="cancel.emit()"
+    class="app-dialog bg-card rounded-[2rem] p-6 shadow-2xl border border-border/50 text-center"
   >
     <!-- Mero / Flame Avatar Header -->
     <div
@@ -17,9 +20,7 @@
     </div>
 
     <!-- Title -->
-    <h3 class="text-xl font-bold text-foreground mb-2">
-      Let this flame go?
-    </h3>
+    <h3 class="text-xl font-bold text-foreground mb-2">Let this flame go?</h3>
 
     <!-- Habit Title -->
     <p class="text-sm font-semibold text-primary mb-4">
@@ -31,13 +32,13 @@
       <div
         class="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/20 rounded-2xl p-4 text-left mb-4"
       >
-        <p class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+        <p
+          class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5"
+        >
           <lucide-icon name="sparkles" class="w-3.5 h-3.5"></lucide-icon>
           <span>When you started, your reason was:</span>
         </p>
-        <p class="text-sm font-semibold text-foreground italic">
-          “{{ commitment().why }}”
-        </p>
+        <p class="text-sm font-semibold text-foreground italic">“{{ commitment().why }}”</p>
       </div>
       <p class="text-xs text-muted-foreground mb-6">
         Do you still want to remove this commitment and its current streak?
@@ -50,21 +51,11 @@
 
     <!-- Action Buttons -->
     <div class="flex flex-col gap-2.5">
-      <mc-button
-        variant="primary"
-        size="lg"
-        [fullWidth]="true"
-        (clicked)="cancel.emit()"
-      >
+      <mc-button variant="primary" size="lg" [fullWidth]="true" (clicked)="cancel.emit()">
         Keep This Habit
       </mc-button>
 
-      <mc-button
-        variant="danger"
-        size="md"
-        [fullWidth]="true"
-        (clicked)="confirm.emit()"
-      >
+      <mc-button variant="danger" size="md" [fullWidth]="true" (clicked)="confirm.emit()">
         <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
         <span>Delete Anyway</span>
       </mc-button>

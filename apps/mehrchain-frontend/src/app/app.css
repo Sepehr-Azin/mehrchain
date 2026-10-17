@@ -1,0 +1,28 @@
+:host {
+  display: block;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: var(--app-shell-width);
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  background: var(--color-background);
+  border-inline: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.has-navigation {
+  padding-bottom: var(--app-navigation-height);
+}
+
+.app-navigation {
+  position: fixed;
+  bottom: 0;
+  inset-inline: max(0px, calc((100% - var(--app-shell-width)) / 2));
+  min-height: var(--app-navigation-height);
+  padding: 0.5rem max(0.5rem, env(safe-area-inset-right, 0px))
+    calc(0.5rem + env(safe-area-inset-bottom, 0px)) max(0.5rem, env(safe-area-inset-left, 0px));
+}

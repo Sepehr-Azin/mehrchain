@@ -1,3 +1,4 @@
+import { DialogAccessibilityDirective } from '../../../shared/directives/dialog-accessibility.directive';
 import { Component, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { MeroComponent } from '../../../shared/components/mero/mero';
@@ -5,7 +6,7 @@ import { MeroComponent } from '../../../shared/components/mero/mero';
 @Component({
   selector: 'app-login-modal',
   standalone: true,
-  imports: [LucideAngularModule, MeroComponent],
+  imports: [DialogAccessibilityDirective, LucideAngularModule, MeroComponent],
   templateUrl: './login-modal.html',
 })
 export class LoginModalComponent {

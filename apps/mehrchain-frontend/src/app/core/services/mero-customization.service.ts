@@ -138,7 +138,7 @@ export class MeroCustomizationService {
   readonly personalityOptions = PERSONALITY_OPTIONS;
 
   // Reactive State Signals
-  readonly nickname = signal<string>('Mero');
+  readonly nickname = computed(() => 'Mero');
   readonly selectedThemeId = signal<MeroGlowThemeId>('golden');
   readonly personality = signal<MeroPersonality>('calm');
   readonly customGlowColor = signal<string>('#8b5cf6');
@@ -207,7 +207,6 @@ export class MeroCustomizationService {
     this.loadState();
     effect(() => {
       const user = this.auth.currentUser();
-      this.nickname.set('Mero');
       this.selectedThemeId.set('golden');
       this.personality.set('calm');
       this.customGlowColor.set('#8b5cf6');
@@ -216,44 +215,39 @@ export class MeroCustomizationService {
     });
   }
 
-  setNickname(newName: string): void {
-    const trimmed = newName.trim();
-    if (trimmed.length > 0 && trimmed.length <= 25) {
-      this.nickname.set(trimmed);
-      this.saveState();
-    }
-  }
-
   setGlowTheme(themeId: MeroGlowThemeId): boolean {
     const canUnlock = this.isThemeUnlocked()(themeId);
     if (!canUnlock) {
       return false;
     }
+    this.saveState({ selectedThemeId: themeId });
     this.selectedThemeId.set(themeId);
-    this.saveState();
     return true;
   }
 
   setCustomGlow(name: string, hexColor: string): void {
     const trimmedName = name.trim();
-    if (trimmedName.length > 0 && trimmedName.length <= 30) {
-      this.customGlowName.set(trimmedName);
+    if (!trimmedName || trimmedName.length > 30) {
+      throw new Error('Use a color name of 1–30 characters.');
     }
-    if (/^#?[0-9a-fA-F]{6}$/.test(hexColor.trim())) {
-      const formatted = hexColor.startsWith('#') ? hexColor.trim() : `#${hexColor.trim()}`;
-      this.customGlowColor.set(formatted);
+    const trimmedColor = hexColor.trim();
+    if (!/^#?[0-9a-fA-F]{6}$/.test(trimmedColor)) {
+      throw new Error('Enter a six-digit hex color, such as #8b5cf6.');
     }
-    this.saveState();
+    const formatted = trimmedColor.startsWith('#') ? trimmedColor : `#${trimmedColor}`;
+    this.saveState({ customGlowName: trimmedName, customGlowColor: formatted });
+    this.customGlowName.set(trimmedName);
+    this.customGlowColor.set(formatted);
   }
 
   resetToDefaultGlow(): void {
+    this.saveState({ selectedThemeId: 'golden' });
     this.selectedThemeId.set('golden');
-    this.saveState();
   }
 
   setPersonality(personality: MeroPersonality): void {
+    this.saveState({ personality });
     this.personality.set(personality);
-    this.saveState();
   }
 
   getGreeting(): string {
@@ -269,9 +263,7 @@ export class MeroCustomizationService {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.nickname && typeof parsed.nickname === 'string') {
-          this.nickname.set(parsed.nickname);
-        }
+        // Ignore legacy mascot nicknames; named glow colors are separate and retained for T06.
         if (parsed.customGlowColor && typeof parsed.customGlowColor === 'string') {
           this.customGlowColor.set(parsed.customGlowColor);
         }
@@ -297,7 +289,14 @@ export class MeroCustomizationService {
     }
   }
 
-  private saveState(): void {
+  private saveState(
+    overrides: {
+      selectedThemeId?: MeroGlowThemeId;
+      personality?: MeroPersonality;
+      customGlowColor?: string;
+      customGlowName?: string;
+    } = {},
+  ): void {
     try {
       const payload = {
         nickname: this.nickname(),
@@ -305,10 +304,11 @@ export class MeroCustomizationService {
         personality: this.personality(),
         customGlowColor: this.customGlowColor(),
         customGlowName: this.customGlowName(),
+        ...overrides,
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload));
-    } catch (err) {
-      console.warn('[MeroCustomizationService] Failed to save state:', err);
+    } catch {
+      throw new Error('Could not save your glow on this device. Try again.');
     }
   }
 }

@@ -31,39 +31,6 @@ describe('MeroComponent', () => {
     expect(component.sizeClasses()).toBe('w-10 h-10');
   });
 
-  it('should emit tap on click when interactive', () => {
-    let tapEmitted = false;
-    component.onTap.subscribe(() => {
-      tapEmitted = true;
-    });
-
-    const event = new MouseEvent('click');
-    component.handleClick(event);
-
-    expect(tapEmitted).toBe(true);
-  });
-
-  it('should not emit tap when interactive is false', () => {
-    fixture.componentRef.setInput('interactive', false);
-    fixture.detectChanges();
-
-    let tapEmitted = false;
-    component.onTap.subscribe(() => {
-      tapEmitted = true;
-    });
-
-    const event = new MouseEvent('click');
-    component.handleClick(event);
-
-    expect(tapEmitted).toBe(false);
-  });
-
-  it('should support overriding state via input', () => {
-    fixture.componentRef.setInput('state', 'celebrating');
-    fixture.detectChanges();
-    expect(component.effectiveState()).toBe('celebrating');
-  });
-
   it('should support custom glow gradient override', () => {
     const custom = 'radial-gradient(circle, #ff0000 0%, transparent 70%)';
     fixture.componentRef.setInput('customGradient', custom);

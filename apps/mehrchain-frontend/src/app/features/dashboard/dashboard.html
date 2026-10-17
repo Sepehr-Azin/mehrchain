@@ -1,12 +1,12 @@
 @if (commitmentService.syncError()) {
   <p role="alert" class="text-red-500">{{ commitmentService.syncError() }}</p>
 }
-<div class="min-h-[100dvh] bg-background pb-24 px-5 safe-top font-sans">
+<div class="app-page bg-background pb-24 px-5 safe-top font-sans">
   <!-- Header with Mero avatar and Quick Theme Toggle -->
-  <div class="flex justify-between items-center mb-6">
-    <div>
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+    <div class="min-w-0">
       <h1 class="text-2xl font-bold text-foreground">My Dashboard</h1>
-      <p class="text-sm text-muted-foreground">Keep your lights burning.</p>
+      <p class="text-sm text-muted-foreground">One small step today.</p>
     </div>
     <div class="flex items-center gap-2.5">
       <button
@@ -14,6 +14,7 @@
         (click)="toggleTheme()"
         class="w-9 h-9 rounded-full bg-card border border-border/70 flex items-center justify-center text-foreground hover:border-primary/50 shadow-sm transition-all active:scale-95"
         [title]="themeService.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        [attr.aria-label]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
       >
         <lucide-icon
           [name]="themeService.isDark() ? 'sun' : 'moon'"
@@ -22,30 +23,12 @@
       </button>
       <a
         routerLink="/profile"
-        class="relative flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-        [title]="'Profile • ' + customizationService.nickname()"
+        class="flex items-center gap-1 rounded-xl text-xs text-muted-foreground hover:text-foreground"
+        aria-label="Open profile"
       >
         <app-mero size="xs" [showGlow]="true" />
+        <span>Profile</span>
       </a>
-    </div>
-  </div>
-
-  <!-- Overall Streak Card -->
-  <div
-    class="bg-card rounded-2xl p-4 shadow-sm border border-border/50 flex justify-between items-center mb-6"
-  >
-    <div class="flex items-center gap-3">
-      <div
-        class="w-10 h-10 rounded-xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center text-orange-500 dark:text-orange-400"
-      >
-        <lucide-icon name="flame" class="w-6 h-6"></lucide-icon>
-      </div>
-      <div>
-        <p class="text-xs text-muted-foreground font-bold uppercase">Overall Streak</p>
-        <p class="text-xl font-bold text-foreground">
-          {{ commitmentService.overallStreak() }} Days
-        </p>
-      </div>
     </div>
   </div>
 
@@ -62,7 +45,7 @@
         </div>
         <h3 class="text-lg font-bold text-foreground mb-1.5">No Active Habits</h3>
         <p class="text-xs text-muted-foreground max-w-xs mx-auto mb-6 leading-relaxed">
-          Every journey begins with a single spark. Ready to light your first flame?
+          Choose a small habit to begin.
         </p>
         <button
           type="button"
@@ -78,6 +61,8 @@
         <app-commitment-card
           [commitment]="c"
           [supportersCount]="chainService.getSupportersCount(c.id)"
+          [pending]="completingIds().has(c.id)"
+          [errorMessage]="completionErrors()[c.id] || null"
           (onComplete)="handleComplete($event)"
           (onDelete)="promptDelete($event)"
           (onArchive)="handleArchive($event)"
@@ -91,21 +76,24 @@
   <!-- Toast Notification -->
   @if (toastMessage()) {
     <div
-      class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in"
+      class="app-toast bg-foreground text-background px-4 py-2.5 rounded-2xl text-xs font-medium shadow-lg flex items-center gap-2 z-50"
+      role="status"
     >
-      <lucide-icon name="sparkles" class="w-4 h-4 text-amber-400"></lucide-icon>
       <span>{{ toastMessage() }}</span>
     </div>
   }
 
   <!-- Floating Add Button -->
-  <button
-    (click)="openNewCommitment()"
-    class="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-float flex items-center justify-center active:scale-90 transition-transform z-50"
-    aria-label="Add new commitment"
-  >
-    <lucide-icon name="plus" class="w-8 h-8"></lucide-icon>
-  </button>
+  @if (commitmentService.commitments().length > 0) {
+    <button
+      type="button"
+      (click)="openNewCommitment()"
+      class="app-fab w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-float flex items-center justify-center hover:bg-accent transition-colors z-40"
+      aria-label="Add new commitment"
+    >
+      <lucide-icon name="plus" class="w-8 h-8"></lucide-icon>
+    </button>
+  }
 
   <!-- Delete Confirmation Modal (Mindful Intention Reflection) -->
   @if (deletingCommitment()) {

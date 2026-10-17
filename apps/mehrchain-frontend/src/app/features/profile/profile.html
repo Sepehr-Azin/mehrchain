@@ -1,13 +1,17 @@
-<div class="min-h-[100dvh] bg-background pb-28 px-4 sm:px-6 safe-top font-sans select-none animate-fade-in">
+<div
+  class="app-page bg-background pb-6 px-4 sm:px-6 safe-top font-sans select-none animate-fade-in"
+>
   <!-- Top Navigation / Title -->
-  <div class="flex justify-between items-center mb-6">
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
     <div>
       <h1 class="text-2xl font-black text-foreground tracking-tight">Profile & Companion</h1>
       <p class="text-xs sm:text-sm text-muted-foreground mt-0.5">Personal companion & settings</p>
     </div>
 
     <!-- Quick User Status -->
-    <div class="flex items-center gap-2 bg-card border border-border/60 px-3 py-1.5 rounded-full shadow-xs">
+    <div
+      class="min-w-0 max-w-full flex items-center gap-2 bg-card border border-border/60 px-3 py-1.5 rounded-full shadow-xs"
+    >
       <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
       <span class="text-xs font-medium text-foreground truncate max-w-[130px] sm:max-w-[180px]">
         {{ currentUser()?.name || currentUser()?.email || 'MehrChain Explorer' }}
@@ -18,15 +22,16 @@
   <!-- Toast / Feedback Pill -->
   @if (saveFeedbackMessage()) {
     <div
+      [attr.role]="saveFailed() ? 'alert' : 'status'"
       class="mb-5 px-4 py-2.5 rounded-2xl bg-primary/10 border border-primary/25 text-primary text-xs font-bold flex items-center justify-between gap-2 animate-fade-in shadow-sm"
     >
-      <div class="flex items-center gap-2">
-        <lucide-icon name="sparkles" class="w-4 h-4 text-primary shrink-0"></lucide-icon>
+      <div class="flex flex-wrap items-center gap-2">
         <span>{{ saveFeedbackMessage() }}</span>
       </div>
       <button
         type="button"
         (click)="saveFeedbackMessage.set(null)"
+        aria-label="Dismiss feedback"
         class="text-primary hover:opacity-75 p-0.5 cursor-pointer"
       >
         <lucide-icon name="x" class="w-3.5 h-3.5"></lucide-icon>
@@ -34,136 +39,63 @@
     </div>
   }
 
-  <!-- 1. Hero Companion Card (Live Mero Mascot + Nickname Editor + Dynamic Greeting) -->
-  <div
-    class="relative overflow-hidden bg-gradient-to-b from-card to-card/70 rounded-3xl p-6 border border-border/70 shadow-sm mb-6 transition-all"
-  >
-    <!-- Background subtle ambient glow -->
-    <div
-      class="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none transition-all duration-700"
-      [style.background]="customization.activeTheme().accentColor"
-    ></div>
-
-    <div class="relative z-10 flex flex-col items-center text-center">
-      <!-- Live Mero Mascot -->
-      <div class="relative mb-3">
-        <app-mero
-          size="hero"
-          [showGlow]="true"
-          [floating]="true"
-          [interactive]="true"
-        />
-      </div>
-
-      <!-- Companion Nickname Editor -->
-      <div class="mt-2 mb-2 flex items-center justify-center gap-2 w-full max-w-xs">
-        @if (isEditingNickname()) {
-          <div class="flex items-center gap-1.5 w-full bg-background border border-primary rounded-2xl p-1 shadow-xs">
-            <input
-              type="text"
-              [(ngModel)]="nicknameInput"
-              (keydown.enter)="saveNickname()"
-              (keydown.escape)="cancelEditingNickname()"
-              maxlength="25"
-              placeholder="Name your Mero..."
-              class="w-full bg-transparent px-3 py-1.5 text-sm font-bold text-foreground focus:outline-hidden text-center"
-              autofocus
-            />
-            <button
-              type="button"
-              (click)="saveNickname()"
-              class="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/90 active:scale-95 transition-transform cursor-pointer"
-              title="Save"
-            >
-              <lucide-icon name="check" class="w-4 h-4"></lucide-icon>
-            </button>
-            <button
-              type="button"
-              (click)="cancelEditingNickname()"
-              class="w-8 h-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0 hover:bg-muted/80 active:scale-95 transition-transform cursor-pointer"
-              title="Cancel"
-            >
-              <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
-            </button>
-          </div>
-        } @else {
-          <div class="flex items-center gap-2">
-            <h2 class="text-xl font-black text-foreground tracking-tight">
-              {{ customization.nickname() }}
-            </h2>
-            <button
-              type="button"
-              (click)="startEditingNickname()"
-              class="w-7 h-7 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-              title="Change companion name"
-            >
-              <lucide-icon name="edit" class="w-3.5 h-3.5"></lucide-icon>
-            </button>
-          </div>
-        }
-      </div>
-
-      <!-- Mero Dynamic Speech Bubble -->
-      <div
-        class="mt-1 max-w-sm bg-background/90 backdrop-blur-sm border border-border/80 rounded-2xl px-4 py-2.5 shadow-xs transition-all animate-fade-in"
-      >
-        <p class="text-xs sm:text-sm font-medium text-foreground leading-relaxed">
-          {{ customization.getGreeting() }}
-        </p>
-      </div>
-
-      <!-- Active Glow Badge -->
-      <div class="mt-4 flex items-center gap-2">
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all"
-          [style.borderColor]="customization.activeTheme().accentColor + '55'"
-          [style.backgroundColor]="customization.activeTheme().accentColor + '15'"
-          [style.color]="customization.activeTheme().accentColor"
-        >
-          <span
-            class="w-2 h-2 rounded-full shadow-xs"
-            [style.backgroundColor]="customization.activeTheme().previewColor"
-          ></span>
-          <span>Glow: {{ customization.activeTheme().name }}</span>
-        </span>
-      </div>
-    </div>
+  <!-- Mero keeps a fixed name; existing named-color preferences remain available. -->
+  <div class="bg-card rounded-3xl p-5 border border-border/70 shadow-sm mb-6 text-center">
+    <app-mero size="lg" [showGlow]="true" />
+    <h2 class="mt-2 text-xl font-bold text-foreground">Mero</h2>
+    <p class="mt-1 text-xs text-muted-foreground">A little company for your daily steps.</p>
+    <p class="mt-3 text-xs text-muted-foreground">
+      Glow: <span class="text-foreground">{{ customization.activeTheme().name }}</span>
+    </p>
   </div>
-
   <!-- 2. 21-Day Custom Glow Studio (Exclusive Streak Milestone) -->
   <div class="mb-8">
-    <div class="flex items-center gap-2 mb-3 px-1">
-      <div class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
+    <div class="flex flex-wrap items-center gap-2 mb-3 px-1">
+      <div
+        class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center"
+      >
         <lucide-icon name="sparkles" class="w-4 h-4"></lucide-icon>
       </div>
       <div>
         <h3 class="text-base font-bold text-foreground">Custom Glow Studio</h3>
-        <p class="text-[11px] text-muted-foreground">Unlock your signature aura at 21 consecutive days</p>
+        <p class="text-[11px] text-muted-foreground">
+          Unlock your signature aura at 21 consecutive days
+        </p>
       </div>
     </div>
 
     @if (isCustomThemeUnlocked()) {
-      <div class="p-5 rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-primary/25 shadow-sm space-y-4 animate-fade-in">
-        <div class="flex items-center justify-between">
+      <div
+        class="p-5 rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-primary/25 shadow-sm space-y-4 animate-fade-in"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+            <div
+              class="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center"
+            >
               <lucide-icon name="palette" class="w-4 h-4"></lucide-icon>
             </div>
             <div>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <h4 class="text-sm font-bold text-foreground">21-Day Custom Glow Studio</h4>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                >
                   Mastery Unlocked ✨
                 </span>
               </div>
-              <p class="text-[11px] text-muted-foreground">Pick your signature color and name your companion's aura</p>
+              <p class="text-[11px] text-muted-foreground">
+                Pick your signature color and name your companion's aura
+              </p>
             </div>
           </div>
         </div>
 
         <!-- Preset Vibrancies -->
         <div>
-          <label class="block text-[11px] font-bold text-muted-foreground mb-2">Preset Vibrancies</label>
+          <label class="block text-[11px] font-bold text-muted-foreground mb-2"
+            >Preset Vibrancies</label
+          >
           <div class="flex flex-wrap gap-2">
             @for (preset of PRESET_CUSTOM_COLORS; track preset.hex) {
               <button
@@ -171,9 +103,11 @@
                 (click)="applyPresetCustomColor(preset)"
                 class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer"
                 [class.border-primary]="customColorInput() === preset.hex"
-                [class.bg-primary/10]="customColorInput() === preset.hex"
-                [class.border-border/60]="customColorInput() !== preset.hex"
-                [class.hover:border-primary/40]="customColorInput() !== preset.hex"
+                [ngClass]="
+                  customColorInput() === preset.hex
+                    ? 'bg-primary/10'
+                    : 'border-border/60 hover:border-primary/40'
+                "
               >
                 <span
                   class="w-3.5 h-3.5 rounded-full shadow-xs shrink-0"
@@ -189,11 +123,18 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <!-- Color Picker and Hex Input -->
           <div class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-muted-foreground">Custom Color & Hex</label>
-            <div class="flex items-center gap-2 bg-background border border-border/80 rounded-2xl p-2 shadow-xs">
-              <div class="relative w-8 h-8 rounded-xl overflow-hidden shrink-0 border border-border/60 cursor-pointer shadow-xs">
+            <label class="block text-[11px] font-bold text-muted-foreground"
+              >Custom Color & Hex</label
+            >
+            <div
+              class="flex items-center gap-2 bg-background border border-border/80 rounded-2xl p-2 shadow-xs"
+            >
+              <div
+                class="relative w-8 h-8 rounded-xl overflow-hidden shrink-0 border border-border/60 cursor-pointer shadow-xs"
+              >
                 <input
                   type="color"
+                  aria-label="Custom glow color picker"
                   [(ngModel)]="customColorInput"
                   class="absolute -top-2 -left-2 w-12 h-12 cursor-pointer border-0 p-0"
                 />
@@ -203,6 +144,7 @@
                 [(ngModel)]="customColorInput"
                 maxlength="7"
                 placeholder="#8b5cf6"
+                aria-label="Custom glow hex color"
                 class="w-full bg-transparent text-xs font-mono font-bold text-foreground focus:outline-hidden uppercase"
               />
             </div>
@@ -211,12 +153,15 @@
           <!-- Custom Name Input -->
           <div class="space-y-1.5">
             <label class="block text-[11px] font-bold text-muted-foreground">Glow Aura Name</label>
-            <div class="flex items-center gap-2 bg-background border border-border/80 rounded-2xl p-2 shadow-xs">
+            <div
+              class="flex items-center gap-2 bg-background border border-border/80 rounded-2xl p-2 shadow-xs"
+            >
               <lucide-icon name="sparkles" class="w-4 h-4 text-primary shrink-0 ml-1"></lucide-icon>
               <input
                 type="text"
                 [(ngModel)]="customNameInput"
                 maxlength="30"
+                aria-label="Custom glow name"
                 placeholder="Name your custom glow..."
                 class="w-full bg-transparent text-xs font-bold text-foreground focus:outline-hidden"
               />
@@ -232,7 +177,10 @@
               (click)="resetToDefaultGlow()"
               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold transition-all cursor-pointer border border-border/60"
             >
-              <lucide-icon name="rotate-ccw" class="w-3.5 h-3.5 text-muted-foreground"></lucide-icon>
+              <lucide-icon
+                name="rotate-ccw"
+                class="w-3.5 h-3.5 text-muted-foreground"
+              ></lucide-icon>
               <span>Reset to Default Glow</span>
             </button>
           }
@@ -249,17 +197,23 @@
     } @else {
       <!-- 21-Day Custom Glow Locked Teaser Card -->
       <div class="p-5 rounded-3xl bg-card border border-border/60 shadow-xs space-y-3">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center">
+            <div
+              class="w-8 h-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center"
+            >
               <lucide-icon name="lock" class="w-4 h-4"></lucide-icon>
             </div>
             <div>
               <h4 class="text-sm font-bold text-foreground">21-Day Custom Glow Studio</h4>
-              <p class="text-[11px] text-muted-foreground">Mastery reward: craft and name your own signature hue</p>
+              <p class="text-[11px] text-muted-foreground">
+                Mastery reward: craft and name your own signature hue
+              </p>
             </div>
           </div>
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border/40">
+          <span
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border/40"
+          >
             <lucide-icon name="lock" class="w-3 h-3 text-muted-foreground"></lucide-icon>
             <span>21-Day Lock</span>
           </span>
@@ -284,8 +238,8 @@
 
   <!-- 3. Milestones & Badges -->
   <div class="mb-8">
-    <div class="flex items-center justify-between mb-3 px-1">
-      <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+      <div class="flex flex-wrap items-center gap-2">
         <div class="w-7 h-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
           <lucide-icon name="trophy" class="w-4 h-4"></lucide-icon>
         </div>
@@ -294,7 +248,9 @@
           <p class="text-[11px] text-muted-foreground">Your achievements and companion badges</p>
         </div>
       </div>
-      <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+      <span
+        class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20"
+      >
         {{ unlockedBadgesCount() }} / {{ badges().length }} Unlocked
       </span>
     </div>
@@ -323,13 +279,18 @@
             <div class="flex items-center justify-between gap-1">
               <h4 class="text-xs font-bold text-foreground truncate">{{ badge.name }}</h4>
               @if (badge.isUnlocked) {
-                <span class="text-[9px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded-md">
+                <span
+                  class="text-[9px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded-md"
+                >
                   ✓
                 </span>
               }
             </div>
             <p class="text-[10px] text-muted-foreground truncate">{{ badge.description }}</p>
-            <p class="text-[9px] font-medium mt-0.5" [class]="badge.isUnlocked ? 'text-primary' : 'text-muted-foreground'">
+            <p
+              class="text-[9px] font-medium mt-0.5"
+              [class]="badge.isUnlocked ? 'text-primary' : 'text-muted-foreground'"
+            >
               {{ badge.progressText }}
             </p>
           </div>
@@ -354,10 +315,10 @@
           type="button"
           (click)="setThemeMode('light')"
           class="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-          [class.bg-primary/15]="themeService.mode() === 'light'"
+          [ngClass]="
+            themeService.mode() === 'light' ? 'bg-primary/15 border-primary/40' : 'border-border/60'
+          "
           [class.text-primary]="themeService.mode() === 'light'"
-          [class.border-primary/40]="themeService.mode() === 'light'"
-          [class.border-border/60]="themeService.mode() !== 'light'"
           [class.text-muted-foreground]="themeService.mode() !== 'light'"
         >
           <lucide-icon name="sun" class="w-3.5 h-3.5"></lucide-icon>
@@ -368,10 +329,12 @@
           type="button"
           (click)="setThemeMode('system')"
           class="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-          [class.bg-primary/15]="themeService.mode() === 'system'"
+          [ngClass]="
+            themeService.mode() === 'system'
+              ? 'bg-primary/15 border-primary/40'
+              : 'border-border/60'
+          "
           [class.text-primary]="themeService.mode() === 'system'"
-          [class.border-primary/40]="themeService.mode() === 'system'"
-          [class.border-border/60]="themeService.mode() !== 'system'"
           [class.text-muted-foreground]="themeService.mode() !== 'system'"
         >
           <lucide-icon name="monitor" class="w-3.5 h-3.5"></lucide-icon>
@@ -382,10 +345,10 @@
           type="button"
           (click)="setThemeMode('dark')"
           class="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-          [class.bg-primary/15]="themeService.mode() === 'dark'"
+          [ngClass]="
+            themeService.mode() === 'dark' ? 'bg-primary/15 border-primary/40' : 'border-border/60'
+          "
           [class.text-primary]="themeService.mode() === 'dark'"
-          [class.border-primary/40]="themeService.mode() === 'dark'"
-          [class.border-border/60]="themeService.mode() !== 'dark'"
           [class.text-muted-foreground]="themeService.mode() !== 'dark'"
         >
           <lucide-icon name="moon" class="w-3.5 h-3.5"></lucide-icon>
@@ -399,16 +362,21 @@
       <button
         type="button"
         (click)="toggleWhatsNew()"
+        [attr.aria-expanded]="isWhatsNewExpanded()"
         class="w-full flex items-center justify-between text-left transition-colors cursor-pointer"
       >
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center">
+          <div
+            class="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center"
+          >
             <lucide-icon name="sparkles" class="w-4 h-4"></lucide-icon>
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <h4 class="text-xs font-bold text-foreground">What's New</h4>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20"
+              >
                 v{{ versionService.currentVersion }}
               </span>
             </div>
@@ -425,16 +393,20 @@
         <div class="mt-4 pt-3 border-t border-border/50 space-y-4 animate-fade-in">
           @for (release of versionService.changelog; track release.version) {
             <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
+              <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5">
                   <span class="text-xs font-bold text-foreground">v{{ release.version }}</span>
-                  <span class="text-[11px] font-medium text-muted-foreground">— {{ release.title }}</span>
+                  <span class="text-[11px] font-medium text-muted-foreground"
+                    >— {{ release.title }}</span
+                  >
                 </div>
                 <span class="text-[10px] font-mono text-muted-foreground">{{ release.date }}</span>
               </div>
               <ul class="space-y-1 pl-1">
                 @for (item of release.highlights; track item) {
-                  <li class="flex items-start gap-2 text-[11px] text-muted-foreground leading-relaxed">
+                  <li
+                    class="flex items-start gap-2 text-[11px] text-muted-foreground leading-relaxed"
+                  >
                     <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5"></span>
                     <span>{{ item }}</span>
                   </li>
@@ -448,7 +420,7 @@
 
     <!-- Account Settings -->
     <div class="bg-card border border-border/60 rounded-2xl p-4 shadow-xs space-y-3">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h4 class="text-xs font-bold text-foreground">Account Actions</h4>
           <p class="text-[10px] text-muted-foreground">Manage your session and account data</p>

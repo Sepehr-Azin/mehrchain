@@ -8,7 +8,6 @@ import { ChainInvitePayload, ChainService } from '../../core/services/chain.serv
 import { CommitmentService } from '../../core/services/commitment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { MeroCustomizationService } from '../../core/services/mero-customization.service';
 import { MeroComponent } from '../../shared/components/mero/mero';
 import { ChainCardComponent } from './components/chain-card/chain-card';
 import { InviteSectionComponent } from './components/invite-section/invite-section';
@@ -34,7 +33,6 @@ export class ChainComponent {
   public commitmentService = inject(CommitmentService);
   public authService = inject(AuthService);
   public themeService = inject(ThemeService);
-  public customizationService = inject(MeroCustomizationService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 

@@ -2,24 +2,25 @@ import { CommonModule } from '@angular/common';
 import { Component, input, output, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { Commitment } from '@mehrchain/shared-data';
-import { McBadgeComponent, McCardComponent } from '../../ui';
+import { McCardComponent } from '../../ui';
 
 @Component({
   selector: 'app-commitment-card',
-  imports: [CommonModule, LucideAngularModule, McCardComponent, McBadgeComponent],
+  imports: [CommonModule, LucideAngularModule, McCardComponent],
   templateUrl: './commitment-card.html',
   styleUrl: './commitment-card.css',
 })
 export class CommitmentCardComponent {
   commitment = input.required<Commitment>();
   supportersCount = input<number>(0);
+  pending = input(false);
+  errorMessage = input<string | null>(null);
   onComplete = output<string>();
   onDelete = output<string>();
   onArchive = output<string>();
   onEdit = output<string>();
 
   isMenuOpen = signal(false);
-  isSparking = signal(false);
 
   toggleMenu(e: Event) {
     e.stopPropagation();
@@ -31,33 +32,7 @@ export class CommitmentCardComponent {
   }
 
   handleSpark() {
-    if (this.isSparking()) return;
-    this.isSparking.set(true);
-
-    // Allow CSS scale, glow pulse, and icon spin animation to play out
-    setTimeout(() => {
-      this.onComplete.emit(this.commitment().id);
-      this.isSparking.set(false);
-    }, 400);
-  }
-
-  get progressPercent() {
-    if (this.commitment().totalDays === -1) {
-      return 100;
-    }
-    return Math.round((this.commitment().currentDay / this.commitment().totalDays) * 100);
-  }
-
-  get weekDots() {
-    const current = this.commitment().currentDay;
-    const completed = this.commitment().isCompletedToday;
-    return Array(7)
-      .fill(0)
-      .map((_, i) => {
-        const dayIndex = i + 1;
-        if (dayIndex < current % 7 || (dayIndex === current % 7 && completed)) return 'filled';
-        if (dayIndex === current % 7 && !completed) return 'current';
-        return 'empty';
-      });
+    if (this.pending() || this.commitment().isCompletedToday) return;
+    this.onComplete.emit(this.commitment().id);
   }
 }

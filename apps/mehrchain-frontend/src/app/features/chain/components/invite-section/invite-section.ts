@@ -1,3 +1,4 @@
+import { DialogAccessibilityDirective } from '../../../../shared/directives/dialog-accessibility.directive';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -9,7 +10,13 @@ import { QrCodeComponent } from '../../../../shared/components/qr-code/qr-code';
 @Component({
   selector: 'app-invite-section',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, QrCodeComponent],
+  imports: [
+    DialogAccessibilityDirective,
+    CommonModule,
+    RouterLink,
+    LucideAngularModule,
+    QrCodeComponent,
+  ],
   templateUrl: './invite-section.html',
   styleUrls: ['./invite-section.css'],
 })

@@ -2,9 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import {
-  MeroCustomizationService,
-} from '../../core/services/mero-customization.service';
+import { MeroCustomizationService } from '../../core/services/mero-customization.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService, ThemeMode } from '../../core/services/theme.service';
 import { CommitmentService } from '../../core/services/commitment.service';
@@ -28,12 +26,7 @@ export interface ProfileBadge {
 
 @Component({
   selector: 'app-profile',
-  imports: [
-    CommonModule,
-    FormsModule,
-    LucideAngularModule,
-    MeroComponent,
-  ],
+  imports: [CommonModule, FormsModule, LucideAngularModule, MeroComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -48,10 +41,8 @@ export class ProfileComponent {
   // What's New Collapsible State
   isWhatsNewExpanded = signal<boolean>(false);
 
-  // Nickname Editing State
-  nicknameInput = signal<string>(this.customization.nickname());
-  isEditingNickname = signal<boolean>(false);
   saveFeedbackMessage = signal<string | null>(null);
+  saveFailed = signal(false);
 
   // Custom Glow 21-Day Studio State
   customColorInput = signal<string>(this.customization.customGlowColor());
@@ -91,7 +82,7 @@ export class ProfileComponent {
     const hasPublicOrChain =
       connections.length > 0 || this.commitmentService.commitments().some((c) => c.isPublic);
     const hasHeartReaction = connections.some(
-      (c) => c.heartSent === true || (c.lastPartnerActivityAt && c.status === 'ACTIVE')
+      (c) => c.heartSent === true || (c.lastPartnerActivityAt && c.status === 'ACTIVE'),
     );
 
     return [
@@ -143,7 +134,7 @@ export class ProfileComponent {
   // 21-day Streak progress
   isCustomThemeUnlocked = computed(() => this.currentStreak() >= 21);
   customStreakProgress = computed(() =>
-    Math.min(100, Math.round((this.currentStreak() / 21) * 100))
+    Math.min(100, Math.round((this.currentStreak() / 21) * 100)),
   );
 
   constructor() {
@@ -155,25 +146,6 @@ export class ProfileComponent {
     this.isWhatsNewExpanded.update((v) => !v);
   }
 
-  startEditingNickname(): void {
-    this.nicknameInput.set(this.customization.nickname());
-    this.isEditingNickname.set(true);
-  }
-
-  saveNickname(): void {
-    const val = this.nicknameInput().trim();
-    if (val.length > 0) {
-      this.customization.setNickname(val);
-      this.isEditingNickname.set(false);
-      this.showSaveFeedback('Companion name saved successfully');
-    }
-  }
-
-  cancelEditingNickname(): void {
-    this.nicknameInput.set(this.customization.nickname());
-    this.isEditingNickname.set(false);
-  }
-
   applyPresetCustomColor(preset: PresetCustomColor): void {
     this.customColorInput.set(preset.hex);
     this.customNameInput.set(preset.name);
@@ -181,21 +153,38 @@ export class ProfileComponent {
 
   saveCustomGlow(): void {
     if (!this.isCustomThemeUnlocked()) {
-      this.showSaveFeedback('Custom Glow Studio unlocks at a 21-day streak');
+      this.showSaveFeedback('Custom Glow Studio unlocks at a 21-day streak', true);
       return;
     }
 
     const name = this.customNameInput().trim() || 'Custom Aura';
     const color = this.customColorInput().trim() || '#8b5cf6';
 
-    this.customization.setCustomGlow(name, color);
-    this.customization.setGlowTheme('custom');
-    this.showSaveFeedback(`Custom glow "${name}" saved & applied to Mero!`);
+    try {
+      this.customization.setCustomGlow(name, color);
+      if (!this.customization.setGlowTheme('custom')) {
+        this.showSaveFeedback('Custom Glow Studio unlocks at a 21-day streak', true);
+        return;
+      }
+      this.showSaveFeedback(`Custom glow "${name}" saved & applied on this device.`);
+    } catch (error) {
+      this.showSaveFeedback(
+        error instanceof Error ? error.message : 'Could not save glow. Try again.',
+        true,
+      );
+    }
   }
 
   resetToDefaultGlow(): void {
-    this.customization.resetToDefaultGlow();
-    this.showSaveFeedback('Reset to default warm glow');
+    try {
+      this.customization.resetToDefaultGlow();
+      this.showSaveFeedback('Reset to default warm glow');
+    } catch (error) {
+      this.showSaveFeedback(
+        error instanceof Error ? error.message : 'Could not reset glow. Try again.',
+        true,
+      );
+    }
   }
 
   setThemeMode(mode: ThemeMode): void {
@@ -222,8 +211,10 @@ export class ProfileComponent {
     }
   }
 
-  private showSaveFeedback(msg: string): void {
+  private showSaveFeedback(msg: string, failed = false): void {
+    this.saveFailed.set(failed);
     this.saveFeedbackMessage.set(msg);
+    if (failed) return;
     setTimeout(() => {
       if (this.saveFeedbackMessage() === msg) {
         this.saveFeedbackMessage.set(null);

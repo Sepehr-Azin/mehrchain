@@ -1,31 +1,16 @@
-<div
-  class="relative inline-flex items-center justify-center select-none transition-transform duration-200"
-  [ngClass]="sizeClasses()"
-  [class.cursor-pointer]="interactive()"
-  [class.active:scale-95]="interactive()"
-  (click)="handleClick($event)"
->
+<div class="relative inline-flex items-center justify-center select-none" [ngClass]="sizeClasses()">
   <!-- Warm Belly Glow Light -->
   @if (showGlow()) {
-    <div
-      class="mero-belly-glow"
-      [style.background]="effectiveGradient()"
-      [class.glow-celebrate]="effectiveState() === 'celebrating'"
-      [class.glow-dim]="effectiveState() === 'sleepy'"
-    ></div>
+    <div class="mero-belly-glow" [style.background]="effectiveGradient()"></div>
   }
 
-  <!-- Physical Mascot Body Container with Motion States -->
-  <div
-    class="relative w-full h-full flex items-center justify-center transform-gpu"
-    [class.mero-celebrating]="effectiveState() === 'celebrating'"
-    [class.mero-sleepy]="effectiveState() === 'sleepy'"
-  >
+  <!-- Static mascot and glow; profile navigation belongs to the surrounding link. -->
+  <div class="relative w-full h-full flex items-center justify-center">
     <!-- Base 3D Mascot Image -->
     <img
       src="assets/mero.png"
-      alt="Mero Mascot"
-      class="w-full h-full object-contain relative z-10 pointer-events-none select-none drop-shadow-sm transition-all duration-300"
+      alt="Mero"
+      class="w-full h-full object-contain relative z-10 pointer-events-none select-none drop-shadow-sm"
     />
   </div>
 </div>

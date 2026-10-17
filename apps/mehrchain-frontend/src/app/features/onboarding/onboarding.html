@@ -5,7 +5,7 @@
   appSwipe
   (swipeLeft)="onSwipeLeft()"
   (swipeRight)="onSwipeRight()"
-  class="h-[100dvh] max-h-[100dvh] flex flex-col items-center justify-between px-3 sm:px-6 pb-3 sm:pb-6 safe-top-sm bg-background relative overflow-hidden font-sans select-none overscroll-none"
+  class="min-h-[100dvh] flex flex-col items-center gap-4 px-4 sm:px-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] safe-top-sm bg-background relative font-sans"
 >
   <!-- Floating Back Button -->
   @if (step() > 0) {
@@ -20,15 +20,13 @@
   }
 
   <!-- Top Section: Mascot & Hero Title (Proportional & Auto Centered) -->
-  <div
-    class="flex-1 flex flex-col items-center justify-center w-full max-w-md transition-all duration-500 ease-out py-1 sm:py-4 min-h-0 shrink"
-  >
+  <div class="flex flex-col items-center justify-center w-full max-w-md pt-12 pb-2">
     <div
-      class="relative flex items-center justify-center filter drop-shadow-2xl transition-all duration-500 shrink"
+      class="relative flex items-center justify-center"
       [class.mb-4]="step() === 0"
       [class.mb-0]="step() > 0"
     >
-      <app-mero [size]="step() === 0 ? 'hero' : 'sm'" [showGlow]="true" [floating]="step() === 0" />
+      <app-mero [size]="step() === 0 ? 'lg' : 'sm'" [showGlow]="true" />
     </div>
 
     @if (step() === 0) {
@@ -48,7 +46,7 @@
 
   <!-- Bottom Floating Card (Proportional content-driven height with overflow containment) -->
   <div
-    class="w-full max-w-md bg-card rounded-3xl sm:rounded-[2rem] shadow-float p-4 sm:p-7 flex flex-col justify-between animate-slide-up relative z-10 border border-white/20 backdrop-blur-sm overflow-y-auto max-h-[calc(100dvh-120px)] sm:max-h-none custom-scrollbar shrink-0"
+    class="w-full max-w-md bg-card rounded-3xl shadow-soft p-4 sm:p-6 flex flex-col justify-between relative border border-border/50"
   >
     @switch (step()) {
       @case (0) {

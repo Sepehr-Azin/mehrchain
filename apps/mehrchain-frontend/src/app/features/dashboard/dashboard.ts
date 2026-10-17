@@ -4,8 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommitmentService } from '../../core/services/commitment.service';
 import { ChainService } from '../../core/services/chain.service';
-import { MeroService } from '../../core/services/mero.service';
-import { MeroCustomizationService } from '../../core/services/mero-customization.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { Commitment } from '@mehrchain/shared-data';
@@ -36,8 +34,6 @@ export class DashboardComponent {
   commitmentService = inject(CommitmentService);
   chainService = inject(ChainService);
   themeService = inject(ThemeService);
-  meroService = inject(MeroService);
-  customizationService = inject(MeroCustomizationService);
   notificationService = inject(NotificationService);
   router = inject(Router);
   saving = signal(false);
@@ -46,6 +42,8 @@ export class DashboardComponent {
   deletingCommitment = signal<Commitment | null>(null);
   editingCommitment = signal<Commitment | null>(null);
   toastMessage = signal<string | null>(null);
+  completingIds = signal<ReadonlySet<string>>(new Set());
+  completionErrors = signal<Record<string, string>>({});
 
   toggleTheme() {
     const nextMode = this.themeService.isDark() ? 'light' : 'dark';
@@ -64,7 +62,6 @@ export class DashboardComponent {
     try {
       const newCommitment = await this.commitmentService.addCommitment(data);
       this.isModalOpen.set(false);
-      this.meroService.setState('celebrating');
 
       // Schedule notification if reminder time exists
       if (data.reminderTime) {
@@ -83,8 +80,6 @@ export class DashboardComponent {
           })
           .catch(() => this.showToast('Habit saved. Reminder could not be scheduled.'));
       }
-
-      setTimeout(() => this.meroService.setState('idle'), 3000);
     } catch (error) {
       this.saveError.set(
         error instanceof Error ? error.message : 'Could not save habit. Try again.',
@@ -95,15 +90,26 @@ export class DashboardComponent {
   }
 
   async handleComplete(id: string) {
+    if (this.completingIds().has(id)) return;
+    this.completingIds.update((ids) => new Set([...ids, id]));
+    this.completionErrors.update((errors) => {
+      const next = { ...errors };
+      delete next[id];
+      return next;
+    });
     try {
       await this.commitmentService.completeCommitment(id);
-      this.meroService.setState('happy');
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      setTimeout(() => this.meroService.setState('idle'), 2000);
     } catch (error) {
-      this.showToast(error instanceof Error ? error.message : 'Could not save Spark. Try again.');
+      this.completionErrors.update((errors) => ({
+        ...errors,
+        [id]: error instanceof Error ? error.message : 'Could not save completion. Try again.',
+      }));
+    } finally {
+      this.completingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(id);
+        return next;
+      });
     }
   }
 

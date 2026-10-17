@@ -66,26 +66,24 @@ describe('CommitmentCard', () => {
     expect(editSpy).toHaveBeenCalledWith('comm-1');
   });
 
-  it('should render Spark button with sparkles icon when not completed today', () => {
+  it('should render the daily action when not completed today', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const sparkBtn = compiled.querySelector('.spark-btn');
     expect(sparkBtn).toBeTruthy();
-    expect(sparkBtn?.textContent).toContain('Spark');
-    expect(compiled.querySelector('lucide-icon[name="sparkles"]')).toBeTruthy();
+    expect(sparkBtn?.textContent).toContain('Complete today');
   });
 
-  it('should trigger handleSpark and emit onComplete after animation delay', () => {
-    vi.useFakeTimers();
+  it('should emit immediately and ignore further actions while the request is pending', () => {
     const completeSpy = vi.fn();
     component.onComplete.subscribe(completeSpy);
 
     component.handleSpark();
-    expect(component.isSparking()).toBe(true);
-
-    vi.advanceTimersByTime(400);
     expect(completeSpy).toHaveBeenCalledWith('comm-1');
-    expect(component.isSparking()).toBe(false);
-    vi.useRealTimers();
+    fixture.componentRef.setInput('pending', true);
+    fixture.detectChanges();
+    component.handleSpark();
+    expect(completeSpy).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.textContent).toContain('Saving...');
   });
 
   it('should render Completed state when isCompletedToday is true', () => {
@@ -104,7 +102,8 @@ describe('CommitmentCard', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.spark-btn')).toBeFalsy();
-    expect(compiled.textContent).toContain('Completed ✓');
+    expect(compiled.textContent).toContain('Completed');
+    expect(compiled.querySelectorAll('lucide-icon[name="check"]')).toHaveLength(1);
     expect(compiled.querySelector('button[disabled]')).toBeTruthy();
   });
 
@@ -123,7 +122,10 @@ describe('CommitmentCard', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Day 12 • Endless Journey');
-    expect(component.progressPercent).toBe(100);
+    expect(compiled.textContent).toContain('12 day streak');
+    expect(compiled.textContent).not.toContain('100%');
+    component.toggleMenu(new MouseEvent('click'));
+    fixture.detectChanges();
+    expect(compiled.textContent).toContain('12 days completed');
   });
 });

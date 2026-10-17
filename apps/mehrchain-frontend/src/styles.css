@@ -4,6 +4,8 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
+  --app-shell-width: 34rem;
+  --app-navigation-height: calc(5rem + env(safe-area-inset-bottom, 0px));
   /* Light Theme Palette */
   --color-background: hsl(210 20% 98%);
   --color-foreground: hsl(220 29% 17%);
@@ -103,7 +105,9 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Custom Components */
@@ -194,26 +198,95 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 /* Modal containment */
 .custom-scrollbar,
-[role="dialog"],
+[role='dialog'],
 .overflow-y-auto {
   overscroll-behavior: contain;
+}
+
+/* Shared viewport anchors use the same width as the routed content. */
+.app-page {
+  min-height: calc(100dvh - var(--app-navigation-height));
+}
+
+.app-fab {
+  position: fixed;
+  right: calc(
+    max(0px, (100% - var(--app-shell-width)) / 2) + max(1.25rem, env(safe-area-inset-right, 0px))
+  );
+  bottom: calc(var(--app-navigation-height) + 1rem);
+}
+
+.app-toast {
+  position: fixed;
+  z-index: 70;
+  inset-inline: 1rem;
+  bottom: calc(var(--app-navigation-height) + 1rem);
+  width: fit-content;
+  max-width: min(calc(100% - 2rem), calc(var(--app-shell-width) - 2rem));
+  max-height: calc(100dvh - var(--app-navigation-height) - 3rem);
+  overflow-y: auto;
+  margin-inline: auto;
+}
+
+.app-banner {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  inset-inline: max(1rem, calc((100% - var(--app-shell-width)) / 2 + 1rem));
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 2rem);
+  overflow-y: auto;
+}
+
+.app-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+}
+
+.app-dialog {
+  position: relative;
+  width: 100%;
+  max-width: min(30rem, calc(var(--app-shell-width) - 2rem));
+  max-height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+
+/* Prevent flex/grid inputs and long account/habit names from forcing a wider shell. */
+input,
+textarea,
+select {
+  min-width: 0;
+  max-width: 100%;
+  scroll-margin-block: 1rem;
+}
+
+:where(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 3px;
 }
 
 /* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

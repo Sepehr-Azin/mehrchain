@@ -1,3 +1,4 @@
+import { DialogAccessibilityDirective } from '../../directives/dialog-accessibility.directive';
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
@@ -6,7 +7,7 @@ import { McButtonComponent } from '../../ui';
 
 @Component({
   selector: 'app-delete-confirmation-modal',
-  imports: [CommonModule, LucideAngularModule, McButtonComponent],
+  imports: [DialogAccessibilityDirective, CommonModule, LucideAngularModule, McButtonComponent],
   templateUrl: './delete-confirmation-modal.html',
 })
 export class DeleteConfirmationModal {

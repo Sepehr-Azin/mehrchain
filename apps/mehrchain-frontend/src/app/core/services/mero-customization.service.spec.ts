@@ -1,8 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  MeroCustomizationService,
-  DEFAULT_GLOW_THEME,
-} from './mero-customization.service';
+import { MeroCustomizationService, DEFAULT_GLOW_THEME } from './mero-customization.service';
 import { CommitmentService } from './commitment.service';
 import { ThemeService } from './theme.service';
 import { signal } from '@angular/core';
@@ -41,15 +38,6 @@ describe('MeroCustomizationService', () => {
     expect(service.selectedThemeId()).toBe('golden');
     expect(service.personality()).toBe('calm');
     expect(service.activeTheme().id).toBe('golden');
-  });
-
-  it('should update nickname correctly when valid', () => {
-    service.setNickname('Sparky');
-    expect(service.nickname()).toBe('Sparky');
-
-    // Should ignore empty or whitespace-only names
-    service.setNickname('   ');
-    expect(service.nickname()).toBe('Sparky');
   });
 
   it('should adapt effective gradient based on dark mode', () => {

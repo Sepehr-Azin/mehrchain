@@ -4,10 +4,10 @@
 @if (chainService.loadError()) {
   <p role="alert" class="p-4 text-sm text-red-500">{{ chainService.loadError() }}</p>
 }
-<div class="min-h-[100dvh] bg-background pb-28 px-4 sm:px-6 safe-top font-sans relative">
+<div class="app-page bg-background pb-6 px-4 sm:px-6 safe-top font-sans relative">
   <!-- Header with Mero avatar and Quick Theme Toggle -->
-  <div class="flex justify-between items-center mb-4">
-    <div>
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+    <div class="min-w-0">
       <h1 class="text-xl sm:text-2xl font-black text-foreground tracking-tight">MehrChain</h1>
       <p class="text-xs text-muted-foreground">Keep each other's lights burning with care.</p>
     </div>
@@ -17,6 +17,7 @@
         (click)="toggleTheme()"
         class="w-8 h-8 rounded-full bg-card border border-border/70 flex items-center justify-center text-foreground hover:border-primary/50 shadow-xs transition-all active:scale-95 cursor-pointer"
         [title]="themeService.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        [attr.aria-label]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
       >
         <lucide-icon
           [name]="themeService.isDark() ? 'sun' : 'moon'"
@@ -25,10 +26,11 @@
       </button>
       <a
         routerLink="/profile"
-        class="relative flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-        [title]="'Profile • ' + customizationService.nickname()"
+        class="flex items-center gap-1 rounded-xl text-xs text-muted-foreground hover:text-foreground"
+        aria-label="Open profile"
       >
         <app-mero size="xs" [showGlow]="true" />
+        <span>Profile</span>
       </a>
     </div>
   </div>
@@ -184,7 +186,8 @@
   <!-- Toast Notification -->
   @if (toastMessage()) {
     <div
-      class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-50 animate-fade-in"
+      class="app-toast bg-foreground text-background px-4 py-2.5 rounded-2xl text-xs font-medium shadow-lg flex items-center gap-2 z-50"
+      role="status"
     >
       <lucide-icon name="check-circle-2" class="w-4 h-4 text-teal-400"></lucide-icon>
       <span>{{ toastMessage() }}</span>

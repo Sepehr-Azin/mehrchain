@@ -36,18 +36,6 @@ describe('ProfileComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should allow editing and saving nickname', () => {
-    component.startEditingNickname();
-    expect(component.isEditingNickname()).toBe(true);
-
-    component.nicknameInput.set('Sparky');
-    component.saveNickname();
-
-    expect(component.isEditingNickname()).toBe(false);
-    expect(customizationService.nickname()).toBe('Sparky');
-    expect(component.saveFeedbackMessage()).toContain('saved successfully');
-  });
-
   it('should prevent saving custom glow when streak is less than 21', () => {
     streakSignal.set(5);
     fixture.detectChanges();
@@ -110,7 +98,7 @@ describe('ProfileComponent', () => {
 
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('What\'s New');
+    expect(compiled.textContent).toContain("What's New");
     expect(compiled.textContent).toContain('v1.0.0');
     expect(compiled.textContent).toContain('Spark Button');
   });

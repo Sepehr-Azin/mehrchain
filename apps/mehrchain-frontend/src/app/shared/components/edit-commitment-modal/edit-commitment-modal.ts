@@ -1,3 +1,4 @@
+import { DialogAccessibilityDirective } from '../../directives/dialog-accessibility.directive';
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,13 @@ import {
 
 @Component({
   selector: 'app-edit-commitment-modal',
-  imports: [CommonModule, FormsModule, LucideAngularModule, McButtonComponent],
+  imports: [
+    DialogAccessibilityDirective,
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    McButtonComponent,
+  ],
   templateUrl: './edit-commitment-modal.html',
 })
 export class EditCommitmentModal {
