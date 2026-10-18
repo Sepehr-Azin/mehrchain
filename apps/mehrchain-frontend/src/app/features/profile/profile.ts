@@ -9,6 +9,7 @@ import { CommitmentService } from '../../core/services/commitment.service';
 import { ChainService } from '../../core/services/chain.service';
 import { VersionService } from '../../core/services/version.service';
 import { MeroComponent } from '../../shared/components/mero/mero';
+import { MeroMoodService } from '../../core/services/mero-mood.service';
 
 export interface PresetCustomColor {
   name: string;
@@ -37,6 +38,7 @@ export class ProfileComponent {
   commitmentService = inject(CommitmentService);
   chainService = inject(ChainService);
   versionService = inject(VersionService);
+  readonly meroMood = inject(MeroMoodService);
 
   // What's New Collapsible State
   isWhatsNewExpanded = signal<boolean>(false);

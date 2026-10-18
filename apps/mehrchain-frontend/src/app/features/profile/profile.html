@@ -45,7 +45,7 @@
     timezone stays fixed when you travel or change device settings.
   </p>
   <div class="bg-card rounded-3xl p-5 border border-border/70 shadow-sm mb-6 text-center">
-    <app-mero size="lg" [showGlow]="true" />
+    <app-mero size="lg" [showGlow]="true" [mood]="meroMood.mood() === 'sad' ? 'sad' : 'happy'" />
     <h2 class="mt-2 text-xl font-bold text-foreground">Mero</h2>
     <p class="mt-1 text-xs text-muted-foreground">A little company for your daily steps.</p>
     <p class="mt-3 text-xs text-muted-foreground">
