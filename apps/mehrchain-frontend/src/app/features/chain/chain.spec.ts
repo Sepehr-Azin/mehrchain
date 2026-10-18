@@ -25,6 +25,7 @@ describe('ChainComponent', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     localStorage.clear();
   });
 
@@ -33,22 +34,41 @@ describe('ChainComponent', () => {
   });
 
   it('should sort connections by most recent activity first', async () => {
-    // Add two connections
+    const firstHabit = await commitmentService.addCommitment({
+      title: 'Habit 1',
+      category: 'growth',
+      totalDays: -1,
+      isPublic: true,
+    });
+    const secondHabit = await commitmentService.addCommitment({
+      title: 'Habit 2',
+      category: 'growth',
+      totalDays: -1,
+      isPublic: true,
+    });
+    vi.useFakeTimers({ toFake: ['Date'] });
+
+    // Insert the newer activity first so insertion order differs from sort order.
+    vi.setSystemTime(new Date('2026-01-02T12:00:00.000Z'));
     await chainService.acceptInvite({
       inviterName: 'Partner1',
       habitTitle: 'Habit 1',
-      myCommitmentId: 'comm-1',
+      myCommitmentId: firstHabit.id,
     });
+    vi.setSystemTime(new Date('2026-01-01T12:00:00.000Z'));
     await chainService.acceptInvite({
       inviterName: 'Partner2',
       habitTitle: 'Habit 2',
-      myCommitmentId: 'comm-2',
+      myCommitmentId: secondHabit.id,
     });
 
     fixture.detectChanges();
+    expect(chainService.connections().map((connection) => connection.partner?.name)).toEqual([
+      'Partner2',
+      'Partner1',
+    ]);
     const sorted = component.sortedConnections();
-    expect(sorted.length).toBe(2);
-    expect(sorted[0].partner?.name).toBe('Partner2');
+    expect(sorted.map((connection) => connection.partner?.name)).toEqual(['Partner1', 'Partner2']);
   });
 
   it('should delegate heart, nudge, and disconnect actions to ChainService', async () => {
@@ -75,6 +95,8 @@ describe('ChainComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Articles');
     expect(compiled.textContent).toContain('Coming Soon');
-    expect(compiled.textContent).toContain('Short reads about kindness, habit chaining, and human connection.');
+    expect(compiled.textContent).toContain(
+      'Short reads about kindness, habit chaining, and human connection.',
+    );
   });
 });

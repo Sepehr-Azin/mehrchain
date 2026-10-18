@@ -31,7 +31,7 @@ describe('ColdStartBannerComponent', () => {
 
     const banner = fixture.nativeElement.querySelector('[role="status"]');
     expect(banner).toBeTruthy();
-    expect(banner.textContent).toContain('Waking up Mero...');
+    expect(banner.querySelector('h4')?.textContent).toBe('Still connecting...');
     expect(banner.textContent).toContain('Free servers need a moment to warm up');
   });
 

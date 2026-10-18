@@ -275,9 +275,12 @@ select {
   scroll-margin-block: 1rem;
 }
 
-:where(button, a, input, textarea, select, summary):focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 3px;
+/* A fallback: controls with their own focus border/ring can override this in utilities. */
+@layer base {
+  :where(button, a, input, textarea, select, summary):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+  }
 }
 
 /* Animations */

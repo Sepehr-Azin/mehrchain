@@ -17,7 +17,8 @@
   width: 100%;
   max-width: 37rem;
   min-width: 0;
-  margin: auto;
+  /* Keep compact mobile steps at the bottom; tall steps still scroll naturally. */
+  margin: auto auto 0;
 }
 
 .onboarding-header {
@@ -67,6 +68,10 @@
 
   .onboarding-card {
     padding: 2rem;
+  }
+
+  .onboarding-flow {
+    margin: auto;
   }
 }
 
