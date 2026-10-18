@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     region: frankfurt
-    buildCommand: npm ci --legacy-peer-deps && NX_DAEMON=false npm run build:backend:release
+    buildCommand: npm ci --include=dev --legacy-peer-deps && NX_DAEMON=false npm run build:backend:release
     startCommand: node dist/mehrchain-backend/main.js
     healthCheckPath: /api/version
     envVars:
