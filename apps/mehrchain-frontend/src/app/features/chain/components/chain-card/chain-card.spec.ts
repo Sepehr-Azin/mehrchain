@@ -6,224 +6,113 @@ import { commonTestProviders } from '../../../../../testing/test-providers';
 describe('ChainCardComponent', () => {
   let component: ChainCardComponent;
   let fixture: ComponentFixture<ChainCardComponent>;
-
-  const baseConnection: ChainConnection = {
-    id: 'conn-123',
-    userId: 'user-1',
-    partnerId: 'user-2',
-    userCommitmentId: 'comm-1',
-    partnerCommitmentId: 'comm-2',
+  const connection: ChainConnection = {
+    id: 'conn-1',
+    userId: 'me',
+    partnerId: 'partner',
+    userCommitmentId: 'own-habit',
+    partnerCommitmentId: 'partner-habit',
     status: 'ACTIVE',
     consecutiveMissedDays: 0,
     heartSent: false,
-    createdAt: new Date().toISOString(),
-    partner: {
-      username: 'sara_habits',
-      name: 'Sara Smith',
-    },
-    partnerCommitment: {
-      title: 'Morning Meditation',
-      category: 'health',
-      lastCompletedDate: null,
-    },
+    createdAt: '2026-10-18T00:00:00Z',
+    partner: { username: 'sara', name: 'Sara Smith' },
+    partnerCommitment: { title: 'Morning Meditation', category: 'health', isCompletedToday: false },
   };
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ChainCardComponent],
       providers: [...commonTestProviders],
     }).compileComponents();
-
     fixture = TestBed.createComponent(ChainCardComponent);
     component = fixture.componentInstance;
-  });
-
-  it('should create the component', () => {
-    fixture.componentRef.setInput('connection', baseConnection);
+    fixture.componentRef.setInput('connection', connection);
     fixture.detectChanges();
-    expect(component).toBeTruthy();
   });
-
-  it('shows received support separately from a heart sent to the partner', () => {
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      heartSent: false,
-      heartReceived: true,
-    });
+  it('shows identification and one restrained current state without named support', () => {
+    fixture.componentRef.setInput('connection', { ...connection, receivedHeartCount: 2 });
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Sara Smith supported your habit today');
-    expect(component.isHeartSent()).toBe(false);
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('@sara');
+    expect(text).toContain('Morning Meditation');
+    expect(text).toContain('Not completed today');
+    expect(text).not.toContain('supported your habit');
+    expect(text).not.toContain('streak');
+    expect(text).not.toContain('Congratulate');
   });
-
-  it("shows today's completion immediately even when the cached status is fading", () => {
+  it('sends on click and keeps pending, sent and stale hearts disabled', () => {
+    const sent = vi.fn();
+    component.heartSend.subscribe(sent);
+    const button = fixture.nativeElement.querySelector(
+      'button[title="Send heart"]',
+    ) as HTMLButtonElement;
+    button.click();
+    expect(sent).toHaveBeenCalledWith('conn-1');
+    fixture.componentRef.setInput('pending', true);
+    fixture.detectChanges();
+    component.sendHeart();
+    expect(button.disabled).toBe(true);
+    expect(sent).toHaveBeenCalledTimes(1);
+    fixture.componentRef.setInput('pending', false);
+    fixture.componentRef.setInput('connection', { ...connection, heartSent: true });
+    fixture.detectChanges();
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-label')).toBe('Heart sent for this habit today');
+    fixture.componentRef.setInput('stale', true);
+    fixture.detectChanges();
+    expect(button.disabled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Refresh required');
+  });
+  it('offers the same heart action at a finite goal', () => {
+    fixture.componentRef.setInput('connection', { ...connection, status: 'COMPLETED' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Goal reached');
+    expect(fixture.nativeElement.querySelector('button[title="Send heart"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).not.toContain('Congratulate');
+  });
+  it('uses server completion state even when the device UTC date matches a timestamp', () => {
     fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      status: 'FADING',
-      consecutiveMissedDays: 2,
+      ...connection,
       partnerCommitment: {
-        ...baseConnection.partnerCommitment,
+        ...connection.partnerCommitment,
         lastCompletedDate: new Date().toISOString(),
-      },
-    });
-    fixture.detectChanges();
-    expect(component.visualState()).toBe('COMPLETED_TODAY');
-  });
-
-  it('should display partner username, display initial and habit title', () => {
-    fixture.componentRef.setInput('connection', baseConnection);
-    fixture.detectChanges();
-
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('@sara_habits');
-    expect(compiled.textContent).toContain('Morning Meditation');
-    expect(component.partnerAvatarInitial()).toBe('S');
-  });
-
-  it('should render WAITING state when active and not completed today', () => {
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      status: 'ACTIVE',
-      consecutiveMissedDays: 0,
-      partnerCommitment: {
-        ...baseConnection.partnerCommitment!,
-        lastCompletedDate: null,
-      },
-    });
-    fixture.detectChanges();
-
-    expect(component.visualState()).toBe('WAITING');
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain("Waiting for today's spark");
-  });
-
-  it('should render COMPLETED_TODAY state when partner completed habit today', () => {
-    const todayStr = new Date().toISOString();
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      status: 'ACTIVE',
-      consecutiveMissedDays: 0,
-      partnerCommitment: {
-        ...baseConnection.partnerCommitment!,
-        lastCompletedDate: todayStr,
-      },
-    });
-    fixture.detectChanges();
-
-    expect(component.visualState()).toBe('COMPLETED_TODAY');
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Completed today');
-  });
-
-  it('should render RESTING state when consecutive missed days is 1 or status is RESTING', () => {
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      status: 'RESTING',
-      consecutiveMissedDays: 1,
-    });
-    fixture.detectChanges();
-
-    expect(component.visualState()).toBe('RESTING');
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Resting today');
-  });
-
-  it('does not show the obsolete two-day reminder', () => {
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      status: 'FADING',
-      consecutiveMissedDays: 2,
-    });
-    fixture.detectChanges();
-
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).not.toContain('2 days away');
-    expect(compiled.textContent).not.toContain('Send Gentle Reminder');
-  });
-
-  it('should render JOURNEY_COMPLETED state and allow congratulating partner', () => {
-    let emittedId: string | undefined;
-    component.congratulate.subscribe((id) => (emittedId = id));
-
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      status: 'COMPLETED',
-    });
-    fixture.detectChanges();
-
-    expect(component.visualState()).toBe('JOURNEY_COMPLETED');
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Completed their journey!');
-    expect(compiled.textContent).toContain('Congratulate');
-
-    // Click congratulate button
-    const congratsButton = compiled.querySelector('button.bg-primary\\/10') as HTMLButtonElement;
-    expect(congratsButton).toBeTruthy();
-    congratsButton.click();
-    fixture.detectChanges();
-
-    expect(emittedId).toBe('conn-123');
-    expect(component.congratulated()).toBe(true);
-    expect(compiled.textContent).toContain('Congratulated!');
-  });
-
-  it('should emit heartToggle when heart button is clicked', () => {
-    let emittedId: string | undefined;
-    component.heartToggle.subscribe((id) => (emittedId = id));
-
-    fixture.componentRef.setInput('connection', baseConnection);
-    fixture.detectChanges();
-
-    const heartBtn = fixture.nativeElement.querySelector(
-      'button[aria-label="Send silent heart"]',
-    ) as HTMLButtonElement;
-    expect(heartBtn).toBeTruthy();
-    heartBtn.click();
-
-    expect(emittedId).toBe('conn-123');
-  });
-
-  it('should open options menu and emit disconnect', () => {
-    let disconnectedId: string | undefined;
-    component.disconnect.subscribe((id) => (disconnectedId = id));
-
-    fixture.componentRef.setInput('connection', baseConnection);
-    fixture.componentRef.setInput('myHabitTitle', 'Daily Reading');
-    fixture.detectChanges();
-
-    expect(component.isMenuOpen()).toBe(false);
-
-    // Click 3-dot options
-    const optionsBtn = fixture.nativeElement.querySelector(
-      'button[aria-label="Card options"]',
-    ) as HTMLButtonElement;
-    optionsBtn.click();
-    fixture.detectChanges();
-
-    expect(component.isMenuOpen()).toBe(true);
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Daily Reading');
-
-    // Click disconnect button
-    const disconnectBtn = compiled.querySelector('button.text-destructive') as HTMLButtonElement;
-    expect(disconnectBtn).toBeTruthy();
-    disconnectBtn.click();
-    fixture.detectChanges();
-
-    expect(disconnectedId).toBe('conn-123');
-    expect(component.isMenuOpen()).toBe(false);
-  });
-
-  it('uses server day state rather than the device UTC date', () => {
-    fixture.componentRef.setInput('connection', {
-      ...baseConnection,
-      partnerCommitment: {
-        ...baseConnection.partnerCommitment,
         isCompletedToday: false,
-        lastCompletedDate: new Date().toISOString(),
       },
     });
     fixture.detectChanges();
     expect(component.visualState()).toBe('WAITING');
-    expect(fixture.nativeElement.textContent).not.toContain('Send Gentle Reminder');
+    fixture.componentRef.setInput('connection', {
+      ...connection,
+      partnerCommitment: {
+        ...connection.partnerCommitment,
+        isCompletedToday: true,
+      },
+    });
+    fixture.detectChanges();
+    expect(component.visualState()).toBe('COMPLETED_TODAY');
+  });
+  it('keeps details/disconnect keyboard reachable and displays a retryable error', () => {
+    const disconnected = vi.fn();
+    component.disconnect.subscribe(disconnected);
+    fixture.componentRef.setInput('myHabitTitle', 'Daily Reading');
+    fixture.componentRef.setInput('errorMessage', 'Heart was not saved. Please retry.');
+    const options = fixture.nativeElement.querySelector(
+      'button[aria-label="Chain details and options"]',
+    ) as HTMLButtonElement;
+    options.click();
+    fixture.detectChanges();
+    expect(options.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.nativeElement.textContent).toContain('Daily Reading');
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
+      'Please retry',
+    );
+    const details = fixture.nativeElement.querySelector('#chain-details-conn-1') as HTMLElement;
+    details.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(component.isMenuOpen()).toBe(false);
+    component.toggleMenu();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('button.text-destructive') as HTMLButtonElement).click();
+    expect(disconnected).toHaveBeenCalledWith('conn-1');
   });
 });

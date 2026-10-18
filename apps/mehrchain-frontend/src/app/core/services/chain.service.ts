@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ChainConnection, ChainInvite } from '@mehrchain/shared-data';
 import { CommitmentService } from './commitment.service';
@@ -61,6 +61,14 @@ export class ChainService {
   readonly lastVisitAt = signal<string | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly loadError = signal<string | null>(null);
+  readonly supportStale = signal(true);
+  readonly pendingHeartTargets = signal<ReadonlySet<string>>(new Set());
+  private readonly heartRequests = new Map<string, Promise<ChainConnection | null>>();
+  private refreshTimer?: ReturnType<typeof setTimeout>;
+  private loadRequest?: { token: string; userId?: string; promise: Promise<ChainConnection[]> };
+  private mutationVersion = 0;
+  private sessionVersion = 0;
+  private destroyed = false;
 
   // Active commitment selection for invite in UI
   readonly selectedCommitmentId = signal<string>('');
@@ -84,13 +92,7 @@ export class ChainService {
   // Backwards compatibility for components still referencing friendChains
   readonly friendChains = computed<HabitChain[]>(() => {
     return this.activeConnections().map((conn) => {
-      const partnerLastCompleted = conn.partnerCommitment?.lastCompletedDate;
-      let completedToday = conn.partnerCommitment?.isCompletedToday ?? false;
-      if (conn.partnerCommitment?.isCompletedToday === undefined && partnerLastCompleted) {
-        const compDate = new Date(partnerLastCompleted).toISOString().split('T')[0];
-        const todayStr = new Date().toISOString().split('T')[0];
-        completedToday = compDate === todayStr;
-      }
+      const completedToday = conn.partnerCommitment?.isCompletedToday ?? false;
 
       return {
         id: conn.id,
@@ -103,13 +105,14 @@ export class ChainService {
         partnerCompletedToday: completedToday,
         partnerBroadcastedToday: false,
         myCompletedToday: false,
-        lastReaction: conn.heartSent
-          ? {
-              type: 'heart',
-              from: 'You',
-              timestamp: conn.lastPartnerActivityAt || conn.createdAt,
-            }
-          : undefined,
+        lastReaction:
+          !this.supportStale() && conn.heartSent
+            ? {
+                type: 'heart',
+                from: 'You',
+                timestamp: conn.lastPartnerActivityAt || conn.createdAt,
+              }
+            : undefined,
         createdAt: conn.createdAt,
       };
     });
@@ -126,9 +129,49 @@ export class ChainService {
   }
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
+    const resume = () => {
+      if (document.visibilityState === 'visible') {
+        this.supportStale.set(true);
+        void this.loadConnections();
+      }
+    };
+    const reconnect = () => {
+      this.supportStale.set(true);
+      void this.loadConnections();
+    };
+    destroyRef.onDestroy(() => {
+      this.destroyed = true;
+      this.sessionVersion++;
+      clearTimeout(this.refreshTimer);
+    });
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', resume);
+      window.addEventListener('focus', resume);
+      window.addEventListener('pageshow', resume);
+      window.addEventListener('online', reconnect);
+      destroyRef.onDestroy(() => {
+        clearTimeout(this.refreshTimer);
+        document.removeEventListener('visibilitychange', resume);
+        window.removeEventListener('focus', resume);
+        window.removeEventListener('pageshow', resume);
+        window.removeEventListener('online', reconnect);
+      });
+    }
     // React to user change
     effect(() => {
       const user = this.authService.currentUser();
+      untracked(() => {
+        this.sessionVersion++;
+        this.mutationVersion++;
+        clearTimeout(this.refreshTimer);
+        this.loadRequest = undefined;
+        this.heartRequests.clear();
+        this.pendingHeartTargets.set(new Set());
+        this.supportStale.set(true);
+        this.loadError.set(null);
+        this.isLoading.set(false);
+      });
       if (user) {
         untracked(() => {
           this._connections.set([]);
@@ -198,45 +241,102 @@ export class ChainService {
     }
   }
 
-  async loadConnections(): Promise<ChainConnection[]> {
+  private scheduleExpiry(connections: ChainConnection[], elapsed: number): void {
+    clearTimeout(this.refreshTimer);
+    const deadlines = connections.flatMap((c) => [c.calendar, c.partnerCalendar]);
+    const delays = deadlines.map((calendar) =>
+      calendar ? Date.parse(calendar.nextDayAt) - Date.parse(calendar.serverNow) - elapsed : NaN,
+    );
+    const valid = delays.every(Number.isFinite);
+    const delay = delays.length && valid ? Math.min(...delays) : 60000;
+    this.supportStale.set(!valid || delay <= 0);
+    if (!valid)
+      this.loadError.set('Could not refresh daily support. Please update the app and retry.');
+    if (!connections.length) return;
+    this.refreshTimer = setTimeout(
+      () => {
+        this.supportStale.set(true);
+        void this.loadConnections();
+      },
+      Math.max(1000, delay),
+    );
+  }
+
+  loadConnections(): Promise<ChainConnection[]> {
+    if (this.destroyed) return Promise.resolve([]);
     const token = this.authService.getToken();
     const userId = this.authService.currentUser()?.id;
     if (!isRemoteToken(token)) {
+      this.supportStale.set(environment.production);
       this.checkUnread();
-      return this._connections();
+      return Promise.resolve(this._connections());
     }
-
+    if (this.loadRequest?.token === token && this.loadRequest.userId === userId)
+      return this.loadRequest.promise;
+    const session = this.sessionVersion;
+    const version = this.mutationVersion;
+    const started = performance.now();
     this.isLoading.set(true);
     this.loadError.set(null);
     this.coldStartService.startRequest();
-    try {
-      const res = await firstValueFrom(
-        this.http.get<ChainConnection[]>(`${environment.apiUrl}/chain/connections`, {
-          params: { 'ngsw-bypass': 'true' },
-        }),
-      );
-      if (this.authService.currentUser()?.id !== userId || this.authService.getToken() !== token)
-        return [];
-      this._connections.set(res || []);
-      this.saveLocalCache(res || []);
-      this.checkUnread();
-      return res || [];
-    } catch (error) {
-      if (this.authService.currentUser()?.id === userId)
-        this.loadError.set('Could not refresh your chain. Please retry.');
-      return this._connections();
-    } finally {
-      this.isLoading.set(false);
-      this.coldStartService.finishRequest();
-    }
+    const promise = (async () => {
+      try {
+        const res = await firstValueFrom(
+          this.http.get<ChainConnection[]>(`${environment.apiUrl}/chain/connections`, {
+            params: { 'ngsw-bypass': 'true' },
+          }),
+        );
+        if (
+          this.destroyed ||
+          session !== this.sessionVersion ||
+          this.authService.currentUser()?.id !== userId ||
+          this.authService.getToken() !== token
+        )
+          return [];
+        if (version !== this.mutationVersion) {
+          this.supportStale.set(true);
+          clearTimeout(this.refreshTimer);
+          this.refreshTimer = setTimeout(() => void this.loadConnections(), 1000);
+          return this._connections();
+        }
+        if (!Array.isArray(res)) throw new Error('Invalid chain response');
+        this._connections.set(res);
+        this.saveLocalCache(res || []);
+        this.scheduleExpiry(res || [], performance.now() - started);
+        this.checkUnread();
+        return res || [];
+      } catch (error) {
+        if (
+          session === this.sessionVersion &&
+          this.authService.currentUser()?.id === userId &&
+          this.authService.getToken() === token
+        ) {
+          this.supportStale.set(true);
+          this.loadError.set('Could not refresh your chain. Please retry.');
+          clearTimeout(this.refreshTimer);
+          this.refreshTimer = setTimeout(() => void this.loadConnections(), 60000);
+        }
+        return this._connections();
+      } finally {
+        if (session === this.sessionVersion && this.loadRequest?.promise === promise)
+          this.isLoading.set(false);
+        this.coldStartService.finishRequest();
+      }
+    })().finally(() => {
+      if (this.loadRequest?.promise === promise) this.loadRequest = undefined;
+    });
+    this.loadRequest = { token: token!, userId, promise };
+    return promise;
   }
 
   private async writeConnection(
     connectionId: string,
-    action: 'heart' | 'nudge' | 'disconnect',
+    action: 'heart' | 'disconnect',
   ): Promise<ChainConnection | null> {
     const token = this.authService.getToken();
     const userId = this.authService.currentUser()?.id;
+    const session = this.sessionVersion;
+    this.mutationVersion++;
     if (isRemoteToken(token)) {
       const url = `${environment.apiUrl}/chain/connections/${connectionId}`;
       const response = await firstValueFrom(
@@ -244,11 +344,31 @@ export class ChainService {
           ? this.http.delete<ChainConnection>(url)
           : this.http.post<ChainConnection>(`${url}/${action}`, {}),
       );
-      if (this.authService.currentUser()?.id !== userId || this.authService.getToken() !== token)
+      if (
+        session !== this.sessionVersion ||
+        this.authService.currentUser()?.id !== userId ||
+        this.authService.getToken() !== token
+      )
         throw new Error('Your session changed. Please reload.');
-      const updated = this._connections().map((c) =>
-        c.id === connectionId ? { ...c, ...response } : c,
-      );
+      if (response?.id !== connectionId || (action === 'heart' && response.heartSent !== true))
+        throw new Error('The server did not confirm the heart. Please refresh and retry.');
+      this.mutationVersion++;
+      const updated = this._connections().map((c) => {
+        if (c.id === connectionId) return { ...c, ...response };
+        if (action !== 'heart' || c.status === 'DISCONNECTED') return c;
+        return {
+          ...c,
+          ...(c.partnerCommitmentId === response.partnerCommitmentId && {
+            heartSent: true,
+            heartSentAt: response.heartSentAt,
+            partnerCalendar: response.partnerCalendar,
+          }),
+          ...(c.userCommitmentId === response.userCommitmentId && {
+            receivedHeartCount: response.receivedHeartCount,
+            calendar: response.calendar,
+          }),
+        };
+      });
       this._connections.set(updated);
       this.saveLocalCache(updated);
       return response;
@@ -258,10 +378,8 @@ export class ChainService {
       c.id !== connectionId
         ? c
         : action === 'heart'
-          ? { ...c, heartSent: !c.heartSent }
-          : action === 'nudge'
-            ? { ...c, lastNudgeSentAt: new Date().toISOString() }
-            : { ...c, status: 'DISCONNECTED' as const },
+          ? { ...c, heartSent: true, heartSentAt: c.heartSentAt || new Date().toISOString() }
+          : { ...c, status: 'DISCONNECTED' as const },
     );
     this._connections.set(updated);
     this.saveLocalCache(updated);
@@ -269,13 +387,31 @@ export class ChainService {
   }
 
   sendHeart(id: string): Promise<ChainConnection | null> {
-    return this.writeConnection(id, 'heart');
-  }
-  sendNudge(id: string): Promise<ChainConnection | null> {
-    return this.writeConnection(id, 'nudge');
+    const connection = this._connections().find((c) => c.id === id);
+    if (!connection) return Promise.reject(new Error('Please refresh your chain.'));
+    const target = connection.partnerCommitmentId;
+    const existing = this.heartRequests.get(target);
+    if (existing) return existing;
+    const session = this.sessionVersion;
+    this.pendingHeartTargets.update((ids) => new Set([...ids, target]));
+    const request = this.writeConnection(id, 'heart').finally(() => {
+      if (session !== this.sessionVersion || this.heartRequests.get(target) !== request) return;
+      this.heartRequests.delete(target);
+      this.pendingHeartTargets.update((ids) => {
+        const next = new Set(ids);
+        next.delete(target);
+        return next;
+      });
+    });
+    this.heartRequests.set(target, request);
+    return request;
   }
   async disconnect(id: string): Promise<void> {
     await this.writeConnection(id, 'disconnect');
+    // Other cards can repeat this habit's received aggregate.
+    // Hide that snapshot until a fresh read confirms the remaining support.
+    this.supportStale.set(true);
+    void this.loadConnections();
   }
 
   async createInvite(commitmentId: string): Promise<ChainInvite> {
@@ -483,15 +619,24 @@ export class ChainService {
     return this.activeConnections().filter((c) => c.userCommitmentId === commitmentId).length;
   }
 
+  getReceivedHeartCount(commitmentId: string): number {
+    if (this.supportStale()) return 0;
+    // Each connection repeats the own-habit aggregate. Never sum duplicate rows.
+    return Math.max(
+      0,
+      ...this.activeConnections()
+        .filter((c) => c.userCommitmentId === commitmentId)
+        .map((c) => c.receivedHeartCount || 0),
+    );
+  }
+
   getChainsForCommitment(commitmentId: string): HabitChain[] {
     return this.friendChains().filter((c) => c.myCommitmentId === commitmentId);
   }
 
-  sendReaction(chainId: string, type: 'heart' | 'cheer' | 'nudge'): void {
+  sendReaction(chainId: string, type: 'heart'): void {
     if (type === 'heart') {
       this.sendHeart(chainId);
-    } else if (type === 'nudge') {
-      this.sendNudge(chainId);
     }
   }
 

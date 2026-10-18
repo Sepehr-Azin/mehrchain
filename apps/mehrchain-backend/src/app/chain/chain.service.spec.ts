@@ -23,6 +23,7 @@ describe('ChainService lifecycle', () => {
   let habits: any[];
   let invite: any;
   let connection: any;
+  let hearts: Map<string, any>;
   const prisma: any = {
     $transaction: jest.fn(),
     $queryRaw: jest.fn(),
@@ -41,15 +42,41 @@ describe('ChainService lifecycle', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    chainHeart: {
+      createMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
+      findMany: jest.fn(),
+    },
   };
   let service: ChainService;
 
   beforeEach(() => {
     jest.resetAllMocks();
     jest.useFakeTimers().setSystemTime(now);
+    hearts = new Map();
+    const keyFor = (h: any) => `${h.senderId}/${h.recipientCommitmentId}/${h.dayKey}`;
+    prisma.chainHeart.createMany.mockImplementation(async ({ data }: any) => {
+      const key = keyFor(data);
+      if (hearts.has(key)) return { count: 0 };
+      hearts.set(key, data);
+      return { count: 1 };
+    });
+    prisma.chainHeart.findUniqueOrThrow.mockImplementation(async ({ where }: any) =>
+      hearts.get(keyFor(where.senderId_recipientCommitmentId_dayKey)),
+    );
+    prisma.chainHeart.findMany.mockImplementation(async ({ where }: any) =>
+      [...hearts.values()].filter(
+        (h) =>
+          h.senderId === where.senderId &&
+          where.OR.some(
+            (k: any) =>
+              k.recipientCommitmentId === h.recipientCommitmentId && k.dayKey === h.dayKey,
+          ),
+      ),
+    );
     habits = [
-      { ...baseHabit, id: 'a', userId: 'sender' },
-      { ...baseHabit, id: 'b', userId: 'receiver' },
+      { ...baseHabit, user: { timeZone: 'UTC' }, id: 'a', userId: 'sender' },
+      { ...baseHabit, user: { timeZone: 'UTC' }, id: 'b', userId: 'receiver' },
     ];
     invite = {
       id: 'invite',
@@ -71,6 +98,7 @@ describe('ChainService lifecycle', () => {
       lastNudgeSentAt: null,
       partner: { username: 'sender' },
       partnerCommitment: habits[0],
+      userCommitment: habits[1],
       createdAt: now,
     };
     prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
@@ -97,10 +125,9 @@ describe('ChainService lifecycle', () => {
       return { count: 2 };
     });
     prisma.chainConnection.upsert.mockImplementation(async ({ create }: any) => create);
-    prisma.chainConnection.update.mockImplementation(async ({ data }: any) => ({
-      ...connection,
-      ...data,
-    }));
+    prisma.chainConnection.update.mockImplementation(async ({ data }: any) =>
+      Object.assign(connection, data),
+    );
     service = new ChainService(prisma, new CommitmentLifecycleService(prisma));
   });
   afterEach(() => jest.useRealTimers());
@@ -226,17 +253,60 @@ describe('ChainService lifecycle', () => {
     await expect(service.sendHeart('receiver', 'missing')).rejects.toThrow(NotFoundException);
   });
 
-  it('preserves the existing heart toggle for eligible links until T04', async () => {
+  it('sends once and keeps retries/concurrent requests from undoing or inflating a heart', async () => {
     expect(await service.sendHeart('receiver', 'c')).toMatchObject({
       heartSent: true,
       heartSentAt: now,
     });
-    connection.heartSent = true;
-    connection.heartSentAt = now;
-    expect(await service.sendHeart('receiver', 'c')).toMatchObject({
+    const retries = await Promise.all([
+      service.sendHeart('receiver', 'c'),
+      service.sendHeart('receiver', 'c'),
+    ]);
+    expect(retries.every((r) => r.heartSent && r.heartSentAt?.getTime() === now.getTime())).toBe(
+      true,
+    );
+    expect(hearts.size).toBe(1);
+    expect(prisma.chainConnection.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares the sender allowance across links and does not revive support cleared by reconnect', async () => {
+    await service.sendHeart('receiver', 'c');
+    const otherHabit = { ...habits[1], id: 'b2' };
+    habits.push(otherHabit);
+    connection = {
+      ...connection,
+      id: 'c2',
+      userCommitmentId: 'b2',
+      userCommitment: otherHabit,
       heartSent: false,
       heartSentAt: null,
-    });
+    };
+    const retry = await service.sendHeart('receiver', 'c2');
+    expect(retry.heartSent).toBe(true);
+    expect(connection.heartSent).toBe(false);
+    expect(hearts.size).toBe(1);
+    expect(prisma.chainConnection.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('renews the allowance at the recipient midnight while the sender date stays unchanged', async () => {
+    habits[0].user.timeZone = 'Asia/Tehran';
+    jest.setSystemTime(new Date('2026-10-15T20:29:59Z'));
+    const first = await service.sendHeart('receiver', 'c');
+    expect(first.partnerCalendar.currentDayKey).toBe('2026-10-15');
+    jest.setSystemTime(new Date('2026-10-15T20:30:01Z'));
+    const second = await service.sendHeart('receiver', 'c');
+    expect(second.partnerCalendar.currentDayKey).toBe('2026-10-16');
+    expect(second.calendar.currentDayKey).toBe('2026-10-15');
+    expect(hearts.size).toBe(2);
+    expect(prisma.chainConnection.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects private targets and obsolete nudges without persisting reactions', async () => {
+    await expect(service.sendNudge('receiver', 'c')).rejects.toThrow('no longer available');
+    habits[0].isPublic = false;
+    await expect(service.sendHeart('receiver', 'c')).rejects.toThrow('no longer available');
+    expect(prisma.chainHeart.createMany).not.toHaveBeenCalled();
+    expect(prisma.chainConnection.update).not.toHaveBeenCalled();
   });
 
   it('disconnects the exact reciprocal pair and clears support', async () => {
@@ -287,5 +357,40 @@ describe('ChainService lifecycle', () => {
     expect(row.partnerCommitment).not.toHaveProperty('why');
     expect(row.partnerCommitment).not.toHaveProperty('history');
     expect(row.partnerCommitment).not.toHaveProperty('user');
+    expect(row).not.toHaveProperty('heartReceived');
+    expect(row).not.toHaveProperty('userCommitment');
+  });
+
+  it('returns an anonymous own-habit count, deduplicating supporters and using the recipient date', async () => {
+    habits[1].user = { timeZone: 'Asia/Tehran' };
+    jest.setSystemTime(new Date('2026-10-15T20:31:00Z'));
+    const incoming = [
+      { userId: 'sender', partnerCommitmentId: 'b', heartSentAt: new Date('2026-10-15T20:30:00Z') },
+      { userId: 'sender', partnerCommitmentId: 'b', heartSentAt: new Date('2026-10-15T20:30:30Z') },
+      {
+        userId: 'another',
+        partnerCommitmentId: 'b',
+        heartSentAt: new Date('2026-10-15T20:30:00Z'),
+      },
+      {
+        userId: 'yesterday',
+        partnerCommitmentId: 'b',
+        heartSentAt: new Date('2026-10-15T20:29:59Z'),
+      },
+      {
+        userId: 'unrelated',
+        partnerCommitmentId: 'other',
+        heartSentAt: new Date('2026-10-15T20:30:00Z'),
+      },
+    ];
+    prisma.chainConnection.findMany
+      .mockResolvedValueOnce([connection])
+      .mockResolvedValueOnce([connection])
+      .mockResolvedValueOnce(incoming);
+    const [row] = await service.getConnections('receiver');
+    expect(row.receivedHeartCount).toBe(2);
+    expect(row.heartSent).toBe(false);
+    expect(row).not.toHaveProperty('heartReceived');
+    expect(row).not.toHaveProperty('supporters');
   });
 });

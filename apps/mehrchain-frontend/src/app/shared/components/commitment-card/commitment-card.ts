@@ -13,6 +13,7 @@ import { McCardComponent } from '../../ui';
 export class CommitmentCardComponent {
   commitment = input.required<Commitment>();
   supportersCount = input<number>(0);
+  receivedHeartCount = input<number>(0);
   pending = input(false);
   stale = input(false);
   goalReached = computed(

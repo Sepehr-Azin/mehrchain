@@ -30,6 +30,7 @@ describe('ChainService (Frontend Hybrid)', () => {
 
   afterEach(() => {
     httpMock.verify();
+    vi.useRealTimers();
     localStorage.clear();
   });
 
@@ -75,7 +76,7 @@ describe('ChainService (Frontend Hybrid)', () => {
     expect(service.connections()).toEqual(mockConnections);
   });
 
-  it('should confirm before toggling heartSent and sync to API', async () => {
+  it('should confirm heart sending and share pending requests across duplicate links', async () => {
     vi.spyOn(authService, 'getToken').mockReturnValue('jwt_valid_remote_token');
     vi.spyOn(authService, 'currentUser').mockReturnValue({
       id: 'user-1',
@@ -96,56 +97,171 @@ describe('ChainService (Frontend Hybrid)', () => {
       createdAt: new Date().toISOString(),
     };
 
-    (service as any)._connections.set([mockConnection]);
+    (service as any)._connections.set([mockConnection, { ...mockConnection, id: 'duplicate' }]);
 
     const heartPromise = service.sendHeart('conn-1');
 
-    // State updated immediately (optimistic)
+    // No success before confirmation.
     expect(service.connections()[0].heartSent).toBe(false);
+    expect(service.sendHeart('duplicate')).toBe(heartPromise);
+    expect(service.pendingHeartTargets().has('comm-2')).toBe(true);
 
     const req = httpMock.expectOne(`${environment.apiUrl}/chain/connections/conn-1/heart`);
     expect(req.request.method).toBe('POST');
     req.flush({ ...mockConnection, heartSent: true });
 
     await heartPromise;
+    expect(service.connections().every((c) => c.heartSent)).toBe(true);
+    expect(service.pendingHeartTargets().size).toBe(0);
+  });
+
+  it('keeps failure retryable and never shows an unsaved heart', async () => {
+    vi.spyOn(authService, 'getToken').mockReturnValue('remote-token');
+    const connection = {
+      id: 'c',
+      userId: 'me',
+      partnerId: 'them',
+      userCommitmentId: 'own',
+      partnerCommitmentId: 'target',
+      status: 'ACTIVE',
+      consecutiveMissedDays: 0,
+      heartSent: false,
+      createdAt: '2026-10-18T00:00:00Z',
+    } as ChainConnection;
+    (service as any)._connections.set([connection]);
+    const failed = service.sendHeart('c');
+    const rejected = expect(failed).rejects.toBeTruthy();
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/connections/c/heart`)
+      .flush({}, { status: 503, statusText: 'Unavailable' });
+    await rejected;
+    expect(service.connections()[0].heartSent).toBe(false);
+    expect(service.pendingHeartTargets().size).toBe(0);
+    const retry = service.sendHeart('c');
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/connections/c/heart`)
+      .flush({ ...connection, heartSent: true });
+    await retry;
     expect(service.connections()[0].heartSent).toBe(true);
   });
 
-  it('should confirm before updating lastNudgeSentAt and sync to API', async () => {
-    vi.spyOn(authService, 'getToken').mockReturnValue('jwt_valid_remote_token');
-    vi.spyOn(authService, 'currentUser').mockReturnValue({
-      id: 'user-1',
-      email: 'test@example.com',
-      username: 'testuser',
-      createdAt: new Date().toISOString(),
-    });
-
-    const mockConnection: ChainConnection = {
-      id: 'conn-1',
-      userId: 'user-1',
-      partnerId: 'user-2',
-      userCommitmentId: 'comm-1',
-      partnerCommitmentId: 'comm-2',
-      status: 'FADING',
-      consecutiveMissedDays: 2,
+  it('uses each own-habit aggregate once rather than adding repeated connection counts', () => {
+    vi.spyOn(TestBed.inject(CommitmentService), 'commitments').mockReturnValue([
+      {
+        id: 'own',
+        title: 'Read',
+        totalDays: -1,
+        currentDay: 1,
+        currentStreak: 1,
+        isCompletedToday: false,
+        category: 'growth',
+        startDate: '',
+        isPublic: true,
+      },
+    ]);
+    const connection: ChainConnection = {
+      id: 'c',
+      userId: 'me',
+      partnerId: 'them',
+      userCommitmentId: 'own',
+      partnerCommitmentId: 'target',
+      status: 'ACTIVE',
+      consecutiveMissedDays: 0,
       heartSent: false,
-      lastNudgeSentAt: null,
-      createdAt: new Date().toISOString(),
+      receivedHeartCount: 2,
+      createdAt: '',
     };
+    (service as any)._connections.set([
+      connection,
+      { ...connection, id: 'c2', partnerId: 'other' },
+    ]);
+    service.supportStale.set(false);
+    expect(service.getReceivedHeartCount('own')).toBe(2);
+    service.supportStale.set(true);
+    expect(service.getReceivedHeartCount('own')).toBe(0);
+  });
 
-    (service as any)._connections.set([mockConnection]);
+  it('expires support at the earliest server boundary and deduplicates refresh requests', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    vi.spyOn(authService, 'getToken').mockReturnValue('remote-token');
+    const calendar = {
+      timeZone: 'Asia/Tehran',
+      currentDayKey: '2026-10-18',
+      serverNow: '2026-10-18T20:29:58Z',
+      nextDayAt: '2026-10-18T20:30:00Z',
+    };
+    const connection: ChainConnection = {
+      id: 'c',
+      userId: 'me',
+      partnerId: 'them',
+      userCommitmentId: 'own',
+      partnerCommitmentId: 'target',
+      status: 'ACTIVE',
+      consecutiveMissedDays: 0,
+      heartSent: true,
+      receivedHeartCount: 2,
+      calendar,
+      partnerCalendar: calendar,
+      createdAt: '2026-10-18T00:00:00Z',
+    };
+    const request = service.loadConnections();
+    expect(service.loadConnections()).toBe(request);
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/connections?ngsw-bypass=true`)
+      .flush([connection]);
+    await request;
+    expect(service.supportStale()).toBe(false);
+    vi.advanceTimersByTime(2001);
+    expect(service.supportStale()).toBe(true);
+    expect(service.getReceivedHeartCount('own')).toBe(0);
+    const refresh = service.loadConnections();
+    httpMock.expectOne(`${environment.apiUrl}/chain/connections?ngsw-bypass=true`).flush([]);
+    await refresh;
+    expect(service.supportStale()).toBe(false);
+  });
 
-    const nudgePromise = service.sendNudge('conn-1');
-
-    // State updated immediately
-    expect(service.connections()[0].lastNudgeSentAt).toBeNull();
-
-    const req = httpMock.expectOne(`${environment.apiUrl}/chain/connections/conn-1/nudge`);
-    expect(req.request.method).toBe('POST');
-    req.flush({ ...mockConnection, lastNudgeSentAt: new Date().toISOString() });
-
-    await nudgePromise;
-    expect(service.connections()[0].lastNudgeSentAt).toBeTruthy();
+  it('does not apply an old read over a confirmed heart or a response from a previous account', async () => {
+    vi.spyOn(authService, 'getToken').mockReturnValue('remote-token');
+    const currentUser = vi.spyOn(authService, 'currentUser').mockReturnValue({
+      id: 'me',
+      username: 'me',
+      email: 'me@example.com',
+      createdAt: '',
+    });
+    const connection: ChainConnection = {
+      id: 'c',
+      userId: 'me',
+      partnerId: 'them',
+      userCommitmentId: 'own',
+      partnerCommitmentId: 'target',
+      status: 'ACTIVE',
+      consecutiveMissedDays: 0,
+      heartSent: false,
+      createdAt: '2026-10-18T00:00:00Z',
+    };
+    (service as any)._connections.set([connection]);
+    const load = service.loadConnections();
+    const read = httpMock.expectOne(`${environment.apiUrl}/chain/connections?ngsw-bypass=true`);
+    const heart = service.sendHeart('c');
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/connections/c/heart`)
+      .flush({ ...connection, heartSent: true });
+    await heart;
+    read.flush([connection]);
+    await load;
+    expect(service.connections()[0].heartSent).toBe(true);
+    const oldWrite = service.sendHeart('c');
+    const rejected = expect(oldWrite).rejects.toThrow('session changed');
+    currentUser.mockReturnValue({
+      id: 'new-user',
+      username: 'new',
+      email: 'new@example.com',
+      createdAt: '',
+    });
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/connections/c/heart`)
+      .flush({ ...connection, heartSent: true });
+    await rejected;
   });
 
   it('should disconnect connection after confirmation and call API', async () => {
@@ -195,6 +311,8 @@ describe('ChainService (Frontend Hybrid)', () => {
 
     await disconnectPromise;
     expect(service.activeConnections().length).toBe(0);
+    httpMock.expectOne(`${environment.apiUrl}/chain/connections?ngsw-bypass=true`).flush([]);
+    await Promise.resolve();
   });
 
   it('should correctly evaluate unread partner activity and clear on markAsRead', () => {

@@ -5,10 +5,15 @@ import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { ChainStatus, ChainInviteStatus, Prisma } from '@prisma/client';
 import { chainState } from './chain-state';
 import { CommitmentLifecycleService } from '../commitments/commitment-lifecycle.service';
-import { commitmentCalendar, dailyCommitmentState } from '../commitments/commitment-calendar';
+import {
+  commitmentCalendar,
+  dailyCommitmentState,
+  localDay,
+} from '../commitments/commitment-calendar';
 
 const connectionInclude = {
   partner: { select: { username: true, name: true } },
+  userCommitment: { include: { user: { select: { timeZone: true } } } },
   partnerCommitment: { include: { user: { select: { timeZone: true } } } },
 } satisfies Prisma.ChainConnectionInclude;
 type Connection = Prisma.ChainConnectionGetPayload<{ include: typeof connectionInclude }>;
@@ -154,34 +159,66 @@ export class ChainService {
         const incoming = await tx.chainConnection.findMany({
           where: { partnerId: userId, heartSent: true, ...available },
         });
-        const today = now.toISOString().slice(0, 10);
-        const sentToday = (c: { heartSent: boolean; heartSentAt: Date | null }) =>
-          c.heartSent && c.heartSentAt?.toISOString().slice(0, 10) === today;
-        return connections.map((c) => ({
-          ...c,
-          // Never return the full partner habit: why, metadata and history are private.
-          partnerCommitment: {
-            title: c.partnerCommitment.title,
-            category: c.partnerCommitment.category,
-            lastCompletedDate: c.partnerCommitment.lastCompletedDate,
-            isCompletedToday: dailyCommitmentState(
-              c.partnerCommitment,
-              commitmentCalendar(c.partnerCommitment.user.timeZone, now),
-            ).isCompletedToday,
-            consecutiveMissedDays: chainState(c, now)?.consecutiveMissedDays ?? 0,
-          },
-          ...(chainState(c, now) || {}),
-          heartSent: !!sentToday(c),
-          heartReceived: incoming.some(
-            (p) =>
-              p.userId === c.partnerId &&
-              p.userCommitmentId === c.partnerCommitmentId &&
-              p.partnerCommitmentId === c.userCommitmentId &&
-              sentToday(p),
+        const sent = connections.length
+          ? await tx.chainHeart.findMany({
+              where: {
+                senderId: userId,
+                OR: connections.map((c) => ({
+                  recipientCommitmentId: c.partnerCommitmentId,
+                  dayKey: localDay(now, c.partnerCommitment.user.timeZone),
+                })),
+              },
+            })
+          : [];
+        return connections.map((c) =>
+          this.connectionResponse(
+            c,
+            sent.find((h) => h.recipientCommitmentId === c.partnerCommitmentId)?.sentAt ?? null,
+            incoming,
+            now,
           ),
-        }));
+        );
       },
     );
+  }
+
+  private connectionResponse(
+    c: Connection,
+    sentAt: Date | null,
+    incoming: { userId: string; partnerCommitmentId: string; heartSentAt: Date | null }[],
+    now: Date,
+  ) {
+    const { userCommitment, partnerCommitment, ...row } = c;
+    const calendar = commitmentCalendar(userCommitment.user.timeZone, now);
+    const partnerCalendar = commitmentCalendar(partnerCommitment.user.timeZone, now);
+    const state = chainState(c, now);
+    const receivedHeartCount = new Set(
+      incoming
+        .filter(
+          (heart) =>
+            heart.partnerCommitmentId === c.userCommitmentId &&
+            heart.heartSentAt &&
+            localDay(heart.heartSentAt, calendar.timeZone) === calendar.currentDayKey,
+        )
+        .map((heart) => heart.userId),
+    ).size;
+    return {
+      ...row,
+      // Only habit identification and current state are shared with a partner.
+      partnerCommitment: {
+        title: partnerCommitment.title,
+        category: partnerCommitment.category,
+        lastCompletedDate: partnerCommitment.lastCompletedDate,
+        isCompletedToday: dailyCommitmentState(partnerCommitment, partnerCalendar).isCompletedToday,
+        consecutiveMissedDays: state?.consecutiveMissedDays ?? 0,
+      },
+      ...(state || {}),
+      heartSent: sentAt !== null,
+      heartSentAt: sentAt,
+      receivedHeartCount,
+      calendar,
+      partnerCalendar,
+    };
   }
 
   async cancelInvite(userId: string, inviteId: string) {
@@ -238,24 +275,50 @@ export class ChainService {
 
   async sendHeart(userId: string, connectionId: string) {
     return this.withConnection(userId, connectionId, async (tx, c, now) => {
-      const sentToday =
-        c.heartSent && c.heartSentAt?.toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
-      return tx.chainConnection.update({
-        where: { id: c.id },
-        data: { heartSent: !sentToday, heartSentAt: sentToday ? null : now },
+      const key = {
+        senderId: userId,
+        recipientCommitmentId: c.partnerCommitmentId,
+        dayKey: localDay(now, c.partnerCommitment.user.timeZone),
+      };
+      // All paths lock the recipient habit first. The unique ledger key also
+      // enforces the allowance across duplicate links and future write paths.
+      const created = await tx.chainHeart.createMany({
+        data: { ...key, sentAt: now },
+        skipDuplicates: true,
       });
+      if (created.count) {
+        await tx.chainConnection.update({
+          where: { id: c.id },
+          data: { heartSent: true, heartSentAt: now },
+        });
+      }
+      // A retry never toggles, extends expiry or revives cleared support after
+      // disconnect/restore. Its consumed allowance still lasts the recipient day.
+      const sent = await tx.chainHeart.findUniqueOrThrow({
+        where: { senderId_recipientCommitmentId_dayKey: key },
+      });
+      const incoming = await tx.chainConnection.findMany({
+        where: {
+          partnerId: userId,
+          partnerCommitmentId: c.userCommitmentId,
+          status: { not: ChainStatus.DISCONNECTED },
+          heartSent: true,
+          userCommitment: { isArchived: false, isPublic: true },
+          partnerCommitment: { isArchived: false, isPublic: true },
+        },
+      });
+      return this.connectionResponse(c, sent.sentAt, incoming, now);
     });
   }
 
   async sendNudge(userId: string, connectionId: string) {
-    return this.withConnection(userId, connectionId, async (tx, c, now) => {
-      const status = chainState(c, now)?.status ?? c.status;
-      if (status !== ChainStatus.FADING && status !== ChainStatus.COMPLETED)
-        return new BadRequestException('A reminder is not available for this habit');
-      if (c.lastNudgeSentAt && now.getTime() - c.lastNudgeSentAt.getTime() < 86400000)
-        return new BadRequestException('You can only send a nudge once every 24 hours');
-      return tx.chainConnection.update({ where: { id: c.id }, data: { lastNudgeSentAt: now } });
-    });
+    // Retain a clear failure for older clients without writing obsolete nudges.
+    return this.withConnection(
+      userId,
+      connectionId,
+      async () =>
+        new BadRequestException('Reminders are no longer available. Send a heart instead'),
+    );
   }
 
   async disconnect(userId: string, connectionId: string) {

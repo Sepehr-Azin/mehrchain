@@ -32,6 +32,21 @@ describe('CommitmentCard', () => {
     expect(component).toBeTruthy();
   });
 
+  it('shows one anonymous heart, adding a visible numeral only for multiple hearts', () => {
+    fixture.componentRef.setInput('receivedHeartCount', 1);
+    fixture.detectChanges();
+    const summary = () => fixture.nativeElement.querySelector('[role="img"]') as HTMLElement | null;
+    expect(summary()?.getAttribute('aria-label')).toBe('1 heart received today');
+    expect(summary()?.textContent?.trim()).toBe('');
+    fixture.componentRef.setInput('receivedHeartCount', 2);
+    fixture.detectChanges();
+    expect(summary()?.getAttribute('aria-label')).toBe('2 hearts received today');
+    expect(summary()?.textContent?.trim()).toBe('2');
+    fixture.componentRef.setInput('receivedHeartCount', 0);
+    fixture.detectChanges();
+    expect(summary()).toBeNull();
+  });
+
   it('should toggle options menu', () => {
     expect(component.isMenuOpen()).toBe(false);
     const dummyEvent = new MouseEvent('click');

@@ -71,16 +71,12 @@ describe('ChainComponent', () => {
     expect(sorted.map((connection) => connection.partner?.name)).toEqual(['Partner1', 'Partner2']);
   });
 
-  it('should delegate heart, nudge, and disconnect actions to ChainService', async () => {
+  it('should delegate heart and disconnect actions to ChainService', async () => {
     const sendHeartSpy = vi.spyOn(chainService, 'sendHeart');
-    const sendNudgeSpy = vi.spyOn(chainService, 'sendNudge');
     const disconnectSpy = vi.spyOn(chainService, 'disconnect');
 
     component.handleHeart('conn-1');
     expect(sendHeartSpy).toHaveBeenCalledWith('conn-1');
-
-    await component.handleNudge('conn-1');
-    expect(sendNudgeSpy).toHaveBeenCalledWith('conn-1');
 
     component.handleDisconnect('conn-1');
     expect(disconnectSpy).toHaveBeenCalledWith('conn-1');
@@ -91,12 +87,10 @@ describe('ChainComponent', () => {
     expect(component.toastMessage()).toBe('Test Toast Notification');
   });
 
-  it('should render the Articles Coming Soon placeholder card', () => {
+  it('keeps invites discoverable without unfinished feature clutter', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Articles');
-    expect(compiled.textContent).toContain('Coming Soon');
-    expect(compiled.textContent).toContain(
-      'Short reads about kindness, habit chaining, and human connection.',
-    );
+    expect(compiled.querySelector('app-invite-section')).toBeTruthy();
+    expect(compiled.textContent).not.toContain('Articles');
+    expect(compiled.textContent).not.toContain('Coming Soon');
   });
 });

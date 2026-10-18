@@ -1,9 +1,10 @@
 # MehrChain — Next iteration
 
-> Updated: **2026-10-17 (Asia/Tehran)**. No committed deadline.
+> Updated: **2026-10-18 (Asia/Tehran)**. No committed deadline.
 > Goal: a small, reliable daily habit experience with quiet support and a kind return.
 > The owner reports a mostly successful two-person signup/Chain pilot, with proxy and server warm-up friction. Multi-day behavior and full acceptance still need testing.
 > T00–T03 implementation is complete and pushed, as confirmed by the owner on October 17. T04 is the next feature task. Deployment and runtime acceptance evidence remain separate from code completion.
+> T04 implementation is now prepared in uncommitted Changes for owner review. No builds, tests or migrations were run; acceptance remains pending.
 > GitHub issue synchronization is completed. Tasks T00–T09 are tracked in issues #55–#64 on GitHub and the project board.
 
 ## Product rules
@@ -19,13 +20,13 @@ People should have room to grow through choice, small steps and real support. A 
 - **Minimal UI:** one primary action per card, one completion check, secondary information in details. Desktop PWA content stays compact even in a maximized window.
 - **Honest feedback:** confirm saves before showing success; preserve input and allow retry on failure. Use short English copy, accessible controls and restrained feedback.
 
-Implemented in T02/T03: persisted account IANA timezone; no missed-day penalty for a partial creation/restore date; Custom counts completed days; finite goals offer Continue or Archive when reached. Existing accounts/history retain UTC, and signing in or changing device timezone does not change an account's zone. Recommended color reward: one habit reaches 21 consecutive days, permanently earning the color option. Recommended heart limit: one sender per recipient habit per recipient day, regardless of multiple links. The reward and heart-limit choices remain proposals to resolve in T06 and T04 respectively; they are not additional planning tasks or claims of owner approval. Preserve historical UTC records explicitly during migration.
+Implemented in T02/T03: persisted account IANA timezone; no missed-day penalty for a partial creation/restore date; Custom counts completed days; finite goals offer Continue or Archive when reached. Existing accounts/history retain UTC, and signing in or changing device timezone does not change an account's zone. Recommended color reward: one habit reaches 21 consecutive days, permanently earning the color option; this remains a proposal to resolve in T06. T04's prepared implementation uses the recommended heart limit: one sender per recipient habit per recipient day, regardless of multiple links. This implementation choice is recorded for owner review, not a claim of separate prior approval. Preserve historical UTC records explicitly during migration.
 
 ## Implementation order
 
 **T00 → T03 are implemented and pushed. Continue with T04**, followed by T05–T07 on that foundation. T08 can run independently; its latency work does not replace verifying the signup contract. T09 verifies the integrated result. Carry the outstanding T00–T03 checks below into release validation; verify the deployed signup blocker is resolved before inviting testers. Each task includes its own focused checks; acceptance does not wait until the end to discover basic defects.
 
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64). Checked boxes record completed implementation, not proof of deployed acceptance. T04–T09 remain pending.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64). Checked boxes record completed implementation, not proof of deployed acceptance. T04 awaits owner review/validation; T05–T09 remain pending implementation.
 
 | Task | Issue | Implementation | Commit | Status | Acceptance evidence in repository |
 | --- | --- | --- | --- | --- | --- |
@@ -33,7 +34,7 @@ Implemented in T02/T03: persisted account IANA timezone; no missed-day penalty f
 | T01 | [#56](https://github.com/farzad-bahadorifar/mehrchain/issues/56) | Complete / pushed | `cfaf0fd` | ✅ Implementation Done | Responsive/PWA and failure-state review not recorded |
 | T02 | [#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57) | Complete / pushed | `9643bda` | ✅ Implementation Done | Migration rehearsal, daily-boundary and concurrency checks not recorded |
 | T03 | [#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58) | Complete / pushed | `2f1cff1` | ✅ Implementation Done | Migration rehearsal, lifecycle/PWA and PostgreSQL race checks not recorded |
-| T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Pending | — | 🔄 In Progress (Next) | Pending implementation |
+| T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Prepared / uncommitted | — | Owner review | Build, tests, migration and runtime review not run |
 | T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Pending | — | 📋 Ready | Pending implementation |
 | T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Pending | — | 📋 Ready | Pending implementation |
 | T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Pending | — | 📋 Ready | Pending implementation |
@@ -112,10 +113,12 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Scope:** backend reactions, shared response types, frontend Chain service/cards and habit support summary. Depends on T02/T03.
 
-- [ ] Replace the retry-sensitive heart toggle with an idempotent send. Enforce the agreed sender/habit/day limit and return aggregate received count plus the current sender's sent state.
-- [ ] Replace named support paragraphs/toasts with a heart; show a numeral only above one, with an accessible count description. Daily expiry follows the recipient habit's day.
-- [ ] Keep Chain cards to partner/habit identification, one restrained current state, heart action and secondary menu. Remove redundant status text, alarm-like pulses, obsolete nudges and Coming Soon clutter.
-- [ ] Keep invitations easy to find, details/disconnect reachable, and active relationships separate from history. Never expose partner streaks or rank popularity.
+**Status:** implementation prepared in Changes for owner review. See [T04 handoff](t04_review_handoff.md) and [OpenSpec checklist](../openspec/changes/update-quiet-chain-hearts/tasks.md). No build, test, migration, commit or push was run.
+
+- [x] Replace the retry-sensitive heart toggle with an idempotent send. Enforce one sender/recipient-habit/recipient-day allowance across links and return the viewer's own aggregate received count plus sent state.
+- [x] Replace named support paragraphs/toasts with a heart; show a numeral only above one, with an accessible count description. Daily expiry follows the recipient habit's day.
+- [x] Keep Chain cards to partner/habit identification, one restrained current state, heart action and secondary menu. Remove redundant status text, alarm-like pulses, obsolete nudges and Coming Soon clutter.
+- [x] Keep invitations easy to find, details/disconnect reachable, and active relationships separate from history. Never expose partner streaks or rank popularity.
 
 **Acceptance:** two supporters produce the right count; duplicate links, retries and simultaneous requests do not inflate or undo support. Reload/day rollover is consistent; stale disconnected/private/archived targets reject new hearts. Empty and multi-partner layouts remain clear.
 
@@ -182,7 +185,7 @@ References for implementation: [Render Free](https://render.com/docs/free), [Wor
 - [ ] Complete the T01 visual checks, T02 calendar/refresh checks and T03 lifecycle/restore/reconnect checks described above and in their handoffs, including real PostgreSQL concurrency and account isolation.
 - [ ] Run strict validation of `update-habit-chain-lifecycle` when the OpenSpec CLI is available; its handoff records this as not run.
 
-T04's idempotent hearts/recipient-day expiry, T05's private disconnect receipts and T06's durable color reward are still planned work. Their absence does not reopen the completed T00–T03 implementation.
+T04's idempotent hearts/recipient-day expiry are prepared for owner review and require the new allowance-ledger migration; acceptance is pending. T05's private disconnect receipts and T06's durable color reward remain planned work. These do not reopen the completed T00–T03 implementation.
 
 ## Scope and completion
 

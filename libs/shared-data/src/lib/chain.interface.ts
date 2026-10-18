@@ -1,3 +1,5 @@
+import { CommitmentCalendar } from './commitment.interface';
+
 export type ChainStatus =
   | 'ACTIVE'
   | 'RESTING'
@@ -33,7 +35,11 @@ export interface ChainConnection {
   lastNudgeSentAt?: string | Date | null;
   heartSent: boolean;
   heartSentAt?: string | Date | null;
-  heartReceived?: boolean;
+  // Aggregate for the viewer's own habit; never identifies a supporter.
+  receivedHeartCount?: number;
+  calendar?: CommitmentCalendar;
+  // The recipient's calendar controls this viewer's heart allowance.
+  partnerCalendar?: CommitmentCalendar;
   createdAt: string | Date;
   archivedAt?: string | Date | null;
   partner?: ChainPartner;

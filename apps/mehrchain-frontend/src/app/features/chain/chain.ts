@@ -38,6 +38,13 @@ export class ChainComponent {
 
   readonly publicCommitments = this.chainService.publicCommitments;
   readonly activeConnections = this.chainService.activeConnections;
+  readonly receivedSupport = computed(() =>
+    this.publicCommitments()
+      .map((habit) => ({ ...habit, count: this.chainService.getReceivedHeartCount(habit.id) }))
+      .filter((habit) => habit.count > 0),
+  );
+  readonly disconnectingIds = signal<ReadonlySet<string>>(new Set());
+  readonly actionErrors = signal<Record<string, string>>({});
 
   // Sort connections: most recently active first
   readonly sortedConnections = computed(() => {
@@ -60,7 +67,7 @@ export class ChainComponent {
     timer(0, 15000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
-        if (!this.chainService.isLoading()) void this.chainService.loadConnections();
+        if (document.visibilityState === 'visible') void this.chainService.loadConnections();
       });
     const list = this.publicCommitments();
     if (list.length > 0) {
@@ -151,37 +158,31 @@ export class ChainComponent {
   }
 
   async handleHeart(connectionId: string): Promise<void> {
+    this.actionErrors.update((errors) => ({ ...errors, [connectionId]: '' }));
     try {
       await this.chainService.sendHeart(connectionId);
     } catch {
-      this.showToast('Heart was not saved. Please retry.');
-    }
-  }
-
-  async handleNudge(connectionId: string): Promise<void> {
-    try {
-      await this.chainService.sendNudge(connectionId);
-      this.showToast('Gentle reminder sent!');
-    } catch {
-      this.showToast('Could not send reminder.');
-    }
-  }
-
-  async handleCongratulate(connectionId: string): Promise<void> {
-    try {
-      await this.chainService.sendHeart(connectionId);
-      this.showToast('Congratulations sent!');
-    } catch {
-      this.showToast('Could not send congratulations.');
+      this.actionErrors.update((errors) => ({
+        ...errors,
+        [connectionId]: 'Heart was not saved. Please retry.',
+      }));
     }
   }
 
   async handleDisconnect(connectionId: string): Promise<void> {
+    if (this.disconnectingIds().has(connectionId)) return;
+    this.disconnectingIds.update((ids) => new Set([...ids, connectionId]));
     try {
       await this.chainService.disconnect(connectionId);
       this.showToast('Chain disconnected.');
     } catch {
       this.showToast('Could not disconnect. Please retry.');
+    } finally {
+      this.disconnectingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(connectionId);
+        return next;
+      });
     }
   }
 

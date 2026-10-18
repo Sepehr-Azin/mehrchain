@@ -21,6 +21,19 @@ The old `20261004210000_production_baseline` history record has a checksum that 
 
 ## Release migration chain
 
+### October 18 quiet-heart allowance addition
+
+T04 adds `20261018000000_idempotent_chain_hearts` after the account calendar and
+habit lifecycle migrations. It creates the unique sender/recipient-habit/day
+allowance ledger and backfills persisted heart timestamps in the recipient zone,
+collapsing duplicate links without changing existing fields. See the
+[T04 populated-copy and recovery handoff](t04_review_handoff.md).
+No migration, database operation or rehearsal was run during T04 implementation.
+Stop old toggle writers during rollout, verify the composite primary key,
+backfill and cascades, regenerate Prisma Client and deploy matching code. The
+production readiness probe now also requires the ledger columns; it does not
+verify migration history or the unique constraint itself.
+
 ### October 17 account calendar and lifecycle additions
 
 The baseline remains the October 5 schema; it is not regenerated when the

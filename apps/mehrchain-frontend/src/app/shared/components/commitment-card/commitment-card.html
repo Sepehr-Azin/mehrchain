@@ -23,6 +23,21 @@
     class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-4 text-xs text-muted-foreground"
   >
     <span>{{ commitment().currentStreak }} day streak</span>
+    @if (receivedHeartCount() > 0) {
+      <span
+        class="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400"
+        role="img"
+        [attr.aria-label]="
+          receivedHeartCount() +
+          (receivedHeartCount() === 1 ? ' heart received today' : ' hearts received today')
+        "
+      >
+        <lucide-icon name="heart" class="w-4 h-4 fill-current" aria-hidden="true"></lucide-icon>
+        @if (receivedHeartCount() > 1) {
+          <span aria-hidden="true">{{ receivedHeartCount() }}</span>
+        }
+      </span>
+    }
     @if (commitment().totalDays !== -1) {
       <span>{{ commitment().currentDay }} / {{ commitment().totalDays }} days</span>
     }

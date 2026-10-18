@@ -57,7 +57,7 @@ export class ChainController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Send heart (toggle)' })
+  @ApiOperation({ summary: 'Send one heart per recipient habit day (idempotent)' })
   @Post('connections/:id/heart')
   sendHeart(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     return this.chainService.sendHeart(user.id, id);
@@ -65,7 +65,7 @@ export class ChainController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Send gentle nudge' })
+  @ApiOperation({ summary: 'Legacy reminder endpoint (no longer supported)' })
   @Post('connections/:id/nudge')
   sendNudge(
     @CurrentUser() user: { id: string },

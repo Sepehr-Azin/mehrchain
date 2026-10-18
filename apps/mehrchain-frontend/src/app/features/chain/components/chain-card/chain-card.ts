@@ -13,75 +13,48 @@ export type ChainCardVisualState = 'COMPLETED_TODAY' | 'WAITING' | 'RESTING' | '
   styleUrls: ['./chain-card.css'],
 })
 export class ChainCardComponent {
-  // Inputs using Angular Signal Inputs
   readonly connection = input.required<ChainConnection>();
   readonly myHabitTitle = input<string>('My Habit');
-
-  // Outputs
-  readonly heartToggle = output<string>();
-  readonly nudge = output<string>();
-  readonly congratulate = output<string>();
+  readonly pending = input(false);
+  readonly stale = input(false);
+  readonly errorMessage = input<string | null>(null);
+  readonly heartSend = output<string>();
   readonly disconnect = output<string>();
+  readonly isMenuOpen = signal(false);
 
-  // Local component state
-  readonly isMenuOpen = signal<boolean>(false);
-  readonly nudgeSent = signal<boolean>(false);
-  readonly congratulated = signal<boolean>(false);
-
-  // Computed state
-  readonly partnerUsername = computed(() => {
-    const conn = this.connection();
-    return conn.partner?.username || 'partner';
-  });
-
-  readonly partnerDisplayName = computed(() => {
-    const conn = this.connection();
-    return conn.partner?.name || conn.partner?.username || 'Partner';
-  });
-
-  readonly partnerHabitTitle = computed(() => {
-    const conn = this.connection();
-    return conn.partnerCommitment?.title || 'Daily Habit';
-  });
-
-  readonly partnerAvatarInitial = computed(() => {
-    const name = this.partnerDisplayName();
-    return (name[0] || 'P').toUpperCase();
-  });
-
-  readonly isHeartSent = computed(() => {
-    return !!this.connection().heartSent;
-  });
-
+  readonly partnerUsername = computed(() => this.connection().partner?.username || 'partner');
+  readonly partnerDisplayName = computed(
+    () => this.connection().partner?.name || this.partnerUsername(),
+  );
+  readonly partnerHabitTitle = computed(
+    () => this.connection().partnerCommitment?.title || 'Daily habit',
+  );
+  readonly partnerAvatarInitial = computed(() => this.partnerDisplayName()[0].toUpperCase());
+  readonly isHeartSent = computed(() => !this.stale() && this.connection().heartSent);
   readonly visualState = computed<ChainCardVisualState>(() => {
     const conn = this.connection();
-    if (conn.status === 'COMPLETED') {
-      return 'JOURNEY_COMPLETED';
-    }
-    const lastCompleted = conn.partnerCommitment?.lastCompletedDate;
-    if (
-      conn.partnerCommitment?.isCompletedToday === true ||
-      (conn.partnerCommitment?.isCompletedToday === undefined &&
-        lastCompleted &&
-        new Date(lastCompleted).toISOString().slice(0, 10) ===
-          new Date().toISOString().slice(0, 10))
-    ) {
-      return 'COMPLETED_TODAY';
-    }
-    if (conn.status === 'RESTING' || conn.consecutiveMissedDays === 1) {
-      return 'RESTING';
-    }
-
+    if (conn.status === 'COMPLETED') return 'JOURNEY_COMPLETED';
+    if (conn.partnerCommitment?.isCompletedToday) return 'COMPLETED_TODAY';
+    if (conn.status === 'RESTING' || conn.consecutiveMissedDays === 1) return 'RESTING';
     return 'WAITING';
   });
+  readonly stateLabel = computed(() => {
+    if (this.stale()) return 'Refresh required';
+    switch (this.visualState()) {
+      case 'COMPLETED_TODAY':
+        return 'Completed today';
+      case 'JOURNEY_COMPLETED':
+        return 'Goal reached';
+      case 'RESTING':
+        return 'Resting today';
+      default:
+        return 'Not completed today';
+    }
+  });
 
-  private lastHeartToggleTime = 0;
-
-  toggleHeart(): void {
-    const now = Date.now();
-    if (now - this.lastHeartToggleTime < 400) return;
-    this.lastHeartToggleTime = now;
-    this.heartToggle.emit(this.connection().id);
+  sendHeart(): void {
+    if (this.pending() || this.stale() || this.isHeartSent()) return;
+    this.heartSend.emit(this.connection().id);
   }
 
   toggleMenu(): void {
@@ -92,19 +65,8 @@ export class ChainCardComponent {
     this.isMenuOpen.set(false);
   }
 
-  handleNudge(): void {
-    if (this.nudgeSent()) return;
-    this.nudge.emit(this.connection().id);
-    this.nudgeSent.set(true);
-  }
-
-  handleCongratulate(): void {
-    if (this.congratulated()) return;
-    this.congratulate.emit(this.connection().id);
-    this.congratulated.set(true);
-  }
-
   handleDisconnect(): void {
+    if (this.pending()) return;
     this.closeMenu();
     this.disconnect.emit(this.connection().id);
   }

@@ -29,6 +29,20 @@
     </div>
   </div>
 
+  @if (chainService.loadError()) {
+    <div role="alert" class="mb-4 text-xs text-muted-foreground">
+      <p>Could not refresh today's support.</p>
+      <button
+        type="button"
+        (click)="chainService.loadConnections()"
+        [disabled]="chainService.isLoading()"
+        class="min-h-11 underline"
+      >
+        Retry
+      </button>
+    </div>
+  }
+
   <!-- Commitments List -->
   <div class="space-y-4">
     @if (commitmentService.isLoading() && commitmentService.commitments().length === 0) {
@@ -58,6 +72,7 @@
         <app-commitment-card
           [commitment]="c"
           [supportersCount]="chainService.getSupportersCount(c.id)"
+          [receivedHeartCount]="chainService.getReceivedHeartCount(c.id)"
           [pending]="completingIds().has(c.id)"
           [stale]="commitmentService.isStale()"
           [errorMessage]="completionErrors()[c.id] || null"

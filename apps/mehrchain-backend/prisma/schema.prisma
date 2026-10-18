@@ -54,6 +54,7 @@ model User {
   partnerChains ChainConnection[] @relation("PartnerChains")
   chainInvites  ChainInvite[]     @relation("SenderInvites")
   acceptedInvites ChainInvite[]   @relation("AcceptedInvites")
+  sentHearts    ChainHeart[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,6 +92,7 @@ model Commitment {
   partnerChains ChainConnection[] @relation("PartnerChainCommitment")
   chainInvites  ChainInvite[]     @relation("SenderCommitmentInvites")
   acceptedInvites ChainInvite[]   @relation("AcceptedCommitmentInvites")
+  receivedHearts ChainHeart[]
 
   metadata Json? // Extensible metadata for future modules
 
@@ -145,6 +147,22 @@ model ChainConnection {
 
   @@unique([userId, partnerId, userCommitmentId])
   @@map("chain_connections")
+}
+
+// Durable daily allowance, independent of the number/lifecycle of connection rows.
+// Connection heartSent/heartSentAt retain visibility and are cleared on detach.
+model ChainHeart {
+  senderId              String
+  recipientCommitmentId String
+  dayKey                String
+  sentAt                DateTime @default(now())
+
+  sender     User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  recipient  Commitment @relation(fields: [recipientCommitmentId], references: [id], onDelete: Cascade)
+
+  @@id([senderId, recipientCommitmentId, dayKey])
+  @@index([recipientCommitmentId, dayKey])
+  @@map("chain_hearts")
 }
 
 // Invite flow replacing old direct requests

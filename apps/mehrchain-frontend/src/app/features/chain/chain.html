@@ -2,14 +2,24 @@
   <p role="alert" class="p-4 text-sm text-red-500">{{ inviteError() }}</p>
 }
 @if (chainService.loadError()) {
-  <p role="alert" class="p-4 text-sm text-red-500">{{ chainService.loadError() }}</p>
+  <div role="alert" class="p-4 text-sm text-rose-600 dark:text-rose-400">
+    <p>{{ chainService.loadError() }}</p>
+    <button
+      type="button"
+      (click)="chainService.loadConnections()"
+      [disabled]="chainService.isLoading()"
+      class="min-h-11 underline"
+    >
+      Retry
+    </button>
+  </div>
 }
 <div class="app-page bg-background pb-6 px-4 sm:px-6 safe-top font-sans relative">
   <!-- Header with Mero avatar and Quick Theme Toggle -->
   <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
     <div class="min-w-0">
       <h1 class="text-xl sm:text-2xl font-black text-foreground tracking-tight">MehrChain</h1>
-      <p class="text-xs text-muted-foreground">Keep each other's lights burning with care.</p>
+      <p class="text-xs text-muted-foreground">A little support for each other.</p>
     </div>
     <div class="flex items-center gap-2">
       <button
@@ -43,9 +53,7 @@
 
   <!-- INCOMING INVITE BANNER (When accessed via invite link) -->
   @if (incomingInvite()) {
-    <div
-      class="bg-gradient-to-br from-teal-500/15 via-teal-500/5 to-muted/40 rounded-2xl p-4 border border-teal-500/30 shadow-md mb-5 animate-fade-in relative"
-    >
+    <div class="bg-card rounded-2xl p-4 border border-border/70 mb-5 relative">
       <button
         type="button"
         (click)="dismissIncomingInvite()"
@@ -118,7 +126,29 @@
     </div>
   }
 
-  <!-- SCROLLABLE FEED OF SUPPORT CHAINS -->
+  @if (receivedSupport().length > 0) {
+    <div class="mb-5 space-y-2" aria-label="Support for your habits today">
+      @for (habit of receivedSupport(); track habit.id) {
+        <div class="flex items-center justify-between gap-3 text-sm">
+          <span class="min-w-0 break-words text-foreground">{{ habit.title }}</span>
+          <span
+            class="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 shrink-0"
+            role="img"
+            [attr.aria-label]="
+              habit.count + (habit.count === 1 ? ' heart received today' : ' hearts received today')
+            "
+          >
+            <lucide-icon name="heart" class="w-4 h-4 fill-current" aria-hidden="true"></lucide-icon>
+            @if (habit.count > 1) {
+              <span aria-hidden="true">{{ habit.count }}</span>
+            }
+          </span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Active relationships only; archived habits remain in Journey. -->
   <div class="space-y-3">
     <div class="flex items-center justify-between px-1">
       <h2 class="text-sm font-extrabold text-foreground flex items-center gap-1.5">
@@ -148,39 +178,17 @@
         <app-chain-card
           [connection]="conn"
           [myHabitTitle]="getMyHabitTitle(conn.userCommitmentId)"
-          (heartToggle)="handleHeart($event)"
-          (nudge)="handleNudge($event)"
-          (congratulate)="handleCongratulate($event)"
+          [pending]="
+            chainService.pendingHeartTargets().has(conn.partnerCommitmentId) ||
+            disconnectingIds().has(conn.id)
+          "
+          [stale]="chainService.supportStale()"
+          [errorMessage]="actionErrors()[conn.id] || null"
+          (heartSend)="handleHeart($event)"
           (disconnect)="handleDisconnect($event)"
         ></app-chain-card>
       }
     }
-  </div>
-
-  <!-- ARTICLES PLACEHOLDER (Issue #38) -->
-  <div
-    class="mt-6 p-4 rounded-2xl bg-card border border-border/60 shadow-xs relative overflow-hidden"
-  >
-    <div class="flex items-start gap-3.5">
-      <div
-        class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0"
-      >
-        <lucide-icon name="book-open" class="w-5 h-5"></lucide-icon>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-1">
-          <h3 class="text-xs font-extrabold text-foreground tracking-tight">Articles</h3>
-          <span
-            class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
-          >
-            Coming Soon
-          </span>
-        </div>
-        <p class="text-xs text-muted-foreground leading-relaxed">
-          Short reads about kindness, habit chaining, and human connection.
-        </p>
-      </div>
-    </div>
   </div>
 
   <!-- Toast Notification -->
@@ -189,7 +197,6 @@
       class="app-toast bg-foreground text-background px-4 py-2.5 rounded-2xl text-xs font-medium shadow-lg flex items-center gap-2 z-50"
       role="status"
     >
-      <lucide-icon name="check-circle-2" class="w-4 h-4 text-teal-400"></lucide-icon>
       <span>{{ toastMessage() }}</span>
     </div>
   }
