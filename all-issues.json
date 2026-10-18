@@ -1,0 +1,555 @@
+[
+  {
+    "number": 2,
+    "title": "[Backend] Implement ChainModule API & Prisma Migration",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-19T17:58:50Z",
+    "closed_at": "2026-09-22T18:44:09Z",
+    "labels": [
+      "backend",
+      "architecture"
+    ]
+  },
+  {
+    "number": 3,
+    "title": "[Frontend] Minimal Chain Card Component & Feed",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-19T17:58:52Z",
+    "closed_at": "2026-09-24T04:37:46Z",
+    "labels": [
+      "design",
+      "frontend"
+    ]
+  },
+  {
+    "number": 4,
+    "title": "[Design] Mero Mascot SVG Illustrations (4 core states)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-19T17:58:55Z",
+    "closed_at": "2026-09-24T04:37:51Z",
+    "labels": [
+      "help wanted",
+      "design",
+      "illustration"
+    ]
+  },
+  {
+    "number": 5,
+    "title": "[Refactor] Split OnboardingComponent into Modular Steps",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-19T17:59:00Z",
+    "closed_at": "2026-09-30T18:22:41Z",
+    "labels": [
+      "help wanted",
+      "good first issue",
+      "frontend"
+    ]
+  },
+  {
+    "number": 6,
+    "title": "[Phase 1] Unit tests for ChainService + ChainCronService",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:12:49Z",
+    "closed_at": "2026-09-22T18:44:08Z",
+    "labels": [
+      "enhancement",
+      "Phase 1"
+    ]
+  },
+  {
+    "number": 7,
+    "title": "[Phase 1] Rewrite ChainService frontend (localStorage -> API hybrid)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:12:54Z",
+    "closed_at": "2026-09-22T19:42:01Z",
+    "labels": [
+      "enhancement",
+      "Phase 1"
+    ]
+  },
+  {
+    "number": 8,
+    "title": "[Phase 1] New ChainCardComponent (minimal 5-state card)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:13:01Z",
+    "closed_at": "2026-09-23T18:19:42Z",
+    "labels": [
+      "enhancement",
+      "Phase 1"
+    ]
+  },
+  {
+    "number": 9,
+    "title": "[Phase 1] Remove Chain page clutter (Bell, Love, emojis, demo)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:13:20Z",
+    "closed_at": "2026-09-23T18:44:44Z",
+    "labels": [
+      "enhancement",
+      "Phase 1"
+    ]
+  },
+  {
+    "number": 10,
+    "title": "[Phase 1] Unread dot on Chain navbar tab",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:13:41Z",
+    "closed_at": "2026-09-23T20:15:30Z",
+    "labels": [
+      "enhancement",
+      "Phase 1"
+    ]
+  },
+  {
+    "number": 11,
+    "title": "[Phase 1] Invite section cleanup (Lucide icons, no emojis)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:13:50Z",
+    "closed_at": "2026-09-23T20:33:56Z",
+    "labels": [
+      "enhancement",
+      "Phase 1"
+    ]
+  },
+  {
+    "number": 12,
+    "title": "[Phase 2] Split OnboardingComponent into step components",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:17:50Z",
+    "closed_at": "2026-09-30T18:22:45Z",
+    "labels": [
+      "refactor",
+      "Phase 2"
+    ]
+  },
+  {
+    "number": 13,
+    "title": "[Phase 2] Remove Mero Personality section from Profile",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:17:59Z",
+    "closed_at": "2026-09-24T17:43:41Z",
+    "labels": [
+      "Phase 2",
+      "cleanup"
+    ]
+  },
+  {
+    "number": 14,
+    "title": "[Phase 2] Remove console.log debug calls from frontend",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:18:02Z",
+    "closed_at": "2026-09-24T18:06:25Z",
+    "labels": [
+      "Phase 2",
+      "cleanup"
+    ]
+  },
+  {
+    "number": 15,
+    "title": "[Phase 3] Signed APK release via GitHub Actions",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:18:25Z",
+    "closed_at": "2026-09-30T18:22:50Z",
+    "labels": [
+      "enhancement",
+      "Phase 3"
+    ]
+  },
+  {
+    "number": 16,
+    "title": "[Phase 3] Add backend tests to CI pipeline",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:18:29Z",
+    "closed_at": "2026-09-30T18:22:53Z",
+    "labels": [
+      "enhancement",
+      "Phase 3"
+    ]
+  },
+  {
+    "number": 17,
+    "title": "[Phase 3] Setup Resend SMTP for real OTP emails",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T18:20:42Z",
+    "closed_at": "2026-09-30T18:23:01Z",
+    "labels": [
+      "enhancement"
+    ]
+  },
+  {
+    "number": 18,
+    "title": "[Mobile & PWA] Fix viewport bounce, pinch-zoom & responsive onboarding layout fit",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T19:25:06Z",
+    "closed_at": "2026-09-22T19:26:51Z",
+    "labels": []
+  },
+  {
+    "number": 19,
+    "title": "[Phase 2] Custom commitment duration validation (zero rejection)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-22T19:34:29Z",
+    "closed_at": "2026-09-22T19:34:32Z",
+    "labels": []
+  },
+  {
+    "number": 20,
+    "title": "feat(visual): Three.js On-Demand visual engine, Spark action button & Mero animation audit",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-09-23T18:55:03Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 21,
+    "title": "Fix Mobile & PWA status bar safe area overlap",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-24T18:36:34Z",
+    "closed_at": "2026-09-24T18:36:35Z",
+    "labels": []
+  },
+  {
+    "number": 22,
+    "title": "Refactor & Split OnboardingComponent",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-27T16:33:50Z",
+    "closed_at": "2026-09-27T16:33:53Z",
+    "labels": []
+  },
+  {
+    "number": 23,
+    "title": "Add backend tests to CI pipeline",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-27T16:47:25Z",
+    "closed_at": "2026-09-27T16:47:27Z",
+    "labels": []
+  },
+  {
+    "number": 24,
+    "title": "Setup SMTP & Resend Email Integration",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-27T17:07:13Z",
+    "closed_at": "2026-09-27T17:07:14Z",
+    "labels": []
+  },
+  {
+    "number": 25,
+    "title": "Signed Release APK via GitHub Actions",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-27T17:17:10Z",
+    "closed_at": "2026-09-27T17:17:12Z",
+    "labels": []
+  },
+  {
+    "number": 26,
+    "title": "Add isPublic toggle in Onboarding habit creation",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-27T18:12:39Z",
+    "closed_at": "2026-09-27T18:12:40Z",
+    "labels": []
+  },
+  {
+    "number": 27,
+    "title": "UI Loading Indicators & Anti-Spam Click Protection",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-27T19:17:46Z",
+    "closed_at": "2026-09-27T19:17:47Z",
+    "labels": []
+  },
+  {
+    "number": 28,
+    "title": "Fix OTP Verification Bypass, Resend SMTP Configuration & Account Deletion Cache Cleanup",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-28T08:00:38Z",
+    "closed_at": "2026-09-28T08:00:39Z",
+    "labels": []
+  },
+  {
+    "number": 29,
+    "title": "test",
+    "state": "closed",
+    "state_reason": "not_planned",
+    "created_at": "2026-09-30T17:43:30Z",
+    "closed_at": "2026-09-30T17:45:30Z",
+    "labels": []
+  },
+  {
+    "number": 30,
+    "title": "[v1.0 Bug] OTP auto-fill from previewCode",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:33Z",
+    "closed_at": "2026-09-30T18:14:47Z",
+    "labels": []
+  },
+  {
+    "number": 31,
+    "title": "[v1.0 Bug] Fix account deletion — only clear local state on backend success",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:36Z",
+    "closed_at": "2026-09-30T18:49:24Z",
+    "labels": []
+  },
+  {
+    "number": 32,
+    "title": "[v1.0 Bug] Translate OTP email template to English",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:38Z",
+    "closed_at": "2026-09-30T18:44:08Z",
+    "labels": []
+  },
+  {
+    "number": 33,
+    "title": "[v1.0 UI] Profile page simplification",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:40Z",
+    "closed_at": "2026-10-01T20:06:02Z",
+    "labels": []
+  },
+  {
+    "number": 34,
+    "title": "[v1.0 UI] Journey page redesign + badge system foundations",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:42Z",
+    "closed_at": "2026-10-02T19:14:21Z",
+    "labels": []
+  },
+  {
+    "number": 35,
+    "title": "[v1.0 UI] Commitment duration — \"Endless Journey\" + Custom",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:44Z",
+    "closed_at": "2026-10-02T19:14:23Z",
+    "labels": []
+  },
+  {
+    "number": 36,
+    "title": "[v1.0 UI] \"I did it\" → \"Spark\" button with CSS animation",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:47Z",
+    "closed_at": "2026-10-02T08:17:00Z",
+    "labels": []
+  },
+  {
+    "number": 37,
+    "title": "[v1.0 UX] Skeleton loading + cold start message",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:50Z",
+    "closed_at": "2026-10-02T20:56:57Z",
+    "labels": []
+  },
+  {
+    "number": 38,
+    "title": "[v1.0 Feature] Articles \"Coming Soon\" placeholder in Chain",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:52Z",
+    "closed_at": "2026-10-03T18:07:45Z",
+    "labels": []
+  },
+  {
+    "number": 39,
+    "title": "[v1.0 Feature] \"What's New\" section in Profile + version dot indicator",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:55Z",
+    "closed_at": "2026-10-03T18:23:20Z",
+    "labels": []
+  },
+  {
+    "number": 40,
+    "title": "[v1.0 Docs] Update landing page — Mero mascot + philosophy + roadmap",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-09-30T17:45:57Z",
+    "closed_at": "2026-10-03T18:34:15Z",
+    "labels": []
+  },
+  {
+    "number": 41,
+    "title": "Setup Cloudflare API Proxy for backend requests (/api/*)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-03T03:24:04Z",
+    "closed_at": "2026-10-03T16:25:06Z",
+    "labels": []
+  },
+  {
+    "number": 42,
+    "title": "Move Badges to Profile, clean streak card, and set custom duration placeholder",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-03T03:25:26Z",
+    "closed_at": "2026-10-03T17:29:39Z",
+    "labels": []
+  },
+  {
+    "number": 43,
+    "title": "Implement Google Sign-In authentication (OAuth / One-Tap)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-03T03:40:33Z",
+    "closed_at": "2026-10-03T16:25:08Z",
+    "labels": []
+  },
+  {
+    "number": 44,
+    "title": "Move Badges to Profile, clean streak card, and set custom duration placeholder",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-03T16:56:36Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 45,
+    "title": "Profile Mero Mood System — Remove squish, add Three.js mood particles",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-03T19:31:12Z",
+    "closed_at": "2026-10-03T19:31:24Z",
+    "labels": []
+  },
+  {
+    "number": 46,
+    "title": "[R0] Establish production truth (P0, read-only, Oct 4)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-04T17:19:19Z",
+    "closed_at": "2026-10-04T18:25:35Z",
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 47,
+    "title": "[R1] Make schema deployment safe and repeatable (P0, depends on R0, Oct 4–5)",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-04T17:19:25Z",
+    "closed_at": "2026-10-04T18:26:36Z",
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 48,
+    "title": "[R2] Secure and deploy real authentication (P0, depends on R1, Oct 5)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:19:32Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 49,
+    "title": "[R3] Configure the frontend's real sign-in path (P0, depends on R2, Oct 5–6)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:19:38Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 50,
+    "title": "[R4] Persist the solo habit journey and make failures honest (P0, depends on R1–R3, Oct 5–6)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:19:43Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 51,
+    "title": "[R5] Use server-issued invites for the entire chain flow (P0, depends on R4, Oct 6–7)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:19:47Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 52,
+    "title": "[R6] Verify heart, deletion, and user data isolation (P0, Oct 7)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:19:52Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 53,
+    "title": "[R7] Deploy and run a two-account release smoke test (P0, depends on R0–R6, Oct 7)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:19:57Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  },
+  {
+    "number": 54,
+    "title": "[R8] Run the private field test and decide on launch (P0 Decision Gate, Oct 7–8)",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-04T17:20:02Z",
+    "closed_at": null,
+    "labels": [
+      "release-recovery",
+      "P0"
+    ]
+  }
+]

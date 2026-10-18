@@ -1,0 +1,1916 @@
+{
+  "data": {
+    "node": {
+      "id": "PVT_kwHOAgpOTc4BkCJE",
+      "title": "MehrChain",
+      "fields": {
+        "nodes": [
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2E",
+            "name": "Title"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2I",
+            "name": "Assignees"
+          },
+          {
+            "id": "PVTSSF_lAHOAgpOTc4BkCJEzhi0Q2M",
+            "name": "Status",
+            "options": [
+              {
+                "id": "f75ad846",
+                "name": "Backlog"
+              },
+              {
+                "id": "61e4505c",
+                "name": "Ready"
+              },
+              {
+                "id": "47fc9ee4",
+                "name": "In progress"
+              },
+              {
+                "id": "df73e18b",
+                "name": "In review"
+              },
+              {
+                "id": "98236657",
+                "name": "Done"
+              }
+            ]
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2Q",
+            "name": "Labels"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2U",
+            "name": "Linked pull requests"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2Y",
+            "name": "Milestone"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2c",
+            "name": "Repository"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2k",
+            "name": "Reviewers"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2o",
+            "name": "Parent issue"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2s",
+            "name": "Sub-issues progress"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q2w",
+            "name": "Created"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q20",
+            "name": "Updated"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q24",
+            "name": "Closed"
+          },
+          {
+            "id": "PVTSSF_lAHOAgpOTc4BkCJEzhi0Q-I",
+            "name": "Priority",
+            "options": [
+              {
+                "id": "79628723",
+                "name": "P0"
+              },
+              {
+                "id": "0a877460",
+                "name": "P1"
+              },
+              {
+                "id": "da944a9c",
+                "name": "P2"
+              }
+            ]
+          },
+          {
+            "id": "PVTSSF_lAHOAgpOTc4BkCJEzhi0Q-M",
+            "name": "Size",
+            "options": [
+              {
+                "id": "6c6483d2",
+                "name": "XS"
+              },
+              {
+                "id": "f784b110",
+                "name": "S"
+              },
+              {
+                "id": "7515a9f1",
+                "name": "M"
+              },
+              {
+                "id": "817d0097",
+                "name": "L"
+              },
+              {
+                "id": "db339eb2",
+                "name": "XL"
+              }
+            ]
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q-Q",
+            "name": "Estimate"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q-U",
+            "name": "Start date"
+          },
+          {
+            "id": "PVTF_lAHOAgpOTc4BkCJEzhi0Q-Y",
+            "name": "Target date"
+          }
+        ]
+      },
+      "items": {
+        "totalCount": 63,
+        "nodes": [
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg7wUZs",
+            "content": {
+              "number": 2,
+              "title": "[Backend] Implement ChainModule API & Prisma Migration",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8LxUA",
+            "content": {
+              "number": 7,
+              "title": "[Phase 1] Rewrite ChainService frontend (localStorage -> API hybrid)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8LxRQ",
+            "content": {
+              "number": 6,
+              "title": "[Phase 1] Unit tests for ChainService + ChainCronService",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg7wUZ0",
+            "content": {
+              "number": 3,
+              "title": "[Frontend] Minimal Chain Card Component & Feed",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg7wUZ8",
+            "content": {
+              "number": 4,
+              "title": "[Design] Mero Mascot SVG Illustrations (4 core states)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg7wUaA",
+            "content": {
+              "number": 5,
+              "title": "[Refactor] Split OnboardingComponent into Modular Steps",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8LxW4",
+            "content": {
+              "number": 8,
+              "title": "[Phase 1] New ChainCardComponent (minimal 5-state card)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8Lxic",
+            "content": {
+              "number": 9,
+              "title": "[Phase 1] Remove Chain page clutter (Bell, Love, emojis, demo)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8LxuM",
+            "content": {
+              "number": 10,
+              "title": "[Phase 1] Unread dot on Chain navbar tab",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8LxzE",
+            "content": {
+              "number": 11,
+              "title": "[Phase 1] Invite section cleanup (Lucide icons, no emojis)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8L0Es",
+            "content": {
+              "number": 12,
+              "title": "[Phase 2] Split OnboardingComponent into step components",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8L0Jk",
+            "content": {
+              "number": 13,
+              "title": "[Phase 2] Remove Mero Personality section from Profile",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8L0MA",
+            "content": {
+              "number": 14,
+              "title": "[Phase 2] Remove console.log debug calls from frontend",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8L0eo",
+            "content": {
+              "number": 15,
+              "title": "[Phase 3] Signed APK release via GitHub Actions",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8L0hQ",
+            "content": {
+              "number": 16,
+              "title": "[Phase 3] Add backend tests to CI pipeline",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8L12Q",
+            "content": {
+              "number": 17,
+              "title": "[Phase 3] Setup Resend SMTP for real OTP emails",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8Ma5g",
+            "content": {
+              "number": 18,
+              "title": "[Mobile & PWA] Fix viewport bounce, pinch-zoom & responsive onboarding layout fit",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8Mgn4",
+            "content": {
+              "number": 19,
+              "title": "[Phase 2] Custom commitment duration validation (zero rejection)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg8Zh50",
+            "content": {
+              "number": 20,
+              "title": "feat(visual): Three.js On-Demand visual engine, Spark action button & Mero animation audit",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {},
+                {},
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9DDp0",
+            "content": {
+              "number": 22,
+              "title": "Refactor & Split OnboardingComponent",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9DVFI",
+            "content": {
+              "number": 25,
+              "title": "Signed Release APK via GitHub Actions",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9ufy4",
+            "content": {
+              "number": 29,
+              "title": "test",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhSc",
+            "content": {
+              "number": 30,
+              "title": "[v1.0 Bug] OTP auto-fill from previewCode",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhUg",
+            "content": {
+              "number": 31,
+              "title": "[v1.0 Bug] Fix account deletion — only clear local state on backend success",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhV4",
+            "content": {
+              "number": 32,
+              "title": "[v1.0 Bug] Translate OTP email template to English",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhX0",
+            "content": {
+              "number": 33,
+              "title": "[v1.0 UI] Profile page simplification",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhaA",
+            "content": {
+              "number": 34,
+              "title": "[v1.0 UI] Journey page redesign + badge system foundations",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhcI",
+            "content": {
+              "number": 35,
+              "title": "[v1.0 UI] Commitment duration — \"Endless Journey\" + Custom",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uheg",
+            "content": {
+              "number": 36,
+              "title": "[v1.0 UI] \"I did it\" → \"Spark\" button with CSS animation",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhgY",
+            "content": {
+              "number": 37,
+              "title": "[v1.0 UX] Skeleton loading + cold start message",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhiI",
+            "content": {
+              "number": 38,
+              "title": "[v1.0 Feature] Articles \"Coming Soon\" placeholder in Chain",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhkU",
+            "content": {
+              "number": 39,
+              "title": "[v1.0 Feature] \"What's New\" section in Profile + version dot indicator",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9uhmg",
+            "content": {
+              "number": 40,
+              "title": "[v1.0 Docs] Update landing page — Mero mascot + philosophy + roadmap",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9u8w4",
+            "content": {
+              "number": 21,
+              "title": "Fix Mobile & PWA status bar safe area overlap",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9u8yQ",
+            "content": {
+              "number": 23,
+              "title": "Add backend tests to CI pipeline",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9u8zM",
+            "content": {
+              "number": 24,
+              "title": "Setup SMTP & Resend Email Integration",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9u82I",
+            "content": {
+              "number": 26,
+              "title": "Add isPublic toggle in Onboarding habit creation",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P2",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9u84A",
+            "content": {
+              "number": 27,
+              "title": "UI Loading Indicators & Anti-Spam Click Protection",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg9u86U",
+            "content": {
+              "number": 28,
+              "title": "Fix OTP Verification Bypass, Resend SMTP Configuration & Account Deletion Cache Cleanup",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                },
+                {},
+                {}
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-QeF0",
+            "content": {
+              "number": 41,
+              "title": "Setup Cloudflare API Proxy for backend requests (/api/*)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-QesQ",
+            "content": {
+              "number": 42,
+              "title": "Move Badges to Profile, clean streak card, and set custom duration placeholder",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-QkDo",
+            "content": {
+              "number": 43,
+              "title": "Implement Google Sign-In authentication (OAuth / One-Tap)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-VZ_s",
+            "content": {
+              "number": 44,
+              "title": "Move Badges to Profile, clean streak card, and set custom duration placeholder",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-WhXs",
+            "content": {
+              "number": 45,
+              "title": "Profile Mero Mood System — Remove squish, add Three.js mood particles",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eEAs",
+            "content": {
+              "number": 46,
+              "title": "[R0] Establish production truth (P0, read-only, Oct 4)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eECQ",
+            "content": {
+              "number": 47,
+              "title": "[R1] Make schema deployment safe and repeatable (P0, depends on R0, Oct 4–5)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eEEw",
+            "content": {
+              "number": 48,
+              "title": "[R2] Secure and deploy real authentication (P0, depends on R1, Oct 5)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eEH0",
+            "content": {
+              "number": 49,
+              "title": "[R3] Configure the frontend's real sign-in path (P0, depends on R2, Oct 5–6)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eEKI",
+            "content": {
+              "number": 50,
+              "title": "[R4] Persist the solo habit journey and make failures honest (P0, depends on R1–R3, Oct 5–6)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eENE",
+            "content": {
+              "number": 51,
+              "title": "[R5] Use server-issued invites for the entire chain flow (P0, depends on R4, Oct 6–7)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eEPA",
+            "content": {
+              "number": 52,
+              "title": "[R6] Verify heart, deletion, and user data isolation (P0, Oct 7)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eEQw",
+            "content": {
+              "number": 53,
+              "title": "[R7] Deploy and run a two-account release smoke test (P0, depends on R0–R6, Oct 7)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzg-eES8",
+            "content": {
+              "number": 54,
+              "title": "[R8] Run the private field test and decide on launch (P0 Decision Gate, Oct 7–8)",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGAU",
+            "content": {
+              "number": 55,
+              "title": "[T00] Restore signup by aligning the deployed timezone contract",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGEE",
+            "content": {
+              "number": 56,
+              "title": "[T01] Simplify the interface and desktop PWA",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGHE",
+            "content": {
+              "number": 57,
+              "title": "[T02] Make daily completion and streak correct",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGJw",
+            "content": {
+              "number": 58,
+              "title": "[T03] Archive habits and disconnect chains consistently",
+              "state": "CLOSED"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Done",
+                  "field": {
+                    "name": "Status"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGLc",
+            "content": {
+              "number": 59,
+              "title": "[T04] Make Chain and hearts quiet and minimal",
+              "state": "OPEN"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "In progress",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGNk",
+            "content": {
+              "number": 60,
+              "title": "[T05] Ask and deliver a disconnect reason",
+              "state": "OPEN"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Ready",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGPs",
+            "content": {
+              "number": 61,
+              "title": "[T06] Make the day-21 named color durable",
+              "state": "OPEN"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Ready",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGRM",
+            "content": {
+              "number": 62,
+              "title": "[T07] Explain daily rules and make returning easy",
+              "state": "OPEN"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Ready",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGT0",
+            "content": {
+              "number": 63,
+              "title": "[T08] Reduce startup and access friction within a free budget",
+              "state": "OPEN"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Ready",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P1",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "PVTI_lAHOAgpOTc4BkCJEzhBkGWc",
+            "content": {
+              "number": 64,
+              "title": "[T09] Verify the complete experience with two real accounts",
+              "state": "OPEN"
+            },
+            "fieldValues": {
+              "nodes": [
+                {},
+                {},
+                {},
+                {
+                  "name": "Ready",
+                  "field": {
+                    "name": "Status"
+                  }
+                },
+                {
+                  "name": "P0",
+                  "field": {
+                    "name": "Priority"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

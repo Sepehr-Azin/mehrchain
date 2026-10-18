@@ -1,0 +1,86 @@
+{
+  "T00": {
+    "number": 55,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/55",
+    "title": "[T00] Restore signup by aligning the deployed timezone contract",
+    "key": "T00",
+    "commit": "784d1ed",
+    "status": "Done",
+    "isClosed": true
+  },
+  "T01": {
+    "number": 56,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/56",
+    "title": "[T01] Simplify the interface and desktop PWA",
+    "key": "T01",
+    "commit": "cfaf0fd",
+    "status": "Done",
+    "isClosed": true
+  },
+  "T02": {
+    "number": 57,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/57",
+    "title": "[T02] Make daily completion and streak correct",
+    "key": "T02",
+    "commit": "9643bda",
+    "status": "Done",
+    "isClosed": true
+  },
+  "T03": {
+    "number": 58,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/58",
+    "title": "[T03] Archive habits and disconnect chains consistently",
+    "key": "T03",
+    "commit": "2f1cff1",
+    "status": "Done",
+    "isClosed": true
+  },
+  "T04": {
+    "number": 59,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/59",
+    "title": "[T04] Make Chain and hearts quiet and minimal",
+    "key": "T04",
+    "status": "In progress",
+    "isClosed": false
+  },
+  "T05": {
+    "number": 60,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/60",
+    "title": "[T05] Ask and deliver a disconnect reason",
+    "key": "T05",
+    "status": "Ready",
+    "isClosed": false
+  },
+  "T06": {
+    "number": 61,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/61",
+    "title": "[T06] Make the day-21 named color durable",
+    "key": "T06",
+    "status": "Ready",
+    "isClosed": false
+  },
+  "T07": {
+    "number": 62,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/62",
+    "title": "[T07] Explain daily rules and make returning easy",
+    "key": "T07",
+    "status": "Ready",
+    "isClosed": false
+  },
+  "T08": {
+    "number": 63,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/63",
+    "title": "[T08] Reduce startup and access friction within a free budget",
+    "key": "T08",
+    "status": "Ready",
+    "isClosed": false
+  },
+  "T09": {
+    "number": 64,
+    "url": "https://github.com/farzad-bahadorifar/mehrchain/issues/64",
+    "title": "[T09] Verify the complete experience with two real accounts",
+    "key": "T09",
+    "status": "Ready",
+    "isClosed": false
+  }
+}

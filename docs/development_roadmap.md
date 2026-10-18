@@ -4,7 +4,7 @@
 > Goal: a small, reliable daily habit experience with quiet support and a kind return.
 > The owner reports a mostly successful two-person signup/Chain pilot, with proxy and server warm-up friction. Multi-day behavior and full acceptance still need testing.
 > T00–T03 implementation is complete and pushed, as confirmed by the owner on October 17. T04 is the next feature task. Deployment and runtime acceptance evidence remain separate from code completion.
-> GitHub issue synchronization remains deferred.
+> GitHub issue synchronization is completed. Tasks T00–T09 are tracked in issues #55–#64 on GitHub and the project board.
 
 ## Product rules
 
@@ -25,18 +25,24 @@ Implemented in T02/T03: persisted account IANA timezone; no missed-day penalty f
 
 **T00 → T03 are implemented and pushed. Continue with T04**, followed by T05–T07 on that foundation. T08 can run independently; its latency work does not replace verifying the signup contract. T09 verifies the integrated result. Carry the outstanding T00–T03 checks below into release validation; verify the deployed signup blocker is resolved before inviting testers. Each task includes its own focused checks; acceptance does not wait until the end to discover basic defects.
 
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs are local, not GitHub issue numbers. Checked boxes record completed implementation, not proof of deployed acceptance. T04–T09 remain pending.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64). Checked boxes record completed implementation, not proof of deployed acceptance. T04–T09 remain pending.
 
-| Task | Implementation | Commit | Acceptance evidence in repository |
-| --- | --- | --- | --- |
-| T00 | Complete / pushed | `784d1ed` | Focused tests and deployed auth flows not recorded |
-| T01 | Complete / pushed | `cfaf0fd` | Responsive/PWA and failure-state review not recorded |
-| T02 | Complete / pushed | `9643bda` | Migration rehearsal, daily-boundary and concurrency checks not recorded |
-| T03 | Complete / pushed | `2f1cff1` | Migration rehearsal, lifecycle/PWA and PostgreSQL race checks not recorded |
+| Task | Issue | Implementation | Commit | Status | Acceptance evidence in repository |
+| --- | --- | --- | --- | --- | --- |
+| T00 | [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55) | Complete / pushed | `784d1ed` | ✅ Implementation Done | Focused tests and deployed auth flows not recorded |
+| T01 | [#56](https://github.com/farzad-bahadorifar/mehrchain/issues/56) | Complete / pushed | `cfaf0fd` | ✅ Implementation Done | Responsive/PWA and failure-state review not recorded |
+| T02 | [#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57) | Complete / pushed | `9643bda` | ✅ Implementation Done | Migration rehearsal, daily-boundary and concurrency checks not recorded |
+| T03 | [#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58) | Complete / pushed | `2f1cff1` | ✅ Implementation Done | Migration rehearsal, lifecycle/PWA and PostgreSQL race checks not recorded |
+| T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Pending | — | 🔄 In Progress (Next) | Pending implementation |
+| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Pending | — | 📋 Ready | Pending implementation |
+| T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Pending | — | 📋 Ready | Pending implementation |
+| T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Pending | — | 📋 Ready | Pending implementation |
+| T08 | [#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63) | Pending | — | 📋 Ready | Pending implementation |
+| T09 | [#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64) | Pending | — | 📋 Ready | Pending implementation |
 
 The T00–T03 handoffs are historical implementation notes written before commit/push. Their working-tree/uncommitted wording is superseded by this status and the owner's confirmation; their unexecuted validation steps remain open unless later results are recorded.
 
-### T00 — Restore signup by aligning the deployed timezone contract
+### T00 — Restore signup by aligning the deployed timezone contract ([#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55))
 
 **Priority:** **P0 for release verification.** Confirm the reported signup failure is resolved before inviting new testers.
 
@@ -60,7 +66,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** the deployed email and Google flows no longer reject the supported `timeZone` field; a new Tehran account retains its account timezone and existing accounts/history remain intact. Required migrations are applied, the running backend matches the reviewed revision, and no missing-column errors replace the validation failure. Real deployed flow results are recorded; a local build or unit test alone does not close this blocker. T02's broader daily-boundary acceptance remains separate.
 
-### T01 — Simplify the interface and desktop PWA
+### T01 — Simplify the interface and desktop PWA ([#56](https://github.com/farzad-bahadorifar/mehrchain/issues/56))
 
 **Status:** implementation complete and pushed in `cfaf0fd`; visual/runtime acceptance remains unrecorded. See [T01 handoff](t01_review_handoff.md).
 
@@ -76,7 +82,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Original cause addressed:** the manifest already used `standalone`; T01 added the missing shared width-limited route wrapper and aligned navigation with it. Content containment is under app control; native first-launch window size depends on browser/OS. Preserve normal resize/maximize controls.
 
-### T02 — Make daily completion and streak correct
+### T02 — Make daily completion and streak correct ([#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57))
 
 **Status:** implementation complete and pushed in `9643bda`; migration/runtime acceptance remains unrecorded. See [T02 handoff](t02_review_handoff.md).
 
@@ -89,7 +95,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** 08:00 → next 00:01 is valid; two devices/retries create one daily event; a one-day gap restarts at 1. Test Tehran, DST, year boundary, stale cache and explicit timezone-change policy. Failed refresh remains visibly stale.
 
-### T03 — Archive habits and disconnect chains consistently
+### T03 — Archive habits and disconnect chains consistently ([#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58))
 
 **Scope:** commitment archive/restore, `BE/chain/`, relationship/invite data and archive UI. Depends on T02.
 
@@ -102,7 +108,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** Monday complete, Tuesday/Wednesday missed → archived Thursday 00:00, including after server sleep. One missed date stays active. Multi-partner archive, simultaneous completion/invite, manual archive and restore/reconnect preserve unrelated data and do not immediately rearchive.
 
-### T04 — Make Chain and hearts quiet and minimal
+### T04 — Make Chain and hearts quiet and minimal ([#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59))
 
 **Scope:** backend reactions, shared response types, frontend Chain service/cards and habit support summary. Depends on T02/T03.
 
@@ -113,7 +119,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** two supporters produce the right count; duplicate links, retries and simultaneous requests do not inflate or undo support. Reload/day rollover is consistent; stale disconnected/private/archived targets reject new hearts. Empty and multi-partner layouts remain clear.
 
-### T05 — Ask and deliver a disconnect reason
+### T05 — Ask and deliver a disconnect reason ([#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60))
 
 **Scope:** disconnect API/transaction, durable recipient event and compact frontend reason/receipt UI. Depends on T03; integrates with T04's menu.
 
@@ -123,7 +129,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** cancel changes nothing; manual disconnect updates both sides and the partner receives the chosen reason once. Verify offline return, retries, multiple relationships and account deletion. No chat, email or push infrastructure is needed.
 
-### T06 — Make the day-21 named color durable
+### T06 — Make the day-21 named color durable ([#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61))
 
 **Scope:** profile/Mero customization, server-backed preferences/earned milestone and migration. Depends on T02 and the reward interpretation.
 
@@ -133,7 +139,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** day 20 stays locked, qualifying day 21 unlocks, and a later miss/archive does not revoke an earned reward. Login/device change restores it; invalid values and failed saves do not corrupt preferences. Treat 21 days as a product milestone, not a habit-formation claim.
 
-### T07 — Explain daily rules and make returning easy
+### T07 — Explain daily rules and make returning easy ([#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62))
 
 **Scope:** contextual copy, create/edit habit, Journey/history, archive and return states. Integrates T02–T06.
 
@@ -144,7 +150,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 **Acceptance:** a new user, daily visitor, user after one miss and user returning after weeks can identify the next action unaided. Dates/history agree across views and devices. No new coaching system, extra daily ritual or celebration overlay is required.
 
-### T08 — Reduce startup and access friction within a free budget
+### T08 — Reduce startup and access friction within a free budget ([#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63))
 
 **Scope:** current Pages proxy, Render/Neon request path, authentication reachability, loading/retry and foreground refresh.
 
@@ -157,7 +163,7 @@ The T00–T03 handoffs are historical implementation notes written before commit
 
 References for implementation: [Render Free](https://render.com/docs/free), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Neon scale to zero](https://neon.com/docs/introduction/scale-to-zero). Email signup/reset may only be offered as a fallback after actual delivery capability is confirmed.
 
-### T09 — Verify the complete experience with two real accounts
+### T09 — Verify the complete experience with two real accounts ([#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64))
 
 **Scope:** focused regression/integration tests, deployed browser/PWA acceptance and the next small human test. Depends on completed product tasks; T08 migration is not mandatory.
 
@@ -184,4 +190,4 @@ The active roadmap contains these ten tasks (T00–T09) only. Three.js, articles
 
 Keep implementation changes small and reviewable, using the repository's OpenSpec workflow where behavior/schema changes require it. Track implementation completion separately from acceptance: T00–T03 code is complete/pushed, while release readiness requires the outstanding evidence above. New data migrations require a backup, rehearsal and rollback plan. No production deployment or release tag follows automatically from this document.
 
-GitHub remains a later synchronization step: re-read current state, map these tasks to existing issues where appropriate, remove obsolete due dates and close confirmed duplicates. Do not recreate the old twenty-task backlog or mark pilot-only evidence as full acceptance.
+GitHub synchronization status: completed. All tasks T00–T09 are mapped to GitHub issues ([#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64)) and tracked on the project board with appropriate priorities and states. Obsolete and duplicate pre-pilot issues (#20, #44, #48–#54) have been closed with clear audit notes.
