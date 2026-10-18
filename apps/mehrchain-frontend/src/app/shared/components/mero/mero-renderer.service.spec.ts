@@ -159,7 +159,7 @@ describe('Mero shared rendering lifecycle', () => {
     await visible(handle);
     frame();
     expect(factory).toHaveBeenCalledWith('low', expect.any(Function));
-    expect(scene.draw.mock.lastCall?.[1]).toBe(192);
+    expect(scene.draw.mock.lastCall?.[1]).toBe(256);
     expect(scene.draw.mock.lastCall?.[5]).toBe(false);
     expect(frames.size).toBe(0);
   });

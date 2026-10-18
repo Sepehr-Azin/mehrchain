@@ -5,8 +5,16 @@
   "projectType": "application",
   "tags": [],
   "targets": {
+    "prisma-generate": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "prisma generate --schema=apps/mehrchain-backend/prisma/schema.prisma"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
+      "dependsOn": ["^build", "prisma-generate"],
       "options": {
         "command": "webpack-cli build",
         "args": ["--node-env=production"],

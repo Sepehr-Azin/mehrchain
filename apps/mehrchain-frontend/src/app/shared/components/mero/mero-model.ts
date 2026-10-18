@@ -147,7 +147,7 @@ export function createMascot({
   model.name = 'MehrChain mascot';
   const glowUniform = { value: THREE.MathUtils.clamp(glow, 0, 2) };
   const skin = new THREE.MeshPhysicalMaterial({
-    color: '#1c615b',
+    color: '#347f73',
     roughness: 0.9,
     metalness: 0,
     clearcoat: 0,
@@ -173,9 +173,9 @@ export function createMascot({
       float front = smoothstep(0.05, 0.45, vMascotPosition.z);
       totalEmissiveRadiance += vec3(0.16, 0.14, 0.025) * halo * front * mascotGlow;
       float rim = pow(1.0 - max(dot(normal, normalize(vViewPosition)), 0.0), 1.1);
-      totalEmissiveRadiance += vec3(0.22, 0.50, 0.45) * rim * 0.75;
+      totalEmissiveRadiance += vec3(0.22, 0.50, 0.45) * rim * 0.35;
       float crown = exp(-max(1.078 - vMascotPosition.y, 0.0) / 0.065);
-      totalEmissiveRadiance += vec3(0.36, 0.39, 0.39) * crown * (0.4 + 0.6 * front);
+      totalEmissiveRadiance += vec3(0.36, 0.39, 0.39) * crown * (0.25 + 0.35 * front);
     `,
     );
   };

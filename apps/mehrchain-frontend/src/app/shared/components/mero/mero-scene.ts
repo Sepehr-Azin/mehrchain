@@ -6,7 +6,8 @@ import { createMascot, MascotDetail, MascotMood } from './mero-model';
 export function createMeroScene(detail: MascotDetail, onContextLost: () => void) {
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
-    antialias: detail !== 'low',
+    // Geometry detail can drop on small devices without jagged silhouette edges.
+    antialias: true,
     powerPreference: 'low-power',
     failIfMajorPerformanceCaveat: true,
   });
@@ -24,11 +25,13 @@ export function createMeroScene(detail: MascotDetail, onContextLost: () => void)
     room.dispose();
     pmrem.dispose();
   }
-  scene.add(new THREE.HemisphereLight('#d9fff0', '#28483d', 0.6));
+  scene.add(new THREE.HemisphereLight('#eafff7', '#48675e', 0.8));
   for (const [color, intensity, x, y, z] of [
-    ['#e4fff4', 0.9, -1.5, 5, 1],
-    ['#bceae7', 1.6, 3, 1, -2],
-    ['#eaffdc', 1.8, -2, 0, -3],
+    // A broad frontal key keeps the face teal instead of almost black.
+    ['#f3fff9', 2.4, -3, 5, 5],
+    ['#d5f5ef', 0.8, 3, 1, 4],
+    ['#bceae7', 1.2, 3, 1, -2],
+    ['#eaffdc', 1.2, -2, 0, -3],
     ['#ffe4b0', 0.25, 0, -2, 3],
   ] as const) {
     const light = new THREE.DirectionalLight(color, intensity);
@@ -62,7 +65,7 @@ export function createMeroScene(detail: MascotDetail, onContextLost: () => void)
       }
       mascot.setMood(mood);
       mascot.setGlow(glow);
-      mascot.update(seconds, false, animated);
+      mascot.update(seconds, animated, animated);
       renderer.render(scene, camera);
       if (target.canvas.width !== size || target.canvas.height !== size) {
         target.canvas.width = size;

@@ -318,12 +318,13 @@ export class ChainService {
         }
         return this._connections();
       } finally {
-        if (session === this.sessionVersion && this.loadRequest?.promise === promise)
-          this.isLoading.set(false);
         this.coldStartService.finishRequest();
       }
     })().finally(() => {
-      if (this.loadRequest?.promise === promise) this.loadRequest = undefined;
+      if (this.loadRequest?.promise === promise) {
+        if (session === this.sessionVersion) this.isLoading.set(false);
+        this.loadRequest = undefined;
+      }
     });
     this.loadRequest = { token: token!, userId, promise };
     return promise;

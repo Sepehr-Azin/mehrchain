@@ -13,7 +13,7 @@ export function meroPerformancePolicy(hints: MeroDeviceHints) {
   return {
     detail: lowPower ? ('low' as const) : ('standard' as const),
     pixelRatio: lowPower ? 1 : 1.5,
-    maxPixels: lowPower ? 192 : 384,
+    maxPixels: lowPower ? 256 : 384,
     animate: !lowPower,
     frameInterval: 1000 / 24,
   };

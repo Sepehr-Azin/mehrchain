@@ -17,7 +17,7 @@
   width: 100%;
   max-width: 37rem;
   min-width: 0;
-  /* Keep compact mobile steps at the bottom; tall steps still scroll naturally. */
+  /* Bottom-align at every width; tall steps still scroll naturally. */
   margin: auto auto 0;
 }
 
@@ -63,15 +63,10 @@
 @media (min-width: 48rem) {
   .onboarding-page {
     padding-top: max(2rem, env(safe-area-inset-top, 0px));
-    padding-bottom: max(6rem, 10dvh, env(safe-area-inset-bottom, 0px));
   }
 
   .onboarding-card {
     padding: 2rem;
-  }
-
-  .onboarding-flow {
-    margin: auto;
   }
 }
 

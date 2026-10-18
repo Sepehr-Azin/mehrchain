@@ -14,7 +14,7 @@ describe('Mero device policy', () => {
       expect(meroPerformancePolicy(hints)).toMatchObject({
         detail: 'low',
         pixelRatio: 1,
-        maxPixels: 192,
+        maxPixels: 256,
         animate: false,
       });
     },
