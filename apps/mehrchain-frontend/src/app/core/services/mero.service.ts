@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 
 export type MeroState =
   | 'idle'
@@ -14,12 +14,14 @@ export type MeroState =
 })
 export class MeroService {
   readonly state = signal<MeroState>('idle');
+  readonly mood = computed(() => {
+    const state = this.state();
+    if (state === 'missing') return 'sad';
+    if (state === 'happy' || state === 'celebrating' || state === 'content') return 'happy';
+    return 'reference';
+  });
 
   setState(newState: MeroState) {
     this.state.set(newState);
-  }
-
-  getAvatar() {
-    return 'assets/mero.png';
   }
 }

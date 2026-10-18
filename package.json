@@ -67,6 +67,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",
     "tailwind-merge": "^3.4.0",
+    "three": "0.180.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -98,6 +99,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "20.19.9",
     "@types/pg": "^8.23.1",
+    "@types/three": "0.180.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "jest": "^30.0.2",

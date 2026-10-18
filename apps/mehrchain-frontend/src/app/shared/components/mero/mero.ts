@@ -1,6 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  NgZone,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MeroCustomizationService } from '../../../core/services/mero-customization.service';
+import type { MascotMood } from './mero-model';
+import { MeroRendererService } from './mero-renderer.service';
 
 export type MeroSize = 'xs' | 'sm' | 'md' | 'lg' | 'hero';
 
@@ -12,11 +26,61 @@ export type MeroSize = 'xs' | 'sm' | 'md' | 'lg' | 'hero';
 })
 export class MeroComponent {
   private customizationService = inject(MeroCustomizationService, { optional: true });
+  private readonly renderer = inject(MeroRendererService);
+  private readonly zone = inject(NgZone);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private renderTarget?: ReturnType<MeroRendererService['attach']>;
+  private readonly pixels = signal(128);
+  readonly ready = signal(false);
 
   // Inputs
   size = input<MeroSize>('md');
+  mood = input<MascotMood>('reference');
   showGlow = input<boolean>(true);
   customGradient = input<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const options = {
+        mood: this.mood(),
+        glow: this.showGlow() ? 1 : 0.75,
+        size: this.pixels(),
+      };
+      this.renderTarget?.update(options);
+    });
+    afterNextRender(() => {
+      const canvas = this.canvas().nativeElement;
+      this.renderTarget = this.renderer.attach(
+        canvas,
+        { mood: this.mood(), glow: this.showGlow() ? 1 : 0.75, size: this.pixels() },
+        (ready) => {
+          if (this.ready() !== ready) this.ready.set(ready);
+        },
+      );
+      this.zone.runOutsideAngular(() => {
+        const resize =
+          typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(([entry]) => this.pixels.set(Math.max(1, entry.contentRect.width)))
+            : undefined;
+        resize?.observe(canvas);
+        this.pixels.set(canvas.getBoundingClientRect().width || 128);
+        const visibility =
+          typeof IntersectionObserver !== 'undefined'
+            ? new IntersectionObserver(([entry]) =>
+                this.renderTarget?.setVisible(entry.isIntersecting),
+              )
+            : undefined;
+        if (visibility) visibility.observe(canvas);
+        else this.renderTarget?.setVisible(true);
+        this.destroyRef.onDestroy(() => {
+          resize?.disconnect();
+          visibility?.disconnect();
+          this.renderTarget?.destroy();
+        });
+      });
+    });
+  }
 
   // Effective glow gradient
   effectiveGradient = computed<string>(() => {

@@ -20,11 +20,11 @@
         >
           <lucide-icon name="arrow-left" class="w-4 h-4 sm:w-5 sm:h-5"></lucide-icon>
         </button>
-        <app-mero size="sm" [showGlow]="true" />
+        <app-mero size="sm" [showGlow]="true" [mood]="meroService.mood()" />
       </div>
     } @else {
       <div class="onboarding-welcome text-center">
-        <app-mero size="lg" [showGlow]="true" />
+        <app-mero size="lg" [showGlow]="true" mood="happy" />
         <div class="space-y-2 sm:space-y-4">
           <h1
             class="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight"

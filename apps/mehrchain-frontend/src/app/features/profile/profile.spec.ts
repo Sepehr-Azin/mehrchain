@@ -16,6 +16,7 @@ describe('ProfileComponent', () => {
     const mockCommitmentService = {
       overallStreak: streakSignal,
       commitments: signal([]),
+      archivedCommitments: signal([]),
     };
 
     await TestBed.configureTestingModule({
@@ -34,6 +35,13 @@ describe('ProfileComponent', () => {
 
   it('should create the profile component', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows the procedural sad Mero before a daily habit is completed', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('app-mero canvas')).toBeTruthy();
+    expect(element.querySelector('app-mero img')).toBeNull();
+    expect(element.querySelector('app-mero [role="img"]')?.getAttribute('aria-label')).toContain('sad');
   });
 
   it('should prevent saving custom glow when streak is less than 21', () => {
