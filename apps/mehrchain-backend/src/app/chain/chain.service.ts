@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { ChainStatus, ChainInviteStatus, Prisma } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import { DisconnectChainDto } from './dto/disconnect-chain.dto';
 import { chainState } from './chain-state';
 import { CommitmentLifecycleService } from '../commitments/commitment-lifecycle.service';
 import {
@@ -110,6 +112,7 @@ export class ChainService {
         // Reuse disconnected unique rows only after explicit new acceptance.
         // Reset every connection-local field so old hearts/nudges cannot reappear.
         const fresh = {
+          generationId: randomUUID(),
           status: ChainStatus.ACTIVE,
           consecutiveMissedDays: 0,
           lastPartnerActivityAt: null,
@@ -321,13 +324,65 @@ export class ChainService {
     );
   }
 
-  async disconnect(userId: string, connectionId: string) {
+  async getDisconnectReceipts(userId: string) {
+    return this.prisma.chainDisconnectReceipt.findMany({
+      where: { recipientId: userId, readAt: null },
+      select: {
+        id: true,
+        partner: { select: { username: true, name: true } },
+        recipientHabitTitle: true,
+        reason: true,
+        note: true,
+        createdAt: true,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 50,
+    });
+  }
+
+  async dismissDisconnectReceipt(userId: string, id: string) {
+    // Scope the write to its recipient, including retries. No event existence leak.
+    await this.prisma.chainDisconnectReceipt.updateMany({
+      where: { id, recipientId: userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return { success: true };
+  }
+
+  async disconnect(userId: string, connectionId: string, dto: DisconnectChainDto) {
     return this.withConnection(
       userId,
       connectionId,
       async (tx, c, now) => {
+        if (c.generationId !== dto.generationId)
+          return new BadRequestException('This chain has changed. Please refresh');
         if (c.status === ChainStatus.DISCONNECTED)
           return tx.chainConnection.findUniqueOrThrow({ where: { id: c.id } });
+        const recipient = await tx.chainConnection.findFirst({
+          where: {
+            userId: c.partnerId,
+            partnerId: userId,
+            userCommitmentId: c.partnerCommitmentId,
+            partnerCommitmentId: c.userCommitmentId,
+            status: { not: ChainStatus.DISCONNECTED },
+          },
+          include: { userCommitment: { select: { title: true } } },
+        });
+        if (!recipient) return new BadRequestException('This chain has changed. Please refresh');
+        // Snapshot only the recipient's own habit. Never copy support identities,
+        // private partner habit details or text from a non-disclosing choice.
+        await tx.chainDisconnectReceipt.create({
+          data: {
+            recipientId: recipient.userId,
+            partnerId: userId,
+            recipientConnectionId: recipient.id,
+            generationId: recipient.generationId,
+            recipientHabitTitle: recipient.userCommitment.title,
+            reason: dto.reason,
+            note: dto.reason === 'PREFER_NOT_TO_SHARE' ? null : dto.note?.trim() || null,
+            createdAt: now,
+          },
+        });
         await tx.chainConnection.updateMany({
           where: {
             OR: [

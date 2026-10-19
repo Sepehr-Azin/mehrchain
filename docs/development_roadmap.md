@@ -1,11 +1,11 @@
 # MehrChain — Next iteration
 
-> Updated: **2026-10-18 (Asia/Tehran)**. No committed deadline.
+> Updated: **2026-10-19 (Asia/Tehran)**. No committed deadline.
 > Goal: a small, reliable daily habit experience with quiet support and a kind return.
 > The owner reports a mostly successful two-person signup/Chain pilot, with proxy and server warm-up friction. Multi-day behavior and full acceptance still need testing.
-> T00–T04 implementation is complete and pushed. The owner confirms T04 is done; its implementation is in `9066570`. T05 is the next feature task.
+> T00–T04 implementation is complete and pushed. The owner confirms T04 is done; its implementation is in `9066570`. T05 was implemented locally on October 19 and remains uncommitted for owner review; no T05 build/test/migration was run.
 > On October 18, the production timezone-contract failure was reproduced and fixed, all three pending release migrations were rehearsed/applied, and backend `952f5f3` became Live. Backend tests passed; remaining interactive, frontend/PWA and PostgreSQL race checks are listed explicitly below.
-> Tasks retain their existing issue mappings #55–#64. This update changes only this local roadmap; it does not update GitHub issues, the project board, other handoffs or OpenSpec checklists.
+> Tasks retain their existing issue mappings #55–#64. The October 19 T05 update adds local implementation, its handoff and OpenSpec record; it does not update GitHub issues or the project board. Earlier handoffs/checklists remain historical.
 
 ## Product rules
 
@@ -26,9 +26,9 @@ Implemented in T04: one sender per recipient habit per recipient account date, r
 
 ## Implementation order
 
-**T00 → T04 are implemented. Continue feature work with T05**, then T06 and T07 on that foundation. First record a real Google signup/returning-account check on the repaired deployment and run the outstanding frontend/Chain checks. T08 can run independently; latency work does not reopen the repaired timezone contract or imply a provider migration. T09 combines the remaining acceptance scenarios with the later features. Validate each feature as it lands rather than deferring all checks to T09.
+**T00 → T04 are implemented and pushed; T05 is implemented locally for owner review.** Complete its migration/runtime acceptance before release, then continue with T06 and T07 on that foundation. Record a real Google signup/returning-account check on the repaired deployment and the outstanding frontend/Chain checks. T08 can run independently; latency work does not reopen the repaired timezone contract or imply a provider migration. T09 combines the remaining acceptance scenarios with the later features. Validate each feature as it lands rather than deferring all checks to T09.
 
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64). Checked boxes record only the implementation or verification explicitly described. Completed implementation, a successful release and full human acceptance are separate states. T05–T07 remain feature work; T08 has some supporting behavior already implemented; T09 has backend/release evidence but remains incomplete.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Task IDs map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64). Checked boxes record only the implementation or verification explicitly described. Completed implementation, a successful release and full human acceptance are separate states. T05 awaits review/validation; T06–T07 remain feature work; T08 has some supporting behavior already implemented; T09 has backend/release evidence but remains incomplete.
 
 | Task | Issue | Implementation | Commit | Status | Acceptance evidence in repository |
 | --- | --- | --- | --- | --- | --- |
@@ -37,7 +37,7 @@ Implemented in T04: one sender per recipient habit per recipient account date, r
 | T02 | [#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57) | Complete / pushed | `9643bda` | Backend deployed; migration verified | Populated-copy rehearsal, production preservation/default/index/drift checks and backend tests passed; midnight/device/race checks remain |
 | T03 | [#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58) | Complete / pushed | `2f1cff1` | Backend deployed; migration verified | Lifecycle migration, preservation and backend tests passed; real restore/reconnect, PWA and PostgreSQL races remain |
 | T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Complete / pushed | `9066570` | Done per owner; backend deployed | Ledger migration/index/FK checks and backend tests passed; frontend, real supporters/day rollover and populated-heart backfill checks remain |
-| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Pending | — | 📋 Ready | Pending implementation |
+| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Implemented locally | Uncommitted | Owner review | Build/tests, migration rehearsal and runtime acceptance not run at owner's request |
 | T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Pending | — | 📋 Ready | Pending implementation |
 | T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Pending | — | 📋 Ready | Pending implementation |
 | T08 | [#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63) | Partial supporting behavior from T04 | `9066570` | Measurement/retry work pending | Hidden polling pause and support request/session guards implemented; latency measurements and hosting decision remain |
@@ -178,12 +178,12 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 
 **Scope:** disconnect API/transaction, durable recipient event and compact frontend reason/receipt UI. Depends on T03; integrates with T04's menu.
 
-**Next feature task.** Reuse T03's ordered locking/detach operation and T04's existing disconnect menu. A private disconnect receipt is new work; it must remain separate from anonymous received-heart aggregates and the durable daily allowance.
+**Implemented locally October 19; pending owner review.** Reuses T03's ordered locking/detach operation and T04's existing disconnect menu. See [T05 handoff](t05_review_handoff.md). Changes remain uncommitted; build/tests, migration and runtime acceptance were not run at the owner's request. Private receipts remain separate from anonymous received-heart aggregates and the durable daily allowance.
 
-- [ ] Ask for a reason with Cancel and a recipient-visible preview. Offer simple choices including “Prefer not to share”; personal explanation is optional.
-- [ ] Persist one private reason event atomically with reciprocal disconnection. It remains available after the relationship disappears from active queries and after the recipient returns offline.
-- [ ] Restrict access to the intended participants; safely render any bounded optional text. Retried requests create one event. Automatic archive uses a neutral system reason.
-- [ ] Preserve T04 behavior when clearing visible support: do not delete/refund the allowance ledger, revive old hearts on reconnect or expose supporter identities through the reason event. Capture the intended receipt before the relationship disappears from active queries.
+- [x] Ask for a reason with Cancel and a recipient-visible preview. Offer simple choices including “Prefer not to share”; personal explanation is optional.
+- [x] Persist one private reason event atomically with reciprocal disconnection. It remains available after the relationship disappears from active queries and after the recipient returns offline.
+- [x] Restrict access to the intended participants; safely render any bounded optional text. Retried requests create one event. Automatic archive uses a neutral system reason.
+- [x] Preserve T04 behavior when clearing visible support: do not delete/refund the allowance ledger, revive old hearts on reconnect or expose supporter identities through the reason event. Capture the intended receipt before the relationship disappears from active queries.
 
 **Acceptance:** cancel changes nothing; manual disconnect updates both sides and the partner receives the chosen reason once. Verify offline return, retries, multiple relationships and account deletion. No chat, email or push infrastructure is needed.
 
@@ -251,10 +251,10 @@ The release build, all three production migrations, preservation/checksum/defaul
 2. **Close the standard-tooling and frontend evidence gap (T04/T09).** Fix the checked-in ESM/Jest compatibility path, run standard backend/frontend commands, record a frontend build/revision and validate the two OpenSpec changes. The successful override-based backend run remains valid evidence with its stated limit.
 3. **Exercise the shipped daily/Chain behavior (T02–T04/T09).** Test midnight/DST, one/two misses, restore/reinvite, finite goals, account isolation and real PostgreSQL concurrency. Include three identities for two distinct supporters, same-day disconnect/reconnect, stale response/session changes and nonempty-heart backfill fixtures. These tests target the completed implementation; fix defects found without reopening already-verified migration execution.
 4. **Complete visual/PWA review (T01/T04/T09).** Responsive/short-window/keyboard/zoom and both themes; installed-PWA update, open-overnight refresh and offline recovery; current Mero's animation/reduced-motion/fallback behavior. The latest onboarding/mascot changes need review, not another speculative redesign.
-5. **Implement T05 → T06 → T07.** Add private disconnect receipts without altering heart allowances; settle/implement the durable day-21 color entitlement on the current Mero; then finalize contextual return/help/history copy. Check each task before progressing.
+5. **Review/validate local T05, then implement T06 → T07.** Private disconnect receipts are prepared without altering heart allowances. Settle/implement the durable day-21 color entitlement on the current Mero, then finalize contextual return/help/history copy. Check each task before progressing.
 6. **Measure access friction and finish integrated acceptance (T08/T09).** Separate cold/warm latency from the repaired deployment failure. Keep the existing stack unless measured evidence supports a bounded alternative. Rehearse recovery/failover on a disposable branch, record remaining outcomes and defects, then invite the next small test group.
 
-T04 is no longer a pending feature or an uncommitted review patch. Remaining heart runtime/visual checks, T05's private reasons and T06's durable reward are distinct work. Snapshot creation/preservation is complete; full recovery switching, nonempty-heart backfill and transaction races are still open.
+T04 is no longer a pending feature or an uncommitted review patch. Remaining heart runtime/visual checks, local T05 review/validation and T06's durable reward are distinct work. Snapshot creation/preservation is complete; full recovery switching, nonempty-heart backfill and transaction races are still open.
 
 ## Scope and completion
 

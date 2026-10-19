@@ -55,6 +55,8 @@ model User {
   chainInvites  ChainInvite[]     @relation("SenderInvites")
   acceptedInvites ChainInvite[]   @relation("AcceptedInvites")
   sentHearts    ChainHeart[]
+  disconnectReceipts ChainDisconnectReceipt[] @relation("DisconnectRecipient")
+  partnerDisconnectReceipts ChainDisconnectReceipt[] @relation("DisconnectPartner")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,6 +125,7 @@ model CommitmentLog {
 // Two-way active chain connection between users
 model ChainConnection {
   id String @id @default(uuid())
+  generationId String @default(uuid())
 
   userId    String
   partnerId String
@@ -147,6 +150,28 @@ model ChainConnection {
 
   @@unique([userId, partnerId, userCommitmentId])
   @@map("chain_connections")
+}
+
+// A private, durable receipt independent of connection/habit deletion or reuse.
+// Deleting either participant removes the receipt and any personal explanation.
+model ChainDisconnectReceipt {
+  id                    String @id @default(uuid())
+  recipientId           String
+  partnerId             String
+  recipientConnectionId String
+  generationId          String
+  recipientHabitTitle   String
+  reason                String
+  note                  String?
+  createdAt             DateTime @default(now())
+  readAt                DateTime?
+
+  recipient User @relation("DisconnectRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  partner   User @relation("DisconnectPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientConnectionId, generationId], map: "chain_disconnect_receipts_connection_generation_key")
+  @@index([recipientId, readAt, createdAt])
+  @@map("chain_disconnect_receipts")
 }
 
 // Durable daily allowance, independent of the number/lifecycle of connection rows.

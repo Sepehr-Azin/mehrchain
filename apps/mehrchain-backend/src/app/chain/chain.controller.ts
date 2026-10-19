@@ -6,6 +6,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { SendNudgeDto } from './dto/send-nudge.dto';
+import { DisconnectChainDto } from './dto/disconnect-chain.dto';
 
 @ApiTags('chain')
 @Controller('chain')
@@ -79,7 +80,27 @@ export class ChainController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Disconnect chain' })
   @Delete('connections/:id')
-  disconnect(@CurrentUser() user: { id: string }, @Param('id') id: string) {
-    return this.chainService.disconnect(user.id, id);
+  disconnect(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+    @Body() dto: DisconnectChainDto,
+  ) {
+    return this.chainService.disconnect(user.id, id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List private unread disconnect receipts' })
+  @Get('disconnect-receipts')
+  @Header('Cache-Control', 'private, no-store')
+  getDisconnectReceipts(@CurrentUser() user: { id: string }) {
+    return this.chainService.getDisconnectReceipts(user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('disconnect-receipts/:id/dismiss')
+  dismissDisconnectReceipt(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+    return this.chainService.dismissDisconnectReceipt(user.id, id);
   }
 }

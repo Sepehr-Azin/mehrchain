@@ -24,7 +24,8 @@ describe('Commitment lifecycle', () => {
     $transaction: jest.fn(),
     $queryRaw: jest.fn(),
     commitment: { findMany: jest.fn(), update: jest.fn() },
-    chainConnection: { updateMany: jest.fn() },
+    chainConnection: { updateMany: jest.fn(), findMany: jest.fn() },
+    chainDisconnectReceipt: { createMany: jest.fn() },
     chainInvite: { updateMany: jest.fn() },
   };
   let service: CommitmentLifecycleService;
@@ -35,6 +36,7 @@ describe('Commitment lifecycle', () => {
     habit = { ...original, history: [...original.history] };
     prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
     prisma.$queryRaw.mockResolvedValue([]);
+    prisma.chainConnection.findMany.mockResolvedValue([]);
     prisma.commitment.findMany.mockImplementation(async () => [{ ...habit }]);
     prisma.commitment.update.mockImplementation(
       async ({ data }: any) => (habit = { ...habit, ...data }),
@@ -119,5 +121,51 @@ describe('Commitment lifecycle', () => {
     await service.reconcileUser('owner');
     expect(prisma.chainConnection.updateMany).toHaveBeenCalled();
     expect(prisma.chainInvite.updateMany).toHaveBeenCalled();
+  });
+
+  it('captures neutral private receipts for both directions before removing visible support', async () => {
+    prisma.chainConnection.findMany.mockResolvedValue([
+      {
+        id: 'a',
+        userId: 'owner',
+        partnerId: 'friend',
+        generationId: 'g',
+        userCommitment: { title: 'Read' },
+      },
+      {
+        id: 'b',
+        userId: 'friend',
+        partnerId: 'owner',
+        generationId: 'g',
+        userCommitment: { title: 'Walk' },
+      },
+    ]);
+    await service.detach(prisma, ['habit'], now);
+    expect(prisma.chainDisconnectReceipt.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          recipientId: 'owner',
+          partnerId: 'friend',
+          recipientConnectionId: 'a',
+          generationId: 'g',
+          recipientHabitTitle: 'Read',
+          reason: 'HABIT_UNAVAILABLE',
+          createdAt: now,
+        },
+        {
+          recipientId: 'friend',
+          partnerId: 'owner',
+          recipientConnectionId: 'b',
+          generationId: 'g',
+          recipientHabitTitle: 'Walk',
+          reason: 'HABIT_UNAVAILABLE',
+          createdAt: now,
+        },
+      ],
+      skipDuplicates: true,
+    });
+    expect(prisma.chainDisconnectReceipt.createMany.mock.invocationCallOrder[0]).toBeLessThan(
+      prisma.chainConnection.updateMany.mock.invocationCallOrder[0],
+    );
   });
 });

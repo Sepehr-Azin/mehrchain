@@ -71,14 +71,82 @@
         Your linked habit: <span class="text-foreground">{{ myHabitTitle() }}</span>
       </p>
       <p class="mt-1">One heart per habit each recipient day.</p>
-      <button
-        type="button"
-        (click)="handleDisconnect(); optionsToggle.focus()"
-        [disabled]="pending()"
-        class="mt-2 min-h-11 px-3 rounded-xl text-destructive hover:bg-muted/60 disabled:opacity-50"
-      >
-        Disconnect Chain
-      </button>
+      @if (!isDisconnectOpen()) {
+        <button
+          type="button"
+          (click)="handleDisconnect()"
+          [disabled]="pending()"
+          class="mt-2 min-h-11 px-3 rounded-xl text-destructive hover:bg-muted/60 disabled:opacity-50"
+        >
+          Disconnect Chain
+        </button>
+      } @else {
+        <fieldset class="mt-3 space-y-3" [disabled]="pending()" [attr.aria-busy]="pending()">
+          <legend class="font-semibold text-foreground">Disconnect this chain?</legend>
+          <p>Your habits and history stay saved. Reconnecting needs a new invitation.</p>
+          <label class="block" [for]="'disconnect-reason-' + connection().id"
+            >Choose a reason</label
+          >
+          <select
+            #reasonSelect
+            [id]="'disconnect-reason-' + connection().id"
+            [value]="disconnectReason()"
+            (change)="selectReason($any($event.target).value)"
+            class="w-full rounded-xl border border-border bg-card px-3 py-2 text-foreground"
+          >
+            <option value="" disabled>Select a reason</option>
+            @for (option of reasonOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          @if (disconnectReason() && disconnectReason() !== 'PREFER_NOT_TO_SHARE') {
+            <label class="block" [for]="'disconnect-note-' + connection().id"
+              >Personal explanation (optional)</label
+            >
+            <textarea
+              [id]="'disconnect-note-' + connection().id"
+              [value]="disconnectNote()"
+              (input)="disconnectNote.set($any($event.target).value)"
+              [maxLength]="noteLimit"
+              rows="3"
+              class="w-full rounded-xl border border-border bg-card px-3 py-2 text-foreground select-text"
+            ></textarea>
+            <p>{{ disconnectNote().length }}/{{ noteLimit }}</p>
+          }
+          @if (disconnectReason()) {
+            <div class="rounded-xl bg-muted/50 p-3" aria-live="polite">
+              <p class="font-medium">Only {{ partnerDisplayName() }} will receive:</p>
+              <p class="mt-1 text-foreground">This chain was disconnected.</p>
+              <p class="break-words text-foreground">{{ disconnectPreview() }}</p>
+              @if (disconnectReason() !== 'PREFER_NOT_TO_SHARE' && disconnectNote().trim()) {
+                <p class="mt-1 whitespace-pre-wrap break-words text-foreground">
+                  {{ disconnectNote().trim() }}
+                </p>
+              }
+            </div>
+          }
+          @if (!connection().generationId) {
+            <p role="alert">Refresh your chain before disconnecting.</p>
+          }
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              (click)="cancelDisconnect(); optionsToggle.focus()"
+              class="min-h-11 px-3 rounded-xl hover:bg-muted/60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="confirmDisconnect()"
+              [disabled]="!disconnectReason() || !connection().generationId"
+              class="min-h-11 px-3 rounded-xl text-destructive hover:bg-muted/60 disabled:opacity-50"
+            >
+              {{ pending() ? 'Disconnecting…' : 'Confirm disconnect' }}
+            </button>
+          </div>
+        </fieldset>
+      }
     </div>
   }
 </div>

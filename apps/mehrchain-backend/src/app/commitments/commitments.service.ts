@@ -321,10 +321,11 @@ export class CommitmentsService {
    * @throws {ForbiddenException} If commitment belongs to a different user.
    */
   async hardDeleteCommitment(userId: string, commitmentId: string) {
-    return this.lifecycle.withCommitments([commitmentId], async (tx, habits) => {
+    return this.lifecycle.withCommitments([commitmentId], async (tx, habits, now) => {
       const commitment = habits.find((h) => h.id === commitmentId);
       if (!commitment) return new NotFoundException('Commitment not found.');
       if (commitment.userId !== userId) return new ForbiddenException('Access denied.');
+      await this.lifecycle.detach(tx, [commitmentId], now);
       await tx.commitment.delete({ where: { id: commitmentId } });
       return { success: true, message: 'Commitment permanently deleted from database.' };
     });

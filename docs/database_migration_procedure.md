@@ -21,6 +21,17 @@ The old `20261004210000_production_baseline` history record has a checksum that 
 
 ## Release migration chain
 
+### October 19 private disconnect receipts addition
+
+T05 adds `20261019000000_chain_disconnect_receipts` after the October 18
+allowance ledger. It backfills a new connection generation token from each row ID
+and creates recipient-scoped durable receipts with account-deletion cascades.
+See the [T05 migration and review handoff](t05_review_handoff.md). No database
+operation or rehearsal was run during implementation. Stop old writers before
+applying this addition: old creates omit the required token and old disconnects
+cannot save reasons. Regenerate Prisma Client and deploy matching code; the
+updated startup probes require this schema. Preserve earlier migration files.
+
 ### October 18 quiet-heart allowance addition
 
 T04 adds `20261018000000_idempotent_chain_hearts` after the account calendar and

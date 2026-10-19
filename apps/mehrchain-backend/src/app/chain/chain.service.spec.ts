@@ -38,6 +38,7 @@ describe('ChainService lifecycle', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       findUniqueOrThrow: jest.fn(),
+      findFirst: jest.fn(),
       upsert: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
@@ -46,6 +47,12 @@ describe('ChainService lifecycle', () => {
       createMany: jest.fn(),
       findUniqueOrThrow: jest.fn(),
       findMany: jest.fn(),
+    },
+    chainDisconnectReceipt: {
+      create: jest.fn(),
+      createMany: jest.fn(),
+      findMany: jest.fn(),
+      updateMany: jest.fn(),
     },
   };
   let service: ChainService;
@@ -88,6 +95,7 @@ describe('ChainService lifecycle', () => {
     };
     connection = {
       id: 'c',
+      generationId: 'generation-1',
       userId: 'receiver',
       partnerId: 'sender',
       userCommitmentId: 'b',
@@ -120,6 +128,13 @@ describe('ChainService lifecycle', () => {
     prisma.chainConnection.findMany.mockResolvedValue([]);
     prisma.chainConnection.findUnique.mockImplementation(async () => connection);
     prisma.chainConnection.findUniqueOrThrow.mockImplementation(async () => connection);
+    prisma.chainConnection.findFirst.mockImplementation(async () => ({
+      id: 'reciprocal',
+      userId: 'sender',
+      partnerId: 'receiver',
+      generationId: 'generation-1',
+      userCommitment: { title: 'Read' },
+    }));
     prisma.chainConnection.updateMany.mockImplementation(async () => {
       connection.status = ChainStatus.DISCONNECTED;
       return { count: 2 };
@@ -310,7 +325,23 @@ describe('ChainService lifecycle', () => {
   });
 
   it('disconnects the exact reciprocal pair and clears support', async () => {
-    await service.disconnect('receiver', 'c');
+    await service.disconnect('receiver', 'c', {
+      generationId: 'generation-1',
+      reason: 'TAKING_BREAK',
+      note: '  A little space  ',
+    });
+    expect(prisma.chainDisconnectReceipt.create).toHaveBeenCalledWith({
+      data: {
+        recipientId: 'sender',
+        partnerId: 'receiver',
+        recipientConnectionId: 'reciprocal',
+        generationId: 'generation-1',
+        recipientHabitTitle: 'Read',
+        reason: 'TAKING_BREAK',
+        note: 'A little space',
+        createdAt: now,
+      },
+    });
     expect(prisma.chainConnection.updateMany).toHaveBeenCalledWith({
       where: {
         OR: [
@@ -336,8 +367,65 @@ describe('ChainService lifecycle', () => {
       },
     });
     prisma.chainConnection.updateMany.mockClear();
-    await service.disconnect('receiver', 'c');
+    await service.disconnect('receiver', 'c', {
+      generationId: 'generation-1',
+      reason: 'TAKING_BREAK',
+    });
     expect(prisma.chainConnection.updateMany).not.toHaveBeenCalled();
+    expect(prisma.chainDisconnectReceipt.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects an old disconnect after the same connection row has been reaccepted', async () => {
+    connection.generationId = 'new-generation';
+    await expect(
+      service.disconnect('receiver', 'c', {
+        generationId: 'generation-1',
+        reason: 'TAKING_BREAK',
+      }),
+    ).rejects.toThrow('chain has changed');
+    expect(prisma.chainDisconnectReceipt.create).not.toHaveBeenCalled();
+    expect(prisma.chainConnection.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('does not detach when the durable receipt cannot be saved', async () => {
+    prisma.chainDisconnectReceipt.create.mockRejectedValueOnce(new Error('write failed'));
+    await expect(
+      service.disconnect('receiver', 'c', {
+        generationId: 'generation-1',
+        reason: 'OTHER',
+      }),
+    ).rejects.toThrow('write failed');
+    expect(prisma.chainConnection.updateMany).not.toHaveBeenCalled();
+    expect(connection.status).toBe(ChainStatus.ACTIVE);
+  });
+
+  it('never stores an explanation for the non-disclosing choice or modifies the heart ledger', async () => {
+    await service.sendHeart('receiver', 'c');
+    await service.disconnect('receiver', 'c', {
+      generationId: 'generation-1',
+      reason: 'PREFER_NOT_TO_SHARE',
+      note: 'Do not disclose',
+    });
+    expect(prisma.chainDisconnectReceipt.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ reason: 'PREFER_NOT_TO_SHARE', note: null }),
+    });
+    expect(hearts.size).toBe(1);
+  });
+
+  it('allows only the recipient to list or dismiss receipts, independently of active connections', async () => {
+    prisma.chainDisconnectReceipt.findMany.mockResolvedValue([{ id: 'receipt' }]);
+    expect(await service.getDisconnectReceipts('recipient')).toEqual([{ id: 'receipt' }]);
+    expect(prisma.chainDisconnectReceipt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { recipientId: 'recipient', readAt: null },
+        take: 50,
+      }),
+    );
+    await service.dismissDisconnectReceipt('outsider', 'receipt');
+    expect(prisma.chainDisconnectReceipt.updateMany).toHaveBeenCalledWith({
+      where: { id: 'receipt', recipientId: 'outsider', readAt: null },
+      data: { readAt: now },
+    });
   });
 
   it('returns limited partner data and derives the partner calendar state', async () => {

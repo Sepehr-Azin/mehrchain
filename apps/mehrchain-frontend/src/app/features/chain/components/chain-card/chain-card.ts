@@ -1,7 +1,23 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
-import { ChainConnection } from '@mehrchain/shared-data';
+import {
+  ChainConnection,
+  DISCONNECT_NOTE_LIMIT,
+  DISCONNECT_REASONS,
+  DisconnectChainRequest,
+  DisconnectReason,
+} from '@mehrchain/shared-data';
 
 export type ChainCardVisualState = 'COMPLETED_TODAY' | 'WAITING' | 'RESTING' | 'JOURNEY_COMPLETED';
 
@@ -19,8 +35,40 @@ export class ChainCardComponent {
   readonly stale = input(false);
   readonly errorMessage = input<string | null>(null);
   readonly heartSend = output<string>();
-  readonly disconnect = output<string>();
+  readonly disconnect = output<{ connectionId: string; request: DisconnectChainRequest }>();
   readonly isMenuOpen = signal(false);
+  readonly isDisconnectOpen = signal(false);
+  readonly disconnectReason = signal<DisconnectReason | ''>('');
+  readonly disconnectNote = signal('');
+  private readonly reasonSelect = viewChild<ElementRef<HTMLSelectElement>>('reasonSelect');
+  readonly reasonOptions = Object.entries(DISCONNECT_REASONS).map(([value, label]) => ({
+    value,
+    label,
+  }));
+  readonly noteLimit = DISCONNECT_NOTE_LIMIT;
+  readonly disconnectPreview = computed(() => {
+    const reason = this.disconnectReason();
+    return reason ? DISCONNECT_REASONS[reason] : '';
+  });
+
+  constructor() {
+    // Reused connection rows can belong to a newly accepted chain. Clear any
+    // old draft before permitting another confirmation against that generation.
+    let generation: string | undefined;
+    effect(() => {
+      const next = this.connection().generationId;
+      if (next === generation) return;
+      generation = next;
+      untracked(() => {
+        this.isDisconnectOpen.set(false);
+        this.disconnectReason.set('');
+        this.disconnectNote.set('');
+      });
+    });
+    effect(() => {
+      this.reasonSelect()?.nativeElement.focus();
+    });
+  }
 
   readonly partnerUsername = computed(() => this.connection().partner?.username || 'partner');
   readonly partnerDisplayName = computed(
@@ -62,12 +110,40 @@ export class ChainCardComponent {
   }
 
   closeMenu(): void {
+    if (this.pending()) return;
+    this.cancelDisconnect();
     this.isMenuOpen.set(false);
   }
 
   handleDisconnect(): void {
     if (this.pending()) return;
-    this.closeMenu();
-    this.disconnect.emit(this.connection().id);
+    this.isDisconnectOpen.set(true);
+  }
+
+  selectReason(value: string): void {
+    this.disconnectReason.set(value as DisconnectReason | '');
+    if (value === 'PREFER_NOT_TO_SHARE') this.disconnectNote.set('');
+  }
+
+  cancelDisconnect(): void {
+    if (this.pending()) return;
+    this.isDisconnectOpen.set(false);
+    this.disconnectReason.set('');
+    this.disconnectNote.set('');
+  }
+
+  confirmDisconnect(): void {
+    const reason = this.disconnectReason();
+    const generationId = this.connection().generationId;
+    if (this.pending() || !reason || !generationId || this.disconnectNote().length > this.noteLimit)
+      return;
+    this.disconnect.emit({
+      connectionId: this.connection().id,
+      request: {
+        generationId,
+        reason,
+        ...(reason !== 'PREFER_NOT_TO_SHARE' && { note: this.disconnectNote().trim() }),
+      },
+    });
   }
 }

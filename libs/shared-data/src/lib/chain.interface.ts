@@ -25,6 +25,8 @@ export interface ChainPartnerCommitment {
 
 export interface ChainConnection {
   id: string;
+  // Changes on explicit reconnection; absent only in legacy local caches.
+  generationId?: string;
   userId: string;
   partnerId: string;
   userCommitmentId: string;
@@ -44,6 +46,33 @@ export interface ChainConnection {
   archivedAt?: string | Date | null;
   partner?: ChainPartner;
   partnerCommitment?: ChainPartnerCommitment;
+}
+
+export const DISCONNECT_REASONS = {
+  TAKING_BREAK: "I'm taking a break from this chain.",
+  DIFFERENT_ROUTINE: "I'm choosing a different routine.",
+  OTHER: "I've decided to end this chain.",
+  PREFER_NOT_TO_SHARE: 'Prefer not to share',
+} as const;
+
+export type DisconnectReason = keyof typeof DISCONNECT_REASONS;
+export const DISCONNECT_NOTE_LIMIT = 500;
+export const SYSTEM_DISCONNECT_MESSAGE =
+  'This chain ended because a linked habit is no longer available.';
+
+export interface DisconnectChainRequest {
+  generationId: string;
+  reason: DisconnectReason;
+  note?: string;
+}
+
+export interface ChainDisconnectReceipt {
+  id: string;
+  partner: ChainPartner;
+  recipientHabitTitle: string;
+  reason: DisconnectReason | 'HABIT_UNAVAILABLE';
+  note: string | null;
+  createdAt: string | Date;
 }
 
 export interface ChainInvite {

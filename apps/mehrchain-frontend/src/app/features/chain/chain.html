@@ -126,6 +126,53 @@
     </div>
   }
 
+  @if (chainService.receiptError()) {
+    <div role="alert" class="mb-4 text-xs text-destructive">
+      <p>{{ chainService.receiptError() }}</p>
+      <button
+        type="button"
+        (click)="chainService.loadDisconnectReceipts()"
+        class="min-h-11 underline"
+      >
+        Retry updates
+      </button>
+    </div>
+  }
+  @if (chainService.disconnectReceipts().length > 0) {
+    <details class="mb-5 rounded-2xl border border-border bg-card p-4">
+      <summary class="cursor-pointer text-sm font-semibold text-foreground">
+        Private chain updates ({{ chainService.disconnectReceipts().length }})
+      </summary>
+      <div class="mt-3 space-y-4">
+        @for (receipt of chainService.disconnectReceipts(); track receipt.id) {
+          <article class="text-xs text-muted-foreground border-t border-border/50 pt-3">
+            <p class="break-words text-foreground">
+              @if (receipt.reason !== 'HABIT_UNAVAILABLE') {
+                &#64;{{ receipt.partner.username }} disconnected this chain.
+              } @else {
+                Chain with &#64;{{ receipt.partner.username }} ended.
+              }
+            </p>
+            <p class="mt-1 break-words">Your linked habit: {{ receipt.recipientHabitTitle }}</p>
+            <p class="mt-2 break-words text-foreground">{{ receiptReason(receipt) }}</p>
+            @if (receipt.note) {
+              <p class="mt-1 whitespace-pre-wrap break-words text-foreground">{{ receipt.note }}</p>
+            }
+            <p class="mt-2">{{ receipt.createdAt | date: 'mediumDate' }}</p>
+            <button
+              type="button"
+              (click)="chainService.dismissDisconnectReceipt(receipt.id)"
+              [disabled]="chainService.dismissingReceipts().has(receipt.id)"
+              class="min-h-11 underline disabled:opacity-50"
+            >
+              {{ chainService.dismissingReceipts().has(receipt.id) ? 'Saving…' : 'Dismiss' }}
+            </button>
+          </article>
+        }
+      </div>
+    </details>
+  }
+
   @if (receivedSupport().length > 0) {
     <div class="mb-5 space-y-2" aria-label="Support for your habits today">
       @for (habit of receivedSupport(); track habit.id) {

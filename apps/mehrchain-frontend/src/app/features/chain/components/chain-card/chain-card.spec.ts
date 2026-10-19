@@ -8,6 +8,7 @@ describe('ChainCardComponent', () => {
   let fixture: ComponentFixture<ChainCardComponent>;
   const connection: ChainConnection = {
     id: 'conn-1',
+    generationId: 'generation-1',
     userId: 'me',
     partnerId: 'partner',
     userCommitmentId: 'own-habit',
@@ -113,6 +114,31 @@ describe('ChainCardComponent', () => {
     component.toggleMenu();
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('button.text-destructive') as HTMLButtonElement).click();
-    expect(disconnected).toHaveBeenCalledWith('conn-1');
+    fixture.detectChanges();
+    expect(disconnected).not.toHaveBeenCalled();
+    component.selectReason('TAKING_BREAK');
+    component.disconnectNote.set('A little space');
+    component.confirmDisconnect();
+    expect(disconnected).toHaveBeenCalledWith({
+      connectionId: 'conn-1',
+      request: { generationId: 'generation-1', reason: 'TAKING_BREAK', note: 'A little space' },
+    });
+  });
+
+  it('cancels without sending, clears non-disclosing notes and keeps drafts through polling or failure', () => {
+    const disconnected = vi.fn();
+    component.disconnect.subscribe(disconnected);
+    component.handleDisconnect();
+    component.selectReason('OTHER');
+    component.disconnectNote.set('<script>not markup</script>');
+    fixture.componentRef.setInput('connection', { ...connection });
+    fixture.componentRef.setInput('errorMessage', 'Please retry');
+    fixture.detectChanges();
+    expect(component.disconnectNote()).toBe('<script>not markup</script>');
+    component.selectReason('PREFER_NOT_TO_SHARE');
+    expect(component.disconnectNote()).toBe('');
+    component.cancelDisconnect();
+    expect(disconnected).not.toHaveBeenCalled();
+    expect(component.isDisconnectOpen()).toBe(false);
   });
 });

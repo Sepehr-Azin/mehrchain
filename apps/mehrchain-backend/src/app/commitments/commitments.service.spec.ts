@@ -29,7 +29,8 @@ describe('CommitmentsService', () => {
     user: { findUnique: jest.fn() },
     commitment: { findMany: jest.fn(), update: jest.fn(), create: jest.fn(), delete: jest.fn() },
     commitmentLog: { create: jest.fn() },
-    chainConnection: { updateMany: jest.fn() },
+    chainConnection: { updateMany: jest.fn(), findMany: jest.fn() },
+    chainDisconnectReceipt: { createMany: jest.fn() },
     chainInvite: { updateMany: jest.fn() },
   };
   const notification = { notifyChainPartners: jest.fn() };
@@ -41,6 +42,7 @@ describe('CommitmentsService', () => {
     habit = { ...base, history: [...base.history] };
     prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
     prisma.$queryRaw.mockResolvedValue([]);
+    prisma.chainConnection.findMany.mockResolvedValue([]);
     prisma.user.findUnique.mockResolvedValue({ timeZone: 'Asia/Tehran' });
     prisma.commitment.findMany.mockImplementation(async ({ where }: any) => {
       if (!habit) return [];

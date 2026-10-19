@@ -82,6 +82,28 @@ export class CommitmentLifecycleService {
         OR "partnerCommitmentId" IN (${Prisma.join(ids)})) AND "status" <> 'DISCONNECTED'
       ORDER BY "id" FOR UPDATE
     `);
+    const connections = await tx.chainConnection.findMany({
+      where: {
+        OR: [{ userCommitmentId: { in: ids } }, { partnerCommitmentId: { in: ids } }],
+        status: { not: ChainStatus.DISCONNECTED },
+      },
+      include: { userCommitment: { select: { title: true } } },
+    });
+    if (connections.length) {
+      // One neutral receipt per direction/generation, before active rows disappear.
+      await tx.chainDisconnectReceipt.createMany({
+        data: connections.map((c) => ({
+          recipientId: c.userId,
+          partnerId: c.partnerId,
+          recipientConnectionId: c.id,
+          generationId: c.generationId,
+          recipientHabitTitle: c.userCommitment.title,
+          reason: 'HABIT_UNAVAILABLE',
+          createdAt: now,
+        })),
+        skipDuplicates: true,
+      });
+    }
     await tx.chainConnection.updateMany({
       where: {
         OR: [{ userCommitmentId: { in: ids } }, { partnerCommitmentId: { in: ids } }],

@@ -29,6 +29,10 @@ describe('ChainService (Frontend Hybrid)', () => {
   });
 
   afterEach(() => {
+    // Connection refreshes independently check the private receipt inbox.
+    httpMock
+      .match((req) => req.url.endsWith('/chain/disconnect-receipts'))
+      .forEach((req) => req.flush([]));
     httpMock.verify();
     vi.useRealTimers();
     localStorage.clear();
@@ -300,13 +304,15 @@ describe('ChainService (Frontend Hybrid)', () => {
 
     (service as any)._connections.set([mockConnection]);
 
-    const disconnectPromise = service.disconnect('conn-1');
+    const request = { generationId: 'generation-1', reason: 'PREFER_NOT_TO_SHARE' as const };
+    const disconnectPromise = service.disconnect('conn-1', request);
 
     expect(service.connections()[0].status).toBe('ACTIVE');
     expect(service.activeConnections().length).toBe(1);
 
     const req = httpMock.expectOne(`${environment.apiUrl}/chain/connections/conn-1`);
     expect(req.request.method).toBe('DELETE');
+    expect(req.request.body).toEqual(request);
     req.flush({ ...mockConnection, status: 'DISCONNECTED' });
 
     await disconnectPromise;
@@ -346,6 +352,56 @@ describe('ChainService (Frontend Hybrid)', () => {
     service.markAsRead();
     expect(service.hasUnread()).toBe(false);
     expect(service.lastVisitAt()).toBeTruthy();
+  });
+
+  it('loads durable private updates with no active chains and keeps failed dismissals retryable', async () => {
+    vi.spyOn(authService, 'getToken').mockReturnValue('remote-token');
+    const receipt = {
+      id: 'receipt-1',
+      partner: { username: 'sara' },
+      recipientHabitTitle: 'Read',
+      reason: 'OTHER' as const,
+      note: '<b>Keep as text</b>',
+      createdAt: '2026-10-19T00:00:00Z',
+    };
+    const load = service.loadDisconnectReceipts();
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/disconnect-receipts?ngsw-bypass=true`)
+      .flush([receipt]);
+    await load;
+    expect(service.disconnectReceipts()).toEqual([receipt]);
+    service.markAsRead();
+    expect(service.hasUnread()).toBe(true);
+    const dismiss = service.dismissDisconnectReceipt(receipt.id);
+    expect(service.disconnectReceipts()).toEqual([receipt]);
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/disconnect-receipts/receipt-1/dismiss`)
+      .flush({}, { status: 503, statusText: 'Unavailable' });
+    await dismiss;
+    expect(service.disconnectReceipts()).toEqual([receipt]);
+    expect(service.receiptError()).toContain('retry');
+  });
+
+  it('ignores a private receipt response arriving after the account changes', async () => {
+    vi.spyOn(authService, 'getToken').mockReturnValue('remote-token');
+    const currentUser = vi.spyOn(authService, 'currentUser').mockReturnValue({
+      id: 'old-user',
+      username: 'old',
+      email: 'old@example.com',
+      createdAt: '',
+    });
+    const load = service.loadDisconnectReceipts();
+    currentUser.mockReturnValue({
+      id: 'new-user',
+      username: 'new',
+      email: 'new@example.com',
+      createdAt: '',
+    });
+    httpMock
+      .expectOne(`${environment.apiUrl}/chain/disconnect-receipts?ngsw-bypass=true`)
+      .flush([{ id: 'old-account-private-note' }]);
+    await load;
+    expect(service.disconnectReceipts()).toEqual([]);
   });
 
   it('should generate full invite URL with production fallback when on localhost/capacitor and include habit details', () => {

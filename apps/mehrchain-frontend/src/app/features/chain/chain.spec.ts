@@ -78,8 +78,9 @@ describe('ChainComponent', () => {
     component.handleHeart('conn-1');
     expect(sendHeartSpy).toHaveBeenCalledWith('conn-1');
 
-    component.handleDisconnect('conn-1');
-    expect(disconnectSpy).toHaveBeenCalledWith('conn-1');
+    const request = { generationId: 'g1', reason: 'PREFER_NOT_TO_SHARE' as const };
+    component.handleDisconnect({ connectionId: 'conn-1', request });
+    expect(disconnectSpy).toHaveBeenCalledWith('conn-1', request);
   });
 
   it('should display toast when showToast is called', () => {

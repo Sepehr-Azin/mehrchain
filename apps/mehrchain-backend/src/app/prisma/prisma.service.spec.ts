@@ -20,15 +20,18 @@ describe('Production schema readiness', () => {
 
   it('allows a migrated database to finish initialization', async () => {
     await service.onModuleInit();
-    expect(service.$queryRaw).toHaveBeenCalledTimes(4);
+    expect(service.$queryRaw).toHaveBeenCalledTimes(6);
     expect(service.$disconnect).not.toHaveBeenCalled();
   });
 
-  it.each([1, 2, 3, 4])('refuses readiness when required schema probe %i fails', async (probe) => {
-    const query = jest.mocked(service.$queryRaw);
-    for (let i = 1; i < probe; i++) query.mockResolvedValueOnce([]);
-    query.mockRejectedValueOnce(new Error('missing column (private database detail)'));
-    await expect(service.onModuleInit()).rejects.toThrow('apply the reviewed release migrations');
-    expect(service.$disconnect).toHaveBeenCalled();
-  });
+  it.each([1, 2, 3, 4, 5, 6])(
+    'refuses readiness when required schema probe %i fails',
+    async (probe) => {
+      const query = jest.mocked(service.$queryRaw);
+      for (let i = 1; i < probe; i++) query.mockResolvedValueOnce([]);
+      query.mockRejectedValueOnce(new Error('missing column (private database detail)'));
+      await expect(service.onModuleInit()).rejects.toThrow('apply the reviewed release migrations');
+      expect(service.$disconnect).toHaveBeenCalled();
+    },
+  );
 });

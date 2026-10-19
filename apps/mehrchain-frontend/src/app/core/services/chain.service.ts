@@ -1,7 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { ChainConnection, ChainInvite } from '@mehrchain/shared-data';
+import {
+  ChainConnection,
+  ChainInvite,
+  ChainDisconnectReceipt,
+  DisconnectChainRequest,
+} from '@mehrchain/shared-data';
 import { CommitmentService } from './commitment.service';
 import { AuthService } from './auth.service';
 import { ColdStartService } from './cold-start.service';
@@ -62,6 +67,11 @@ export class ChainService {
   readonly isLoading = signal<boolean>(false);
   readonly loadError = signal<string | null>(null);
   readonly supportStale = signal(true);
+  readonly disconnectReceipts = signal<ChainDisconnectReceipt[]>([]);
+  readonly receiptError = signal<string | null>(null);
+  readonly dismissingReceipts = signal<ReadonlySet<string>>(new Set());
+  private receiptRequest?: Promise<void>;
+  private receiptVersion = 0;
   readonly pendingHeartTargets = signal<ReadonlySet<string>>(new Set());
   private readonly heartRequests = new Map<string, Promise<ChainConnection | null>>();
   private refreshTimer?: ReturnType<typeof setTimeout>;
@@ -166,6 +176,11 @@ export class ChainService {
         this.mutationVersion++;
         clearTimeout(this.refreshTimer);
         this.loadRequest = undefined;
+        this.receiptRequest = undefined;
+        this.receiptVersion++;
+        this.disconnectReceipts.set([]);
+        this.receiptError.set(null);
+        this.dismissingReceipts.set(new Set());
         this.heartRequests.clear();
         this.pendingHeartTargets.set(new Set());
         this.supportStale.set(true);
@@ -264,6 +279,7 @@ export class ChainService {
 
   loadConnections(): Promise<ChainConnection[]> {
     if (this.destroyed) return Promise.resolve([]);
+    void this.loadDisconnectReceipts();
     const token = this.authService.getToken();
     const userId = this.authService.currentUser()?.id;
     if (!isRemoteToken(token)) {
@@ -333,6 +349,7 @@ export class ChainService {
   private async writeConnection(
     connectionId: string,
     action: 'heart' | 'disconnect',
+    disconnectRequest?: DisconnectChainRequest,
   ): Promise<ChainConnection | null> {
     const token = this.authService.getToken();
     const userId = this.authService.currentUser()?.id;
@@ -342,7 +359,7 @@ export class ChainService {
       const url = `${environment.apiUrl}/chain/connections/${connectionId}`;
       const response = await firstValueFrom(
         action === 'disconnect'
-          ? this.http.delete<ChainConnection>(url)
+          ? this.http.delete<ChainConnection>(url, { body: disconnectRequest })
           : this.http.post<ChainConnection>(`${url}/${action}`, {}),
       );
       if (
@@ -351,8 +368,19 @@ export class ChainService {
         this.authService.getToken() !== token
       )
         throw new Error('Your session changed. Please reload.');
-      if (response?.id !== connectionId || (action === 'heart' && response.heartSent !== true))
-        throw new Error('The server did not confirm the heart. Please refresh and retry.');
+      const current = this._connections().find((c) => c.id === connectionId);
+      if (
+        action === 'disconnect' &&
+        current?.generationId &&
+        current.generationId !== disconnectRequest?.generationId
+      )
+        throw new Error('This chain has changed. Please refresh.');
+      if (
+        response?.id !== connectionId ||
+        (action === 'heart' && response.heartSent !== true) ||
+        (action === 'disconnect' && response.status !== 'DISCONNECTED')
+      )
+        throw new Error('The server did not confirm the change. Please refresh and retry.');
       this.mutationVersion++;
       const updated = this._connections().map((c) => {
         if (c.id === connectionId) return { ...c, ...response };
@@ -407,12 +435,87 @@ export class ChainService {
     this.heartRequests.set(target, request);
     return request;
   }
-  async disconnect(id: string): Promise<void> {
-    await this.writeConnection(id, 'disconnect');
+  async disconnect(id: string, request: DisconnectChainRequest): Promise<void> {
+    await this.writeConnection(id, 'disconnect', request);
     // Other cards can repeat this habit's received aggregate.
     // Hide that snapshot until a fresh read confirms the remaining support.
     this.supportStale.set(true);
     void this.loadConnections();
+  }
+
+  loadDisconnectReceipts(): Promise<void> {
+    const token = this.authService.getToken();
+    const userId = this.authService.currentUser()?.id;
+    if (this.destroyed || !isRemoteToken(token)) return Promise.resolve();
+    if (this.receiptRequest) return this.receiptRequest;
+    const session = this.sessionVersion;
+    const version = this.receiptVersion;
+    const current = () =>
+      !this.destroyed &&
+      session === this.sessionVersion &&
+      token === this.authService.getToken() &&
+      userId === this.authService.currentUser()?.id;
+    const request = (async () => {
+      try {
+        const receipts = await firstValueFrom(
+          this.http.get<ChainDisconnectReceipt[]>(
+            `${environment.apiUrl}/chain/disconnect-receipts`,
+            { params: { 'ngsw-bypass': 'true' } },
+          ),
+        );
+        if (!current() || version !== this.receiptVersion) return;
+        if (!Array.isArray(receipts)) throw new Error('Invalid receipt response');
+        this.disconnectReceipts.set(receipts);
+        this.receiptError.set(null);
+        this.checkUnread();
+      } catch {
+        if (current()) this.receiptError.set('Could not load private chain updates. Please retry.');
+      }
+    })().finally(() => {
+      if (this.receiptRequest === request) this.receiptRequest = undefined;
+    });
+    this.receiptRequest = request;
+    return request;
+  }
+
+  async dismissDisconnectReceipt(id: string): Promise<void> {
+    if (this.dismissingReceipts().has(id)) return;
+    const token = this.authService.getToken();
+    const userId = this.authService.currentUser()?.id;
+    const session = this.sessionVersion;
+    if (!isRemoteToken(token)) return;
+    const current = () =>
+      !this.destroyed &&
+      session === this.sessionVersion &&
+      token === this.authService.getToken() &&
+      userId === this.authService.currentUser()?.id;
+    this.receiptVersion++;
+    this.dismissingReceipts.update((ids) => new Set([...ids, id]));
+    this.receiptError.set(null);
+    try {
+      await firstValueFrom(
+        this.http.post(
+          `${environment.apiUrl}/chain/disconnect-receipts/${encodeURIComponent(id)}/dismiss`,
+          {},
+        ),
+      );
+      if (!current()) return;
+      this.receiptVersion++;
+      this.disconnectReceipts.update((receipts) => receipts.filter((r) => r.id !== id));
+      this.checkUnread();
+      // Wait out any older read before fetching the next page of pending updates.
+      await this.receiptRequest;
+      if (current()) void this.loadDisconnectReceipts();
+    } catch {
+      if (current()) this.receiptError.set('Could not dismiss this update. Please retry.');
+    } finally {
+      if (current())
+        this.dismissingReceipts.update((ids) => {
+          const next = new Set(ids);
+          next.delete(id);
+          return next;
+        });
+    }
   }
 
   async createInvite(commitmentId: string): Promise<ChainInvite> {
@@ -494,6 +597,7 @@ export class ChainService {
 
     const newConn: ChainConnection = {
       id: `local_conn_${crypto.randomUUID()}`,
+      generationId: crypto.randomUUID(),
       userId: user ? user.id : 'user_local',
       partnerId: `partner_${Date.now()}`,
       userCommitmentId: commitmentId,
@@ -520,6 +624,10 @@ export class ChainService {
   }
 
   checkUnread(): void {
+    if (this.disconnectReceipts().length) {
+      this.hasUnread.set(true);
+      return;
+    }
     const lastVisit = this.lastVisitAt();
     if (!lastVisit) {
       const hasAnyActivity = this._connections().some((c) => c.lastPartnerActivityAt);
@@ -544,7 +652,7 @@ export class ChainService {
     } catch (e) {
       console.error('[ChainService] Failed to update last visit', e);
     }
-    this.hasUnread.set(false);
+    this.hasUnread.set(this.disconnectReceipts().length > 0);
   }
 
   // --- Helpers & UI Integration ---
@@ -675,7 +783,7 @@ export class ChainService {
     // No-op for minimal spec
   }
 
-  removeChain(chainId: string): void {
-    this.disconnect(chainId);
+  removeChain(chainId: string, request: DisconnectChainRequest): Promise<void> {
+    return this.disconnect(chainId, request);
   }
 }

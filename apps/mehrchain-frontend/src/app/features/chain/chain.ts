@@ -12,6 +12,12 @@ import { MeroComponent } from '../../shared/components/mero/mero';
 import { ChainCardComponent } from './components/chain-card/chain-card';
 import { InviteSectionComponent } from './components/invite-section/invite-section';
 import { ChainCardSkeletonComponent } from '../../shared/components/skeletons';
+import {
+  ChainDisconnectReceipt,
+  DISCONNECT_REASONS,
+  DisconnectChainRequest,
+  SYSTEM_DISCONNECT_MESSAGE,
+} from '@mehrchain/shared-data';
 
 @Component({
   selector: 'app-chain',
@@ -169,14 +175,31 @@ export class ChainComponent {
     }
   }
 
-  async handleDisconnect(connectionId: string): Promise<void> {
+  receiptReason(receipt: ChainDisconnectReceipt): string {
+    return receipt.reason === 'HABIT_UNAVAILABLE'
+      ? SYSTEM_DISCONNECT_MESSAGE
+      : DISCONNECT_REASONS[receipt.reason];
+  }
+
+  async handleDisconnect({
+    connectionId,
+    request,
+  }: {
+    connectionId: string;
+    request: DisconnectChainRequest;
+  }): Promise<void> {
     if (this.disconnectingIds().has(connectionId)) return;
     this.disconnectingIds.update((ids) => new Set([...ids, connectionId]));
+    this.actionErrors.update((errors) => ({ ...errors, [connectionId]: '' }));
     try {
-      await this.chainService.disconnect(connectionId);
+      await this.chainService.disconnect(connectionId, request);
       this.showToast('Chain disconnected.');
     } catch {
-      this.showToast('Could not disconnect. Please retry.');
+      this.actionErrors.update((errors) => ({
+        ...errors,
+        [connectionId]:
+          'Could not confirm disconnection. Your reason is kept; retry or refresh if this chain changed.',
+      }));
     } finally {
       this.disconnectingIds.update((ids) => {
         const next = new Set(ids);
