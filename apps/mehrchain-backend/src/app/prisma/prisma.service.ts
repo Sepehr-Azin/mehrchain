@@ -17,6 +17,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         await this.$queryRaw`SELECT "generationId" FROM "chain_connections" LIMIT 0`;
         await this
           .$queryRaw`SELECT "recipientId", "partnerId", "recipientConnectionId", "generationId", "recipientHabitTitle", "reason", "note", "createdAt", "readAt" FROM "chain_disconnect_receipts" LIMIT 0`;
+        await this
+          .$queryRaw`SELECT "userId", "unlockedAt", "unlockedDayKey", "collectionDays", "acceptedPartners", "selectedSlot", "preferencesInitialized", "hasSentSupport" FROM "mero_progress" LIMIT 0`;
+        await this.$queryRaw`SELECT "userId", "slot", "name", "hex" FROM "mero_colors" LIMIT 0`;
+        await this.$queryRaw`SELECT "userId", "dayKey" FROM "mero_collection_days" LIMIT 0`;
+        await this.$queryRaw`SELECT "userId", "partnerId" FROM "mero_accepted_partners" LIMIT 0`;
       } catch {
         await this.$disconnect();
         throw new Error(

@@ -419,23 +419,34 @@ const NEW_TASKS = [
   },
   {
     key: 'T06',
-    title: '[T06] Make the day-21 named color durable',
+    title: '[T06] Permanent named-color collection with two progress paths',
     priority: 'P1',
     status: 'Ready',
     isClosed: false,
-    body: `## Task T06 — Make the day-21 named color durable
+    body: `## Task T06 — Permanent named-color collection with two progress paths
 
 **Priority:** P1  
-**Scope:** profile/Mero customization, server-backed preferences/earned milestone and migration. Depends on T02 and reward interpretation.
+**Scope:** scenario C, selected October 20: private named-color collection, server progress, completion/accepted-Chain integration and additive historical migration. Depends on T02–T05.
+
+Implementation is prepared locally in Changes for owner review. Builds, tests, Prisma generation, migration/rehearsal and deployment are not verified. This script definition update does not synchronize GitHub by itself; existing task/issue mappings stay unchanged.
+
+### Product Contract
+- First slot requires one habit at 21 consecutive account dates. No combined short streaks, app visits or Chain bypass. Earned colors/slots never expire after a miss, archive, disconnection or habit deletion.
+- After the unlock date, each account date with a real completion contributes at most one collection day across all habits; every 21 dates advances the shared ladder. Gaps preserve progress.
+- Distinct accepted partner accounts also advance the ladder at 1, 3, 5, etc. partners, counting both participants once per pair. Invitations, multiple habits with the same person, reconnects and support do not advance it.
+- Capacity is zero before the gate; afterwards it is 1 + max(floor(collectionDays / 21), ceil(acceptedPartners / 2)). Both paths share targets rather than adding duplicate rewards. Social participation remains optional.
+- Save one freely editable named hex color per earned slot; one active color or the always-free default. Mero's name stays fixed. Account-scoped legacy colors require server eligibility and cannot overwrite initialized server preferences.
 
 ### Action Items
-- [ ] Unlock custom color/name from one qualifying habit reaching 21 consecutive days; do not combine shorter habit streaks or count app visits. Mero's name stays fixed.
-- [ ] Persist entitlement and selected color/name with validation and account isolation. Keep earned reward after missed days/archive, and recover it on another device.
-- [ ] Migrate existing local color preferences without trusting local eligibility. Keep studio compact; check existing badge eligibility against real connection/support events while updating shared reward consumers.
+- [x] Record the precise contract first in docs/development_roadmap.md and implement permanent, isolated collection APIs and transactional source progress.
+- [x] Prepare canonical schema/additive backfill, safe legacy import, compact collection UI, actual-event badges and matching Three.js/fallback colors.
+- [x] Prepare regression scenarios and docs/t06_review_handoff.md; leave source changes uncommitted for review.
+- [ ] Complete owner-selected execution checks, populated-copy rehearsal, matching release and runtime acceptance.
 
 ### Acceptance Criteria
-- Day 20 stays locked, qualifying day 21 unlocks, and later miss/archive does not revoke earned reward.
-- Login/device change restores it; invalid values and failed saves do not corrupt preferences.
+- Day 20 locked; day 21 on one habit unlocks. One later date counts once; gaps retain progress. 21 collection dates OR one partner yields capacity 2; 42 OR three yields 3; reaching both never duplicates a slot.
+- Reconnects/retries, multiple habits per partner and concurrent actions cannot multiply progress. Earned state survives lifecycle changes and restores on another device.
+- Invalid/cross-account saves, failures, old-session replies and competing legacy imports cannot corrupt confirmed preferences. Review the handoff for migration/backfill/cascade and UI/concurrency acceptance.
 `,
   },
   {

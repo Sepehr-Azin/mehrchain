@@ -9,6 +9,7 @@ import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { ChainModule } from './chain/chain.module';
+import { MeroModule } from './mero/mero.module';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { ChainModule } from './chain/chain.module';
       {
         name: 'auth',
         ttl: 60000, // 60 seconds window
-        limit: 10,  // max 10 requests per window
+        limit: 10, // max 10 requests per window
       },
     ]),
     PrismaModule,
@@ -26,6 +27,7 @@ import { ChainModule } from './chain/chain.module';
     CommitmentsModule,
     UsersModule,
     ChainModule,
+    MeroModule,
   ],
   controllers: [AppController],
   providers: [AppService],

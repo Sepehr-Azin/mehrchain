@@ -151,6 +151,18 @@ describe('Mero shared rendering lifecycle', () => {
     expect(factory).not.toHaveBeenCalled();
   });
 
+  it('passes each target color independently and redraws a static target on selection changes', async () => {
+    const first = attach({ ...options, glowColor: '#06b6d4' });
+    const second = attach({ ...options, glowColor: '#f43f5e' });
+    await visible(first.handle);
+    await visible(second.handle);
+    frame();
+    expect(scene.draw.mock.calls.slice(-2).map((call) => call[6])).toEqual(['#06b6d4', '#f43f5e']);
+    first.handle.update({ ...options, glowColor: null });
+    frame(200);
+    expect(scene.draw.mock.lastCall?.[6]).toBeNull();
+  });
+
   it('uses low geometry, bounded resolution, and no animation on constrained devices', async () => {
     service.ngOnDestroy();
     vi.spyOn(navigator, 'hardwareConcurrency', 'get').mockReturnValue(4);

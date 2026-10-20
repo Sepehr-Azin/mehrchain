@@ -27,6 +27,8 @@ describe('ChainService lifecycle', () => {
   const prisma: any = {
     $transaction: jest.fn(),
     $queryRaw: jest.fn(),
+    meroProgress: { upsert: jest.fn(), update: jest.fn() },
+    meroAcceptedPartner: { createMany: jest.fn() },
     commitment: { findMany: jest.fn(), update: jest.fn() },
     chainInvite: {
       findUnique: jest.fn(),
@@ -110,7 +112,10 @@ describe('ChainService lifecycle', () => {
       createdAt: now,
     };
     prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
-    prisma.$queryRaw.mockResolvedValue([]);
+    prisma.$queryRaw.mockImplementation(async (query: any) =>
+      Array.isArray(query.values) ? query.values.map((id: string) => ({ id })) : [],
+    );
+    prisma.meroAcceptedPartner.createMany.mockResolvedValue({ count: 1 });
     prisma.commitment.findMany.mockImplementation(async ({ where }: any) =>
       habits.filter((h) => where.id.in.includes(h.id)).map((h) => ({ ...h })),
     );
@@ -213,6 +218,14 @@ describe('ChainService lifecycle', () => {
 
   it('reuses disconnected unique rows only on acceptance, clearing old support state', async () => {
     const accepted = await service.acceptInvite('receiver', 'code', { commitmentId: 'b' });
+    expect(prisma.meroAcceptedPartner.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 'sender', partnerId: 'receiver' }],
+      skipDuplicates: true,
+    });
+    expect(prisma.meroAcceptedPartner.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 'receiver', partnerId: 'sender' }],
+      skipDuplicates: true,
+    });
     expect(accepted.senderConnection).toMatchObject({
       userId: 'sender',
       partnerId: 'receiver',

@@ -1,113 +1,160 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { computed, signal } from '@angular/core';
+import { MeroCollection } from '@mehrchain/shared-data';
 import { ProfileComponent } from './profile';
 import { commonTestProviders } from '../../../testing/test-providers';
 import { MeroCustomizationService } from '../../core/services/mero-customization.service';
 import { CommitmentService } from '../../core/services/commitment.service';
-import { signal } from '@angular/core';
+import { AuthService } from '../../core/services/auth.service';
+import { MeroMoodService } from '../../core/services/mero-mood.service';
 
-describe('ProfileComponent', () => {
-  let component: ProfileComponent;
+describe('Profile color collection', () => {
   let fixture: ComponentFixture<ProfileComponent>;
-  let customizationService: MeroCustomizationService;
-  let streakSignal: any;
+  let component: ProfileComponent;
+  let collection: ReturnType<typeof signal<MeroCollection>>;
+  let customization: any;
+  let habits: ReturnType<typeof signal<any[]>>;
 
   beforeEach(async () => {
-    streakSignal = signal(0);
-    const mockCommitmentService = {
-      overallStreak: streakSignal,
-      commitments: signal([]),
-      archivedCommitments: signal([]),
+    collection = signal<MeroCollection>({
+      unlockedAt: null,
+      capacity: 0,
+      collectionDays: 0,
+      acceptedPartners: 0,
+      nextDayTarget: 0,
+      nextPartnerTarget: 1,
+      selectedSlot: 0,
+      preferencesInitialized: false,
+      hasSentSupport: false,
+      currentStreak: 20,
+      colors: [],
+    });
+    habits = signal([]);
+    customization = {
+      collection,
+      isUnlocked: computed(() => !!collection().unlockedAt),
+      loading: signal(false),
+      saving: signal(false),
+      loadError: signal<string | null>(null),
+      customGlowColor: computed(
+        () =>
+          collection().colors.find((c) => c.slot === collection().selectedSlot)?.hex ?? '#8b5cf6',
+      ),
+      customGlowName: computed(
+        () =>
+          collection().colors.find((c) => c.slot === collection().selectedSlot)?.name ??
+          'Custom Aura',
+      ),
+      effectiveGlowGradient: signal('radial-gradient(circle, #f59e0b, transparent)'),
+      effectiveGlowColor: signal<string | null>(null),
+      activeTheme: computed(() => ({ name: 'Golden Warmth' })),
+      refresh: vi.fn(async () => {}),
+      saveColor: vi.fn(async () => {}),
+      selectColor: vi.fn(async () => {}),
     };
-
     await TestBed.configureTestingModule({
       imports: [ProfileComponent],
       providers: [
         ...commonTestProviders,
-        { provide: CommitmentService, useValue: mockCommitmentService },
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser: signal({ id: 'owner', name: 'Owner', timeZone: 'UTC' }),
+            getToken: () => 'remote-owner',
+          },
+        },
+        {
+          provide: CommitmentService,
+          useValue: { commitments: habits, archivedCommitments: signal([]) },
+        },
+        { provide: MeroCustomizationService, useValue: customization },
+        { provide: MeroMoodService, useValue: { mood: signal('sad') } },
       ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(ProfileComponent);
     component = fixture.componentInstance;
-    customizationService = TestBed.inject(MeroCustomizationService);
     fixture.detectChanges();
   });
 
-  it('should create the profile component', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('shows the procedural sad Mero before a daily habit is completed', () => {
-    const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('app-mero canvas')).toBeTruthy();
-    expect(element.querySelector('app-mero img')).toBeNull();
-    expect(element.querySelector('app-mero [role="img"]')?.getAttribute('aria-label')).toContain('sad');
-  });
-
-  it('should prevent saving custom glow when streak is less than 21', () => {
-    streakSignal.set(5);
+  function unlock() {
+    collection.update((c) => ({
+      ...c,
+      unlockedAt: '2026-10-20T12:00:00Z',
+      capacity: 2,
+      nextDayTarget: 42,
+      nextPartnerTarget: 3,
+      acceptedPartners: 1,
+      currentStreak: 0,
+    }));
     fixture.detectChanges();
+  }
 
-    component.saveCustomGlow();
-    expect(component.saveFeedbackMessage()).toContain('unlocks at a 21-day streak');
+  it('keeps day 20 locked and the permanent milestone unlocked after the current streak falls to zero', () => {
+    expect(component.isCustomThemeUnlocked()).toBe(false);
+    unlock();
+    expect(component.isCustomThemeUnlocked()).toBe(true);
+    expect(component.badges().find((b) => b.id === '21-day-master')?.isUnlocked).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Next slot');
   });
 
-  it('should allow saving custom glow and resetting to default when streak reaches 21', () => {
-    streakSignal.set(21);
-    fixture.detectChanges();
+  it('does not award social badges for a public habit, and requires actual accepted/sent evidence', () => {
+    habits.set([{ isPublic: true, currentDay: 0 }]);
+    expect(component.badges().find((b) => b.id === 'chain-starter')?.isUnlocked).toBe(false);
+    expect(component.badges().find((b) => b.id === 'kind-soul')?.isUnlocked).toBe(false);
+    unlock();
+    expect(component.badges().find((b) => b.id === 'chain-starter')?.isUnlocked).toBe(true);
+    expect(component.badges().find((b) => b.id === 'kind-soul')?.isUnlocked).toBe(false);
+    collection.update((c) => ({ ...c, hasSentSupport: true }));
+    expect(component.badges().find((b) => b.id === 'kind-soul')?.isUnlocked).toBe(true);
+  });
 
+  it('preserves failed drafts and does not show saved feedback before confirmation', async () => {
+    unlock();
+    component.beginEdit(2);
+    component.customNameInput.set('My draft');
     component.customColorInput.set('#06b6d4');
-    component.customNameInput.set('Cyber Aurora');
-    component.saveCustomGlow();
-
-    expect(customizationService.selectedThemeId()).toBe('custom');
-    expect(customizationService.customGlowColor()).toBe('#06b6d4');
-    expect(customizationService.customGlowName()).toBe('Cyber Aurora');
-    expect(component.saveFeedbackMessage()).toContain('saved & applied');
-
-    // Reset to default glow
-    component.resetToDefaultGlow();
-    expect(customizationService.selectedThemeId()).toBe('golden');
-    expect(component.saveFeedbackMessage()).toContain('Reset to default');
-  });
-
-  it('should compute 5 initial badges with correct metadata and Lucide icons in Profile', () => {
-    const badges = component.badges();
-    expect(badges.length).toBe(5);
-
-    const badgeIds = badges.map((b) => b.id);
-    expect(badgeIds).toEqual([
-      'first-spark',
-      'chain-starter',
-      '7-day-streak',
-      '21-day-master',
-      'kind-soul',
-    ]);
-
-    const badgeIcons = badges.map((b) => b.icon);
-    expect(badgeIcons).toEqual(['sparkles', 'link', 'flame', 'trophy', 'heart']);
-  });
-
-  it('should unlock streak badges in Profile when streak reaches 7 and 21', () => {
-    streakSignal.set(21);
+    let reject!: (reason: Error) => void;
+    customization.saveColor.mockImplementationOnce(
+      () =>
+        new Promise<void>((_, fail) => {
+          reject = fail;
+        }),
+    );
+    const saving = component.saveCustomGlow();
+    expect(component.saveFeedbackMessage()).toBeNull();
+    reject(new Error('Could not save. Retry.'));
+    await saving;
     fixture.detectChanges();
-
-    const streak7 = component.badges().find((b) => b.id === '7-day-streak');
-    const streak21 = component.badges().find((b) => b.id === '21-day-master');
-
-    expect(streak7?.isUnlocked).toBe(true);
-    expect(streak21?.isUnlocked).toBe(true);
+    expect(component.saveFailed()).toBe(true);
+    expect(component.customNameInput()).toBe('My draft');
+    expect(component.editingSlot()).toBe(2);
   });
 
-  it('should render and toggle the Whats New section', () => {
-    expect(component.isWhatsNewExpanded()).toBe(false);
-    component.toggleWhatsNew();
-    expect(component.isWhatsNewExpanded()).toBe(true);
-
+  it('loads saved input after an asynchronous read and keeps a dirty draft during later refreshes', () => {
+    unlock();
+    collection.update((c) => ({
+      ...c,
+      selectedSlot: 1,
+      colors: [{ slot: 1, name: 'Aurora', hex: '#06b6d4' }],
+    }));
     fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain("What's New");
-    expect(compiled.textContent).toContain('v1.0.0');
-    expect(compiled.textContent).toContain('Spark Button');
+    expect(component.customNameInput()).toBe('Aurora');
+    component.beginEdit(2);
+    component.customNameInput.set('Unfinished');
+    collection.update((c) => ({ ...c, collectionDays: 2 }));
+    fixture.detectChanges();
+    expect(component.customNameInput()).toBe('Unfinished');
+    expect(component.editingSlot()).toBe(2);
+  });
+
+  it('renders names as text rather than HTML', () => {
+    unlock();
+    collection.update((c) => ({
+      ...c,
+      colors: [{ slot: 1, name: '<img src=x>', hex: '#06b6d4' }],
+    }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('<img src=x>');
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
   });
 });

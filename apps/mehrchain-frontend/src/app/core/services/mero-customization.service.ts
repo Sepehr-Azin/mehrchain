@@ -1,4 +1,9 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { firstValueFrom, timeout, TimeoutError } from 'rxjs';
+import { MeroCollection, meroColorCapacity } from '@mehrchain/shared-data';
+import { environment } from '../../../environments/environment';
+import { ColdStartService } from './cold-start.service';
 import { AuthService } from './auth.service';
 import { CommitmentService } from './commitment.service';
 import { ThemeService } from './theme.service';
@@ -127,188 +132,371 @@ export const PERSONALITY_OPTIONS: PersonalityOption[] = [
 })
 export class MeroCustomizationService {
   private readonly auth = inject(AuthService);
-  private get STORAGE_KEY(): string {
-    const id = this.auth.currentUser()?.id;
-    return id ? `mehrchain_mero_customization_v1_${id}` : 'mehrchain_mero_customization_v1';
-  }
-  private themeService = inject(ThemeService);
-  private commitmentService = inject(CommitmentService);
+  private readonly http = inject(HttpClient);
+  private readonly themeService = inject(ThemeService);
+  private readonly commitmentService = inject(CommitmentService);
+  private readonly coldStart = inject(ColdStartService);
+  private readonly api = `${environment.apiUrl}/mero`;
+  private readonly confirmed = signal<{
+    userId: string;
+    token: string;
+    data: MeroCollection;
+  } | null>(null);
+  private version = 0;
+  private destroyed = false;
+  private boundSession: string | null = null;
 
+  readonly collection = computed(() => {
+    const state = this.confirmed();
+    return state &&
+      state.userId === this.auth.currentUser()?.id &&
+      state.token === this.auth.getToken()
+      ? state.data
+      : null;
+  });
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly loadError = signal<string | null>(null);
   readonly baseThemes = MERO_GLOW_THEMES;
   readonly personalityOptions = PERSONALITY_OPTIONS;
-
-  // Reactive State Signals
   readonly nickname = computed(() => 'Mero');
-  readonly selectedThemeId = signal<MeroGlowThemeId>('golden');
   readonly personality = signal<MeroPersonality>('calm');
-  readonly customGlowColor = signal<string>('#8b5cf6');
-  readonly customGlowName = signal<string>('Custom Aura');
-
-  // Available Themes (Base + Dynamic 21-Day Custom Theme)
+  readonly selectedThemeId = computed<MeroGlowThemeId>(() =>
+    this.collection()?.selectedSlot ? 'custom' : 'golden',
+  );
+  readonly customGlowColor = computed(() => this.selectedColor()?.hex ?? '#8b5cf6');
+  readonly customGlowName = computed(() => this.selectedColor()?.name ?? 'Custom Aura');
+  readonly selectedColor = computed(() => {
+    const state = this.collection();
+    return state?.colors.find((c) => c.slot === state.selectedSlot) ?? null;
+  });
+  readonly isUnlocked = computed(() => !!this.collection()?.unlockedAt);
   readonly availableThemes = computed<MeroGlowTheme[]>(() => {
-    const customHex = this.customGlowColor();
-    const customName = this.customGlowName() || 'Custom Aura';
-    const { lightGradient, darkGradient } = generateCustomGlowGradients(customHex);
-
-    const customTheme: MeroGlowTheme = {
-      id: 'custom',
-      name: customName,
-      nameEn: customName,
-      lightGradient,
-      darkGradient,
-      previewColor: customHex,
-      accentColor: customHex,
-      minStreak: 21,
-      badge: '21-Day Streak',
-      description: 'Custom palette crafted by your 21-day dedication',
-    };
-
-    return [...this.baseThemes, customTheme];
+    const colors = this.collection()?.colors ?? [];
+    return [
+      ...this.baseThemes,
+      ...colors.map((color) => ({
+        id: 'custom' as const,
+        name: color.name,
+        nameEn: color.name,
+        ...generateCustomGlowGradients(color.hex),
+        previewColor: color.hex,
+        accentColor: color.hex,
+        minStreak: 21,
+        description: 'Your saved color',
+      })),
+    ];
   });
-
-  // Active Glow Theme object
   readonly activeTheme = computed<MeroGlowTheme>(() => {
-    const id = this.selectedThemeId();
-    const themes = this.availableThemes();
-    return themes.find((t) => t.id === id) ?? themes[0];
+    const color = this.selectedColor();
+    return color
+      ? {
+          id: 'custom',
+          name: color.name,
+          nameEn: color.name,
+          ...generateCustomGlowGradients(color.hex),
+          previewColor: color.hex,
+          accentColor: color.hex,
+          minStreak: 21,
+          description: 'Your saved color',
+        }
+      : DEFAULT_GLOW_THEME;
   });
-
-  // Effective CSS gradient taking into account active Light / Dark mode
-  readonly effectiveGlowGradient = computed<string>(() => {
-    const theme = this.activeTheme();
-    const isDark = this.themeService.isDark();
-    return isDark ? theme.darkGradient : theme.lightGradient;
-  });
-
-  // Active personality metadata
-  readonly activePersonality = computed<PersonalityOption>(() => {
-    const p = this.personality();
-    return this.personalityOptions.find((o) => o.id === p) ?? this.personalityOptions[1];
-  });
-
-  // Check if a specific theme is unlocked by user's streak
-  readonly isThemeUnlocked = computed(() => {
-    const streak = this.commitmentService.overallStreak();
-    const themes = this.availableThemes();
-    return (themeId: MeroGlowThemeId): boolean => {
-      const theme = themes.find((t) => t.id === themeId);
-      if (!theme) return false;
-      return streak >= theme.minStreak;
-    };
-  });
-
-  // Count of currently unlocked themes
-  readonly unlockedThemesCount = computed<number>(() => {
-    const isUnlocked = this.isThemeUnlocked();
-    return this.availableThemes().filter((t) => isUnlocked(t.id)).length;
-  });
+  readonly effectiveGlowGradient = computed(() =>
+    this.themeService.isDark() ? this.activeTheme().darkGradient : this.activeTheme().lightGradient,
+  );
+  // Null preserves the shipped warm model palette rather than recoloring the default.
+  readonly effectiveGlowColor = computed(() => this.selectedColor()?.hex ?? null);
+  readonly activePersonality = computed(
+    () =>
+      this.personalityOptions.find((p) => p.id === this.personality()) ??
+      this.personalityOptions[1],
+  );
+  readonly isThemeUnlocked = computed(
+    () => (id: MeroGlowThemeId) => id === 'golden' || (id === 'custom' && this.isUnlocked()),
+  );
+  readonly unlockedThemesCount = computed(() => 1 + (this.collection()?.colors.length ?? 0));
 
   constructor() {
-    this.loadState();
+    const destroy = inject(DestroyRef);
     effect(() => {
       const user = this.auth.currentUser();
-      this.selectedThemeId.set('golden');
-      this.personality.set('calm');
-      this.customGlowColor.set('#8b5cf6');
-      this.customGlowName.set('Custom Aura');
-      if (user) this.loadState();
+      untracked(() => {
+        const key = user ? `${user.id}:${this.auth.getToken()}` : null;
+        if (key === this.boundSession) return;
+        this.boundSession = key;
+        this.version++;
+        this.confirmed.set(null);
+        this.loading.set(false);
+        this.saving.set(false);
+        this.loadError.set(null);
+        this.personality.set('calm');
+        const legacy = user ? this.readLegacy(user.id) : null;
+        if (legacy && this.personalityOptions.some((p) => p.id === legacy.personality)) {
+          this.personality.set(legacy.personality);
+        }
+        if (user) void this.refresh();
+      });
+    });
+    // A confirmed habit mutation/calendar refresh can earn a slot on this page.
+    effect(() => {
+      this.commitmentService.commitments();
+      untracked(() => {
+        if (this.collection()) void this.refresh();
+      });
+    });
+    const resume = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible')
+        void this.refresh();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', resume);
+      window.addEventListener('online', resume);
+      window.addEventListener('pageshow', resume);
+      document.addEventListener('visibilitychange', resume);
+      destroy.onDestroy(() => {
+        window.removeEventListener('focus', resume);
+        window.removeEventListener('online', resume);
+        window.removeEventListener('pageshow', resume);
+        document.removeEventListener('visibilitychange', resume);
+      });
+    }
+    destroy.onDestroy(() => {
+      this.destroyed = true;
+      this.version++;
     });
   }
 
-  setGlowTheme(themeId: MeroGlowThemeId): boolean {
-    const canUnlock = this.isThemeUnlocked()(themeId);
-    if (!canUnlock) {
-      return false;
+  private session() {
+    const userId = this.auth.currentUser()?.id;
+    const token = this.auth.getToken();
+    if (!userId || !token || this.auth.isLocalToken(token)) {
+      throw new Error('Sign in to load and save your color collection.');
     }
-    this.saveState({ selectedThemeId: themeId });
-    this.selectedThemeId.set(themeId);
+    return { userId, token };
+  }
+
+  private current(session: { userId: string; token: string }, version: number) {
+    return (
+      !this.destroyed &&
+      this.version === version &&
+      this.auth.currentUser()?.id === session.userId &&
+      this.auth.getToken() === session.token
+    );
+  }
+
+  private assertCollection(data: MeroCollection): MeroCollection {
+    const integer = (n: number) => Number.isSafeInteger(n) && n >= 0;
+    if (
+      !data ||
+      !integer(data.collectionDays) ||
+      !integer(data.acceptedPartners) ||
+      !integer(data.capacity) ||
+      !integer(data.selectedSlot) ||
+      !integer(data.currentStreak) ||
+      data.capacity !==
+        meroColorCapacity(!!data.unlockedAt, data.collectionDays, data.acceptedPartners) ||
+      (data.unlockedAt !== null && !Number.isFinite(Date.parse(data.unlockedAt))) ||
+      data.nextDayTarget !== data.capacity * 21 ||
+      data.nextPartnerTarget !== Math.max(1, data.capacity * 2 - 1) ||
+      typeof data.preferencesInitialized !== 'boolean' ||
+      typeof data.hasSentSupport !== 'boolean' ||
+      !Array.isArray(data.colors) ||
+      data.colors.some(
+        (c) =>
+          !c ||
+          !integer(c.slot) ||
+          c.slot < 1 ||
+          c.slot > data.capacity ||
+          !this.validName(c.name) ||
+          typeof c.hex !== 'string' ||
+          !/^#[0-9a-f]{6}$/.test(c.hex),
+      ) ||
+      new Set(data.colors.map((c) => c.slot)).size !== data.colors.length ||
+      (data.selectedSlot !== 0 && !data.colors.some((c) => c.slot === data.selectedSlot))
+    ) {
+      throw new Error('The server did not confirm your collection. Please retry.');
+    }
+    return data;
+  }
+
+  private async request(request: () => Promise<MeroCollection>) {
+    this.coldStart.startRequest();
+    try {
+      return this.assertCollection(await request());
+    } finally {
+      this.coldStart.finishRequest();
+    }
+  }
+
+  async refresh(): Promise<void> {
+    if (this.saving() || this.destroyed || !this.auth.currentUser()) return;
+    let session: { userId: string; token: string };
+    try {
+      session = this.session();
+    } catch (error) {
+      this.loadError.set(this.message(error));
+      return;
+    }
+    const version = ++this.version;
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      let data = await this.request(() =>
+        firstValueFrom(
+          this.http
+            .get<MeroCollection>(`${this.api}/collection`, { params: { 'ngsw-bypass': 'true' } })
+            .pipe(timeout(20000)),
+        ),
+      );
+      if (!this.current(session, version)) return;
+      this.confirmed.set({ ...session, data });
+      const legacy = this.legacyCandidate(session.userId);
+      if (data.unlockedAt && !data.preferencesInitialized && legacy) {
+        // Same conditional import is serialized on the server, so the first
+        // explicit edit/import wins across devices. Never import eligibility.
+        data = await this.request(() =>
+          firstValueFrom(
+            this.http.post<MeroCollection>(`${this.api}/import`, legacy).pipe(timeout(20000)),
+          ),
+        );
+        if (!this.current(session, version)) return;
+        this.confirmed.set({ ...session, data });
+      }
+    } catch (error) {
+      if (this.current(session, version)) this.loadError.set(this.message(error));
+    } finally {
+      if (this.current(session, version)) this.loading.set(false);
+    }
+  }
+
+  async saveColor(slot: number, name: string, hex: string): Promise<void> {
+    const trimmedName = name.trim();
+    if (!this.validName(trimmedName))
+      throw new Error('Use a color name of 1–30 characters without control characters.');
+    const trimmedHex = hex.trim().toLowerCase();
+    const normalized = trimmedHex.startsWith('#') ? trimmedHex : `#${trimmedHex}`;
+    if (!/^#[0-9a-f]{6}$/.test(normalized))
+      throw new Error('Enter a six-digit hex color, such as #8b5cf6.');
+    if (!Number.isSafeInteger(slot) || slot < 1 || slot > (this.collection()?.capacity ?? 0)) {
+      throw new Error('This color slot is not earned yet.');
+    }
+    await this.mutate(() =>
+      firstValueFrom(
+        this.http
+          .put<MeroCollection>(`${this.api}/colors/${slot}`, { name: trimmedName, hex: normalized })
+          .pipe(timeout(20000)),
+      ),
+    );
+  }
+
+  async selectColor(slot: number): Promise<void> {
+    await this.mutate(() =>
+      firstValueFrom(
+        this.http.patch<MeroCollection>(`${this.api}/selection`, { slot }).pipe(timeout(20000)),
+      ),
+    );
+  }
+
+  private async mutate(request: () => Promise<MeroCollection>) {
+    if (this.saving()) throw new Error('Please wait for your current save.');
+    const session = this.session();
+    const version = ++this.version;
+    this.loading.set(false);
+    this.saving.set(true);
+    this.loadError.set(null);
+    try {
+      const data = await this.request(request);
+      if (!this.current(session, version)) throw new Error('Your session changed. Please reload.');
+      this.confirmed.set({ ...session, data });
+    } catch (error) {
+      throw new Error(this.message(error));
+    } finally {
+      if (this.current(session, version)) this.saving.set(false);
+    }
+  }
+
+  async setCustomGlow(name: string, hex: string): Promise<void> {
+    await this.saveColor(this.collection()?.selectedSlot || 1, name, hex);
+  }
+  async setGlowTheme(themeId: MeroGlowThemeId): Promise<boolean> {
+    if (themeId === 'golden') {
+      await this.selectColor(0);
+      return true;
+    }
+    const slot = this.collection()?.colors[0]?.slot;
+    if (themeId !== 'custom' || !this.isUnlocked() || !slot) return false;
+    await this.selectColor(slot);
     return true;
   }
-
-  setCustomGlow(name: string, hexColor: string): void {
-    const trimmedName = name.trim();
-    if (!trimmedName || trimmedName.length > 30) {
-      throw new Error('Use a color name of 1–30 characters.');
-    }
-    const trimmedColor = hexColor.trim();
-    if (!/^#?[0-9a-fA-F]{6}$/.test(trimmedColor)) {
-      throw new Error('Enter a six-digit hex color, such as #8b5cf6.');
-    }
-    const formatted = trimmedColor.startsWith('#') ? trimmedColor : `#${trimmedColor}`;
-    this.saveState({ customGlowName: trimmedName, customGlowColor: formatted });
-    this.customGlowName.set(trimmedName);
-    this.customGlowColor.set(formatted);
-  }
-
-  resetToDefaultGlow(): void {
-    this.saveState({ selectedThemeId: 'golden' });
-    this.selectedThemeId.set('golden');
+  resetToDefaultGlow(): Promise<void> {
+    return this.selectColor(0);
   }
 
   setPersonality(personality: MeroPersonality): void {
-    this.saveState({ personality });
+    if (!this.personalityOptions.some((p) => p.id === personality)) return;
+    const userId = this.auth.currentUser()?.id;
+    if (!userId) return;
+    // Personality stays device-local and does not overwrite legacy color candidates.
+    const legacy = this.readLegacy(userId) ?? {};
+    localStorage.setItem(
+      `mehrchain_mero_customization_v1_${userId}`,
+      JSON.stringify({ ...legacy, personality }),
+    );
     this.personality.set(personality);
   }
-
   getGreeting(): string {
     return this.activePersonality().greeting(this.nickname());
   }
-
-  getStreakPraise(streakDays: number): string {
-    return this.activePersonality().streakPraise(this.nickname(), streakDays);
+  getStreakPraise(days: number): string {
+    return this.activePersonality().streakPraise(this.nickname(), days);
   }
 
-  private loadState(): void {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Ignore legacy mascot nicknames; named glow colors are separate and retained for T06.
-        if (parsed.customGlowColor && typeof parsed.customGlowColor === 'string') {
-          this.customGlowColor.set(parsed.customGlowColor);
-        }
-        if (parsed.customGlowName && typeof parsed.customGlowName === 'string') {
-          this.customGlowName.set(parsed.customGlowName);
-        }
-        if (
-          parsed.selectedThemeId &&
-          (this.baseThemes.some((t) => t.id === parsed.selectedThemeId) ||
-            parsed.selectedThemeId === 'custom')
-        ) {
-          this.selectedThemeId.set(parsed.selectedThemeId);
-        }
-        if (
-          parsed.personality &&
-          this.personalityOptions.some((p) => p.id === parsed.personality)
-        ) {
-          this.personality.set(parsed.personality);
-        }
-      }
-    } catch (err) {
-      console.warn('[MeroCustomizationService] Failed to parse stored state:', err);
-    }
+  private validName(name: unknown): name is string {
+    return (
+      typeof name === 'string' &&
+      Array.from(name).length >= 1 &&
+      Array.from(name).length <= 30 &&
+      name === name.trim() &&
+      !/[\u0000-\u001f\u007f]/u.test(name)
+    );
   }
 
-  private saveState(
-    overrides: {
-      selectedThemeId?: MeroGlowThemeId;
-      personality?: MeroPersonality;
-      customGlowColor?: string;
-      customGlowName?: string;
-    } = {},
-  ): void {
+  private readLegacy(userId: string): Record<string, any> | null {
     try {
-      const payload = {
-        nickname: this.nickname(),
-        selectedThemeId: this.selectedThemeId(),
-        personality: this.personality(),
-        customGlowColor: this.customGlowColor(),
-        customGlowName: this.customGlowName(),
-        ...overrides,
-      };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload));
+      const value = JSON.parse(
+        localStorage.getItem(`mehrchain_mero_customization_v1_${userId}`) || 'null',
+      );
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
     } catch {
-      throw new Error('Could not save your glow on this device. Try again.');
+      return null;
     }
+  }
+
+  private legacyCandidate(userId: string) {
+    const legacy = this.readLegacy(userId);
+    const name = typeof legacy?.customGlowName === 'string' ? legacy.customGlowName.trim() : '';
+    const color =
+      typeof legacy?.customGlowColor === 'string'
+        ? legacy.customGlowColor.trim().toLowerCase()
+        : '';
+    const hex = color.startsWith('#') ? color : `#${color}`;
+    if (!this.validName(name) || !/^#[0-9a-f]{6}$/.test(hex)) return null;
+    return {
+      name,
+      hex,
+      selectedThemeId: legacy?.selectedThemeId === 'custom' ? 'custom' : 'golden',
+    };
+  }
+
+  private message(error: unknown): string {
+    if (error instanceof TimeoutError) {
+      return 'The server is taking longer than expected. Your draft is kept; refresh or retry.';
+    }
+    if (error instanceof HttpErrorResponse) {
+      if (typeof error.error?.message === 'string') return error.error.message;
+      return 'Could not confirm your collection. Your draft is kept; refresh or retry.';
+    }
+    return error instanceof Error ? error.message : 'Could not save your color. Please retry.';
   }
 }

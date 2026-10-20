@@ -13,6 +13,7 @@ export interface MeroRenderOptions {
   mood: MascotMood;
   glow: number;
   size: number;
+  glowColor?: string | null;
 }
 
 interface MeroTarget {
@@ -192,6 +193,7 @@ export class MeroRendererService implements OnDestroy {
           target.options.glow,
           time / 1000,
           this.animated(target),
+          target.options.glowColor ?? null,
         );
         target.dirty = false;
         target.ready(true);

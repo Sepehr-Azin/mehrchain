@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -6,7 +7,6 @@ import { MeroCustomizationService } from '../../core/services/mero-customization
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService, ThemeMode } from '../../core/services/theme.service';
 import { CommitmentService } from '../../core/services/commitment.service';
-import { ChainService } from '../../core/services/chain.service';
 import { VersionService } from '../../core/services/version.service';
 import { MeroComponent } from '../../shared/components/mero/mero';
 import { MeroMoodService } from '../../core/services/mero-mood.service';
@@ -27,7 +27,7 @@ export interface ProfileBadge {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, FormsModule, LucideAngularModule, MeroComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, MeroComponent, RouterLink],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -36,7 +36,6 @@ export class ProfileComponent {
   authService = inject(AuthService);
   themeService = inject(ThemeService);
   commitmentService = inject(CommitmentService);
-  chainService = inject(ChainService);
   versionService = inject(VersionService);
   readonly meroMood = inject(MeroMoodService);
 
@@ -49,6 +48,18 @@ export class ProfileComponent {
   // Custom Glow 21-Day Studio State
   customColorInput = signal<string>(this.customization.customGlowColor());
   customNameInput = signal<string>(this.customization.customGlowName());
+  editingSlot = signal(1);
+  draftDirty = signal(false);
+  colorNameLength = computed(() => Array.from(this.customNameInput()).length);
+  private destroyed = false;
+  private draftSession: string | null = null;
+  readonly nextEmptySlot = computed(() => {
+    const collection = this.customization.collection();
+    if (!collection) return null;
+    const used = new Set(collection.colors.map((c) => c.slot));
+    for (let slot = 1; slot <= collection.capacity; slot++) if (!used.has(slot)) return slot;
+    return null;
+  });
 
   readonly PRESET_CUSTOM_COLORS: PresetCustomColor[] = [
     { name: 'Royal Violet', hex: '#8b5cf6' },
@@ -65,13 +76,16 @@ export class ProfileComponent {
 
   // User details
   currentUser = this.authService.currentUser;
-  currentStreak = this.commitmentService.overallStreak;
+  currentStreak = computed(() => this.customization.collection()?.currentStreak ?? 0);
   activeHabitsCount = computed(() => this.commitmentService.commitments().length);
 
   totalSparks = computed(() => {
     let count = 0;
-    this.commitmentService.commitments().forEach((c) => {
-      if (c.history) count += c.history.length;
+    [
+      ...this.commitmentService.commitments(),
+      ...this.commitmentService.archivedCommitments(),
+    ].forEach((c) => {
+      count += c.currentDay || 0;
     });
     return count;
   });
@@ -80,12 +94,8 @@ export class ProfileComponent {
   badges = computed<ProfileBadge[]>(() => {
     const totalSparks = this.totalSparks();
     const streak = this.currentStreak();
-    const connections = this.chainService.connections();
-    const hasPublicOrChain =
-      connections.length > 0 || this.commitmentService.commitments().some((c) => c.isPublic);
-    const hasHeartReaction = connections.some(
-      (c) => c.heartSent === true || (c.lastPartnerActivityAt && c.status === 'ACTIVE'),
-    );
+    const hasChain = (this.customization.collection()?.acceptedPartners ?? 0) > 0;
+    const hasSentSupport = this.customization.collection()?.hasSentSupport ?? false;
 
     return [
       {
@@ -101,8 +111,8 @@ export class ProfileComponent {
         name: 'Chain Starter',
         description: 'Form your first chain connection',
         icon: 'link',
-        isUnlocked: hasPublicOrChain,
-        progressText: hasPublicOrChain ? 'Unlocked' : 'Create public habit or invite',
+        isUnlocked: hasChain,
+        progressText: hasChain ? 'Unlocked' : 'Connect through an accepted invite',
       },
       {
         id: '7-day-streak',
@@ -114,19 +124,19 @@ export class ProfileComponent {
       },
       {
         id: '21-day-master',
-        name: '21-Day Master',
-        description: '21 days streak (unlocks custom glow)',
+        name: '21-Day Milestone',
+        description: 'One habit, 21 consecutive days; yours to keep',
         icon: 'trophy',
-        isUnlocked: streak >= 21,
-        progressText: streak >= 21 ? 'Unlocked' : `${streak} / 21 days`,
+        isUnlocked: this.isCustomThemeUnlocked(),
+        progressText: this.isCustomThemeUnlocked() ? 'Permanently earned' : `${streak} / 21 days`,
       },
       {
         id: 'kind-soul',
         name: 'Kind Soul',
         description: 'Support a friend along the chain',
         icon: 'heart',
-        isUnlocked: hasHeartReaction || connections.length > 0,
-        progressText: hasHeartReaction || connections.length > 0 ? 'Unlocked' : 'Support partner',
+        isUnlocked: hasSentSupport,
+        progressText: hasSentSupport ? 'Unlocked' : 'Send a heart to a partner',
       },
     ];
   });
@@ -134,7 +144,7 @@ export class ProfileComponent {
   unlockedBadgesCount = computed(() => this.badges().filter((b) => b.isUnlocked).length);
 
   // 21-day Streak progress
-  isCustomThemeUnlocked = computed(() => this.currentStreak() >= 21);
+  isCustomThemeUnlocked = this.customization.isUnlocked;
   customStreakProgress = computed(() =>
     Math.min(100, Math.round((this.currentStreak() / 21) * 100)),
   );
@@ -142,6 +152,33 @@ export class ProfileComponent {
   constructor() {
     // Clear version notification dot when opening profile
     this.versionService.markVersionAsSeen();
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+    });
+    effect(() => {
+      const user = this.currentUser();
+      untracked(() => {
+        const key = user ? `${user.id}:${this.authService.getToken()}` : null;
+        if (key === this.draftSession) return;
+        this.draftSession = key;
+        this.draftDirty.set(false);
+        this.editingSlot.set(1);
+        this.customNameInput.set('Custom Aura');
+        this.customColorInput.set('#8b5cf6');
+        this.saveFeedbackMessage.set(null);
+      });
+    });
+    effect(() => {
+      const state = this.customization.collection();
+      untracked(() => {
+        if (this.draftDirty() || !state) return;
+        const color = state.colors.find((c) => c.slot === state.selectedSlot) ?? state.colors[0];
+        this.editingSlot.set(color?.slot ?? 1);
+        this.customNameInput.set(color?.name ?? 'Custom Aura');
+        this.customColorInput.set(color?.hex ?? '#8b5cf6');
+      });
+    });
+    void this.customization.refresh();
   }
 
   toggleWhatsNew(): void {
@@ -149,27 +186,45 @@ export class ProfileComponent {
   }
 
   applyPresetCustomColor(preset: PresetCustomColor): void {
+    this.draftDirty.set(true);
     this.customColorInput.set(preset.hex);
     this.customNameInput.set(preset.name);
   }
 
-  saveCustomGlow(): void {
+  beginEdit(slot: number): void {
+    const color = this.customization.collection()?.colors.find((c) => c.slot === slot);
+    this.editingSlot.set(slot);
+    this.customNameInput.set(color?.name ?? 'Custom Aura');
+    this.customColorInput.set(color?.hex ?? '#8b5cf6');
+    this.draftDirty.set(true);
+  }
+
+  private sameSession(userId: string | undefined, token: string | null): boolean {
+    return (
+      !this.destroyed && this.currentUser()?.id === userId && this.authService.getToken() === token
+    );
+  }
+
+  async saveCustomGlow(): Promise<void> {
     if (!this.isCustomThemeUnlocked()) {
       this.showSaveFeedback('Custom Glow Studio unlocks at a 21-day streak', true);
       return;
     }
 
-    const name = this.customNameInput().trim() || 'Custom Aura';
-    const color = this.customColorInput().trim() || '#8b5cf6';
+    const name = this.customNameInput().trim();
+    const color = this.customColorInput().trim();
+    const userId = this.currentUser()?.id;
+    const token = this.authService.getToken();
 
     try {
-      this.customization.setCustomGlow(name, color);
-      if (!this.customization.setGlowTheme('custom')) {
-        this.showSaveFeedback('Custom Glow Studio unlocks at a 21-day streak', true);
-        return;
-      }
-      this.showSaveFeedback(`Custom glow "${name}" saved & applied on this device.`);
+      await this.customization.saveColor(this.editingSlot(), name, color);
+      if (!this.sameSession(userId, token)) return;
+      this.draftDirty.set(false);
+      this.customNameInput.set(this.customization.customGlowName());
+      this.customColorInput.set(this.customization.customGlowColor());
+      this.showSaveFeedback(`Color "${name}" saved & applied to your account.`);
     } catch (error) {
+      if (!this.sameSession(userId, token)) return;
       this.showSaveFeedback(
         error instanceof Error ? error.message : 'Could not save glow. Try again.',
         true,
@@ -177,16 +232,24 @@ export class ProfileComponent {
     }
   }
 
-  resetToDefaultGlow(): void {
+  async useColor(slot: number): Promise<void> {
+    const userId = this.currentUser()?.id;
+    const token = this.authService.getToken();
     try {
-      this.customization.resetToDefaultGlow();
-      this.showSaveFeedback('Reset to default warm glow');
+      await this.customization.selectColor(slot);
+      if (!this.sameSession(userId, token)) return;
+      this.showSaveFeedback(slot === 0 ? 'Default warm glow applied' : 'Saved color applied');
     } catch (error) {
+      if (!this.sameSession(userId, token)) return;
       this.showSaveFeedback(
         error instanceof Error ? error.message : 'Could not reset glow. Try again.',
         true,
       );
     }
+  }
+
+  resetToDefaultGlow(): Promise<void> {
+    return this.useColor(0);
   }
 
   setThemeMode(mode: ThemeMode): void {

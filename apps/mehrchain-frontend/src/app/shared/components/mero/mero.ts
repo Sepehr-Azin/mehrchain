@@ -46,6 +46,7 @@ export class MeroComponent {
         mood: this.mood(),
         glow: this.showGlow() ? 1 : 0.75,
         size: this.pixels(),
+        glowColor: this.customizationService?.effectiveGlowColor() ?? null,
       };
       this.renderTarget?.update(options);
     });
@@ -53,7 +54,12 @@ export class MeroComponent {
       const canvas = this.canvas().nativeElement;
       this.renderTarget = this.renderer.attach(
         canvas,
-        { mood: this.mood(), glow: this.showGlow() ? 1 : 0.75, size: this.pixels() },
+        {
+          mood: this.mood(),
+          glow: this.showGlow() ? 1 : 0.75,
+          size: this.pixels(),
+          glowColor: this.customizationService?.effectiveGlowColor() ?? null,
+        },
         (ready) => {
           if (this.ready() !== ready) this.ready.set(ready);
         },
@@ -83,6 +89,7 @@ export class MeroComponent {
   }
 
   // Effective glow gradient
+  effectiveColor = computed(() => this.customizationService?.effectiveGlowColor() ?? null);
   effectiveGradient = computed<string>(() => {
     if (this.customGradient()) {
       return this.customGradient()!;

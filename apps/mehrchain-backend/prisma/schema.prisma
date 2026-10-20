@@ -48,6 +48,11 @@ model User {
   metadata                  Json? // Extensible metadata for future gamification & preferences
 
   commitments Commitment[]
+  meroProgress MeroProgress?
+  meroColors MeroColor[]
+  meroDays MeroCollectionDay[]
+  meroPartners MeroAcceptedPartner[] @relation("MeroPartnerOwner")
+  meroPartnerOf MeroAcceptedPartner[] @relation("MeroPartnerAccount")
 
   // Relations for Chain
   userChains    ChainConnection[] @relation("UserChains")
@@ -63,6 +68,54 @@ model User {
 
   @@index([username])
   @@map("users")
+}
+
+// Private permanent reward state, independent of habit/connection lifetimes.
+model MeroProgress {
+  userId                 String    @id
+  unlockedAt             DateTime?
+  unlockedDayKey         String?
+  collectionDays         Int       @default(0)
+  acceptedPartners       Int       @default(0)
+  selectedSlot           Int       @default(0) // 0 is the always-available default glow
+  preferencesInitialized Boolean   @default(false)
+  hasSentSupport         Boolean   @default(false)
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mero_progress")
+}
+
+model MeroColor {
+  userId String
+  slot   Int
+  name   String
+  hex    String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, slot])
+  @@map("mero_colors")
+}
+
+model MeroCollectionDay {
+  userId String
+  dayKey String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, dayKey])
+  @@map("mero_collection_days")
+}
+
+// Identity deduplication only. Deleting a partner removes the reference, while
+// the owner's permanent acceptedPartners counter remains earned.
+model MeroAcceptedPartner {
+  userId    String
+  partnerId String
+  user      User @relation("MeroPartnerOwner", fields: [userId], references: [id], onDelete: Cascade)
+  partner   User @relation("MeroPartnerAccount", fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@id([userId, partnerId])
+  @@index([partnerId])
+  @@map("mero_accepted_partners")
 }
 
 // Core habit commitment model

@@ -43,8 +43,12 @@
   left: 14.5%;
   bottom: 8%;
   border-radius: 49%;
-  background: radial-gradient(ellipse, #fff0af, #f6e7a3);
-  box-shadow: 0 0 0.2em #f6e7a3;
+  background: radial-gradient(
+    ellipse,
+    var(--mero-custom-color, #fff0af),
+    var(--mero-custom-color, #f6e7a3)
+  );
+  box-shadow: 0 0 0.2em var(--mero-custom-color, #f6e7a3);
 }
 
 .mero-hand {
@@ -52,7 +56,7 @@
   top: 40%;
   width: 20%;
   height: 24%;
-  background: #f6e7a3;
+  background: var(--mero-custom-color, #f6e7a3);
   border-radius: 70% 25% 65% 25%;
 }
 

@@ -146,6 +146,7 @@ export function createMascot({
   const model = new THREE.Group();
   model.name = 'MehrChain mascot';
   const glowUniform = { value: THREE.MathUtils.clamp(glow, 0, 2) };
+  const haloColorUniform = { value: new THREE.Vector3(0.16, 0.14, 0.025) };
   const skin = new THREE.MeshPhysicalMaterial({
     color: '#347f73',
     roughness: 0.9,
@@ -156,13 +157,15 @@ export function createMascot({
   // A warm falloff on the skin, around the luminous belly, without a flat sprite.
   skin.onBeforeCompile = (shader) => {
     shader.uniforms['mascotGlow'] = glowUniform;
+    shader.uniforms['mascotHaloColor'] = haloColorUniform;
     shader.vertexShader = 'varying vec3 vMascotPosition;\n' + shader.vertexShader;
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       '#include <begin_vertex>\nvMascotPosition = position;',
     );
     shader.fragmentShader =
-      'varying vec3 vMascotPosition;\nuniform float mascotGlow;\n' + shader.fragmentShader;
+      'varying vec3 vMascotPosition;\nuniform float mascotGlow;\nuniform vec3 mascotHaloColor;\n' +
+      shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <emissivemap_fragment>',
       `
@@ -171,7 +174,7 @@ export function createMascot({
       float bellyDistance = length(bellyPoint);
       float halo = exp(-pow((bellyDistance - 1.0) / 0.20, 2.0));
       float front = smoothstep(0.05, 0.45, vMascotPosition.z);
-      totalEmissiveRadiance += vec3(0.16, 0.14, 0.025) * halo * front * mascotGlow;
+      totalEmissiveRadiance += mascotHaloColor * halo * front * mascotGlow;
       float rim = pow(1.0 - max(dot(normal, normalize(vViewPosition)), 0.0), 1.1);
       totalEmissiveRadiance += vec3(0.22, 0.50, 0.45) * rim * 0.35;
       float crown = exp(-max(1.078 - vMascotPosition.y, 0.0) / 0.065);
@@ -179,7 +182,7 @@ export function createMascot({
     `,
     );
   };
-  skin.customProgramCacheKey = () => 'mehrchain-belly-halo-v1';
+  skin.customProgramCacheKey = () => 'mehrchain-belly-halo-v2';
   const cream = new THREE.MeshStandardMaterial({
     color: '#242012',
     emissive: '#f5e7a3',
@@ -282,8 +285,20 @@ export function createMascot({
     mouths.set(expression, mouth);
   }
   let currentMood: MascotMood = 'reference';
+  let currentGlowColor: string | null = null;
   const mascot = {
     model,
+    setGlowColor(value: string | null) {
+      const color = value && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
+      if (color === currentGlowColor) return;
+      currentGlowColor = color;
+      cream.emissive.set(color ?? '#f5e7a3');
+      wingMaterial.emissive.set(color ?? '#f2e8ac');
+      if (color) {
+        const linear = new THREE.Color(color);
+        haloColorUniform.value.set(linear.r * 0.16, linear.g * 0.16, linear.b * 0.16);
+      } else haloColorUniform.value.set(0.16, 0.14, 0.025);
+    },
     setGlow(value: number) {
       glowUniform.value = THREE.MathUtils.clamp(value, 0, 2);
       cream.emissiveIntensity = glowUniform.value;

@@ -2,3 +2,4 @@
 export * from './lib/commitment.interface';
 export * from './lib/activity-log.interface';
 export * from './lib/chain.interface';
+export * from './lib/mero.interface';

@@ -11,6 +11,7 @@ import { UpdateCommitmentDto } from './dto/update-commitment.dto';
 import { ChainNotificationService } from '../chain/chain-notification.service';
 import { commitmentCalendar, dailyCommitmentState } from './commitment-calendar';
 import { CommitmentLifecycleService } from './commitment-lifecycle.service';
+import { recordMeroCompletion } from '../mero/mero-rewards';
 
 @Injectable()
 export class CommitmentsService {
@@ -168,6 +169,13 @@ export class CommitmentsService {
           },
         });
 
+        await recordMeroCompletion(
+          tx,
+          userId,
+          calendar.currentDayKey,
+          updated.currentStreak,
+          today,
+        );
         newlyCompleted = true;
 
         return dailyCommitmentState(updated, calendar);

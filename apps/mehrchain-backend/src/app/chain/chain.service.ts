@@ -5,6 +5,7 @@ import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { ChainStatus, ChainInviteStatus, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { DisconnectChainDto } from './dto/disconnect-chain.dto';
+import { lockMeroAccounts, recordMeroAcceptance } from '../mero/mero-rewards';
 import { chainState } from './chain-state';
 import { CommitmentLifecycleService } from '../commitments/commitment-lifecycle.service';
 import {
@@ -132,6 +133,7 @@ export class ChainService {
           create: { ...receiverKey, partnerCommitmentId: sender.id, ...fresh },
           update: { partnerCommitmentId: sender.id, ...fresh },
         });
+        await recordMeroAcceptance(tx, invite.senderId, userId);
         // Invites remain shareable with multiple partners until expiry/cancellation.
         return { senderConnection, receiverConnection };
       },
@@ -300,6 +302,8 @@ export class ChainService {
       const sent = await tx.chainHeart.findUniqueOrThrow({
         where: { senderId_recipientCommitmentId_dayKey: key },
       });
+      await lockMeroAccounts(tx, [userId]);
+      await tx.meroProgress.update({ where: { userId }, data: { hasSentSupport: true } });
       const incoming = await tx.chainConnection.findMany({
         where: {
           partnerId: userId,

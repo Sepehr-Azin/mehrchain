@@ -58,6 +58,7 @@ export function createMeroScene(detail: MascotDetail, onContextLost: () => void)
       glow: number,
       seconds: number,
       animated: boolean,
+      glowColor: string | null = null,
     ) {
       if (pixels !== size) {
         renderer.setSize(size, size, false);
@@ -65,6 +66,7 @@ export function createMeroScene(detail: MascotDetail, onContextLost: () => void)
       }
       mascot.setMood(mood);
       mascot.setGlow(glow);
+      mascot.setGlowColor(glowColor);
       mascot.update(seconds, animated, animated);
       renderer.render(scene, camera);
       if (target.canvas.width !== size || target.canvas.height !== size) {

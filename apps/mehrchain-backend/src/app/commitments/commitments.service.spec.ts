@@ -29,6 +29,7 @@ describe('CommitmentsService', () => {
     user: { findUnique: jest.fn() },
     commitment: { findMany: jest.fn(), update: jest.fn(), create: jest.fn(), delete: jest.fn() },
     commitmentLog: { create: jest.fn() },
+    meroProgress: { upsert: jest.fn(), findUniqueOrThrow: jest.fn(), update: jest.fn() },
     chainConnection: { updateMany: jest.fn(), findMany: jest.fn() },
     chainDisconnectReceipt: { createMany: jest.fn() },
     chainInvite: { updateMany: jest.fn() },
@@ -41,7 +42,10 @@ describe('CommitmentsService', () => {
     jest.useFakeTimers().setSystemTime(now);
     habit = { ...base, history: [...base.history] };
     prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
-    prisma.$queryRaw.mockResolvedValue([]);
+    prisma.$queryRaw.mockImplementation(async (query: any) =>
+      Array.isArray(query.values) ? query.values.map((id: string) => ({ id })) : [],
+    );
+    prisma.meroProgress.findUniqueOrThrow.mockResolvedValue({ unlockedAt: null });
     prisma.chainConnection.findMany.mockResolvedValue([]);
     prisma.user.findUnique.mockResolvedValue({ timeZone: 'Asia/Tehran' });
     prisma.commitment.findMany.mockImplementation(async ({ where }: any) => {
@@ -116,6 +120,23 @@ describe('CommitmentsService', () => {
     await service.completeCommitment('owner', 'habit');
     expect(prisma.commitmentLog.create).not.toHaveBeenCalled();
     expect(prisma.commitment.update).not.toHaveBeenCalled();
+    expect(notification.notifyChainPartners).not.toHaveBeenCalled();
+    expect(prisma.meroProgress.upsert).not.toHaveBeenCalled();
+  });
+
+  it('earns the first color on the qualifying completion, without counting the unlock date', async () => {
+    habit!.lastCompletedDate = new Date('2026-10-14T12:00:00Z');
+    habit!.currentStreak = 20;
+    await service.completeCommitment('owner', 'habit');
+    expect(prisma.meroProgress.update).toHaveBeenCalledWith({
+      where: { userId: 'owner' },
+      data: { unlockedAt: now, unlockedDayKey: '2026-10-15' },
+    });
+  });
+
+  it('propagates reward persistence failure from the source transaction', async () => {
+    prisma.meroProgress.upsert.mockRejectedValueOnce(new Error('reward storage unavailable'));
+    await expect(service.completeCommitment('owner', 'habit')).rejects.toThrow('reward storage');
     expect(notification.notifyChainPartners).not.toHaveBeenCalled();
   });
 

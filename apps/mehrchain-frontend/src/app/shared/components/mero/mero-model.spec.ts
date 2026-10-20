@@ -2,6 +2,26 @@ import * as THREE from 'three';
 import { createMascot } from './mero-model';
 
 describe('Mero procedural geometry', () => {
+  it('recolors the actual luminous materials and restores the shipped default palette', () => {
+    const mascot = createMascot({ detail: 'low' });
+    const colors = () => {
+      const values = new Set<string>();
+      mascot.model.traverse((part) => {
+        if (!(part instanceof THREE.Mesh)) return;
+        const material = part.material;
+        if (material instanceof THREE.MeshStandardMaterial && material.emissiveIntensity > 0) {
+          values.add(material.emissive.getHexString());
+        }
+      });
+      return values;
+    };
+    const defaults = colors();
+    mascot.setGlowColor('#06b6d4');
+    expect(colors()).toEqual(new Set(['06b6d4']));
+    mascot.setGlowColor(null);
+    expect(colors()).toEqual(defaults);
+    mascot.dispose();
+  });
   it('keeps low-detail geometry finite and substantially smaller', () => {
     const count = (detail: 'low' | 'standard') => {
       const mascot = createMascot({ detail });

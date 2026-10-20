@@ -1,6 +1,7 @@
 <div
   class="relative inline-flex items-center justify-center select-none"
   [ngClass]="sizeClasses()"
+  [style.--mero-custom-color]="effectiveColor()"
   role="img"
   [attr.aria-label]="mood() === 'sad' ? 'Mero, feeling sad' : 'Mero, smiling'"
 >

@@ -21,6 +21,20 @@ The old `20261004210000_production_baseline` history record has a checksum that 
 
 ## Release migration chain
 
+### October 20 Mero color collection addition
+
+T06 adds `20261020000000_mero_color_collection` after T05. It creates private
+progress, named-color slots, collection-date deduplication and accepted-partner
+deduplication tables. It backfills only canonical server completion dates and
+persisted accepted pairs; original tables/rows are read without modification.
+See the [T06 implementation/release handoff](t06_review_handoff.md) for the exact
+contract, historical limits, populated-copy fixtures and rollout sequence.
+No database operation, Prisma generation or rehearsal was run during implementation.
+Stop old writers before this migration's snapshot/backfill boundary and deploy the
+matching generated-client backend before resuming: old writers do not record reward
+events. Startup adds four required-table probes. Do not replay earlier migrations,
+drop earned collections on rollback or use `db push` to skip the release chain.
+
 ### October 19 private disconnect receipts addition
 
 T05 adds `20261019000000_chain_disconnect_receipts` after the October 18
