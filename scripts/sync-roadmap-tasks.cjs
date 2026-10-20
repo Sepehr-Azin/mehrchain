@@ -400,17 +400,20 @@ const NEW_TASKS = [
     key: 'T05',
     title: '[T05] Ask and deliver a disconnect reason',
     priority: 'P1',
-    status: 'Ready',
+    status: 'In progress', // Implemented; Render deployment failed; schema/acceptance pending
     isClosed: false,
     body: `## Task T05 — Ask and deliver a disconnect reason
 
 **Priority:** P1  
 **Scope:** disconnect API/transaction, durable recipient event and compact frontend reason/receipt UI. Depends on T03; integrates with T04's menu.
 
+**Status (October 20, updated during T10):** implemented/pushed in ed38dd6; Render history confirms backend deployment failed. The shared disconnect constants are in the unresolved DTO runtime import diagnosed under P0 T10. Schema history, compatible release and runtime acceptance remain unverified; see docs/development_roadmap.md and docs/t10_release_build_handoff.md.
+
 ### Action Items
-- [ ] Ask for a reason with Cancel and a recipient-visible preview. Offer simple choices including “Prefer not to share”; personal explanation is optional.
-- [ ] Persist one private reason event atomically with reciprocal disconnection. It remains available after relationship disappears from active queries and after recipient returns offline.
-- [ ] Restrict access to intended participants; safely render bounded optional text. Retried requests create one event. Automatic archive uses a neutral system reason.
+- [x] Implement reason with Cancel and a recipient-visible preview, including “Prefer not to share” and optional explanation.
+- [x] Implement one durable private receipt atomically with reciprocal disconnection; recipient-only inbox and confirmed saved dismissal.
+- [x] Implement participant isolation, bounded plain text, generation-safe retry and neutral lifecycle reasons. Runtime acceptance remains pending.
+- [ ] Complete T10 build repair verification, actual pending schema/recovery/release gates and owner acceptance.
 
 ### Acceptance Criteria
 - Cancel changes nothing; manual disconnect updates both sides and partner receives chosen reason once.
@@ -421,14 +424,14 @@ const NEW_TASKS = [
     key: 'T06',
     title: '[T06] Permanent named-color collection with two progress paths',
     priority: 'P1',
-    status: 'Ready',
+    status: 'In progress', // Implemented; Render build failed; schema/acceptance pending
     isClosed: false,
     body: `## Task T06 — Permanent named-color collection with two progress paths
 
 **Priority:** P1  
 **Scope:** scenario C, selected October 20: private named-color collection, server progress, completion/accepted-Chain integration and additive historical migration. Depends on T02–T05.
 
-Implementation is now in local commit ddee9ff, observed at the start of T07; its original implementation session left Changes for owner review. Push, builds, tests, Prisma generation, migration/rehearsal and deployment are not verified here. This script definition update does not synchronize GitHub by itself; existing task/issue mappings stay unchanged.
+Implementation is in ddee9ff; the later T10 investigation verified delivery to Render and a failed backend build after successful remote Prisma generation. Shared runtime imports could not resolve; T10 repairs configuration locally. Local build/tests, database migration/rehearsal and a successful matching release remain unverified. See docs/development_roadmap.md. This local definition update does not synchronize GitHub; existing task/issue mappings stay unchanged.
 
 ### Product Contract
 - First slot requires one habit at 21 consecutive account dates. No combined short streaks, app visits or Chain bypass. Earned colors/slots never expire after a miss, archive, disconnection or habit deletion.
@@ -460,7 +463,7 @@ Implementation is now in local commit ddee9ff, observed at the start of T07; its
 **Priority:** P1  
 **Scope:** contextual copy, create/edit habit, Journey/history, archive and return states. Integrates T02–T06.
 
-**Local status (October 20, updated during T08):** implementation now exists in local commit 023b42d; push/deployment state was not queried. The original source/format/diff/whitespace review has no new build, tests, typecheck, OpenSpec validation or runtime/PWA acceptance evidence. See docs/t07_review_handoff.md and docs/development_roadmap.md. T05/T06 release prerequisites remain separate. This task definition was updated locally; no GitHub synchronization was run.
+**Status (October 20, updated during T10):** implementation is in 023b42d and Render history confirms a failed backend deployment attempt. Actual frontend deployment and runtime/PWA acceptance remain unverified. See historical docs/t07_review_handoff.md and current docs/development_roadmap.md. T10 repair and T05/T06 release prerequisites remain separate. This task definition was updated locally; no GitHub synchronization was run.
 
 ### Action Items
 - [x] Shared setup/edit/quick-create daily-rule copy and discoverable Dashboard/Journey help; contextual one-miss/archive/heart/earned-slot hints.
@@ -478,12 +481,14 @@ Implementation is now in local commit ddee9ff, observed at the start of T07; its
     key: 'T08',
     title: '[T08] Reduce startup and access friction within a free budget',
     priority: 'P1',
-    status: 'In progress', // Code/tooling in Changes; measurements and acceptance pending
+    status: 'In progress', // Committed; backend deployment failed; measurements/acceptance pending
     isClosed: false,
     body: `## Task T08 — Reduce startup and access friction within a free budget
 
 **Priority:** P1  
 **Scope:** current Pages proxy, Render/Neon request path, authentication reachability, loading/retry and foreground refresh.
+
+**Status (October 20, updated during T10):** committed in 37ba0e3 and delivered to Render; backend build failed on inherited shared runtime imports after Prisma generation. T10 configuration repair and compatible T05/T06 release must precede deployed latency acceptance. Frontend revision and actual migration history remain uninspected. See docs/development_roadmap.md.
 
 ### Action Items
 - [ ] Measure warm and idle first-action latency separately for API, database and auth provider, on representative desktop/mobile networks and with/without proxy where feasible. Keep private account data out of measurements.
@@ -497,6 +502,31 @@ Implementation is now in local commit ddee9ff, observed at the start of T07; its
 ### Acceptance Criteria
 - Identify real delay and show measured improvement or clear reason to keep current stack.
 - New host must preserve auth, transactions and data recovery; no promise of zero warm-up from hello-world test.
+`,
+  },
+  {
+    key: 'T10',
+    title: '[T10] Repair backend shared-module resolution',
+    priority: 'P0',
+    status: 'In progress', // Config repair in Changes; owner build/release acceptance pending
+    isClosed: false,
+    body: `## Task T10 — Repair backend shared-module resolution
+
+**Priority:** P0 release blocker, ahead of T08 latency measurements and T09 deployed acceptance.
+**Scope:** backend-only build configuration; retain existing product/API/schema and release safeguards.
+
+Registered in the roadmap before implementation on October 20. Render T06/T08 logs show Prisma generation succeeding, then webpack failing to resolve @mehrchain/shared-data in the disconnect DTO and Mero service. Last observed live backend: 67ed08d. T00–T09 issue mappings stay unchanged; the owner will create/synchronize this new task.
+
+### Action Items
+- [x] Register/diagnose the blocker and preserve exact failed/live revision evidence.
+- [x] Set the backend app tsconfig baseUrl to the workspace root; keep the canonical shared alias and root/frontend configuration unchanged.
+- [x] Inspect effective resolver output and source/diff; document release handoff in docs/t10_release_build_handoff.md. No local build/tests/typecheck/Prisma/database/deployment run.
+- [ ] Owner-run clean release build; verify shared values are bundled and no unpublished package is needed at startup.
+- [ ] Complete actually pending T05/T06 backup/rehearsal/schema/client/recovery gates and matching backend/frontend/PWA deployment; confirm startup/readiness and intended direct/Pages revisions.
+
+### Acceptance Criteria
+- Reviewed release build succeeds and the matching compatible backend starts without shared-module errors.
+- Existing auth/timezone, private-receipt and Mero routes retain their contracts. Do not close from configuration inspection alone or bypass schema readiness.
 `,
   },
   {

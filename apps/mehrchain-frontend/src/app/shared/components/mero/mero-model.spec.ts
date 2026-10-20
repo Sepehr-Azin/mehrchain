@@ -4,20 +4,24 @@ import { createMascot } from './mero-model';
 describe('Mero procedural geometry', () => {
   it('recolors the actual luminous materials and restores the shipped default palette', () => {
     const mascot = createMascot({ detail: 'low' });
+    const luminousMaterials = new Set<THREE.MeshStandardMaterial>();
+    mascot.model.traverse((part) => {
+      if (!(part instanceof THREE.Mesh)) return;
+      const material = part.material;
+      // emissiveIntensity defaults to 1 even on non-emitting skin/eye/mouth materials.
+      if (material instanceof THREE.MeshStandardMaterial && material.emissive.getHex() !== 0) {
+        luminousMaterials.add(material);
+      }
+    });
+    expect(luminousMaterials.size).toBe(2);
     const colors = () => {
-      const values = new Set<string>();
-      mascot.model.traverse((part) => {
-        if (!(part instanceof THREE.Mesh)) return;
-        const material = part.material;
-        if (material instanceof THREE.MeshStandardMaterial && material.emissiveIntensity > 0) {
-          values.add(material.emissive.getHexString());
-        }
-      });
-      return values;
+      return new Set([...luminousMaterials].map((material) => material.emissive.getHexString()));
     };
     const defaults = colors();
     mascot.setGlowColor('#06b6d4');
     expect(colors()).toEqual(new Set(['06b6d4']));
+    mascot.setGlowColor('#000000');
+    expect(colors()).toEqual(new Set(['000000']));
     mascot.setGlowColor(null);
     expect(colors()).toEqual(defaults);
     mascot.dispose();

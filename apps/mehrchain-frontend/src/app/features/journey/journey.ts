@@ -9,7 +9,6 @@ import { completionDayKey } from '../../core/utils/completion-day';
 import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
 
 import { McButtonComponent, McCardComponent } from '../../shared/ui';
-import { MeroComponent } from '../../shared/components/mero/mero';
 import { JourneySkeletonComponent } from '../../shared/components/skeletons';
 
 @Component({
@@ -20,7 +19,6 @@ import { JourneySkeletonComponent } from '../../shared/components/skeletons';
     LucideAngularModule,
     McCardComponent,
     McButtonComponent,
-    MeroComponent,
     JourneySkeletonComponent,
     RouterLink,
     DailyRulesComponent,

@@ -1,30 +1,24 @@
 <div
   class="relative inline-flex items-center justify-center select-none"
   [ngClass]="sizeClasses()"
-  [style.--mero-custom-color]="effectiveColor()"
+  [class.mero--ready]="ready()"
   role="img"
-  [attr.aria-label]="mood() === 'sad' ? 'Mero, feeling sad' : 'Mero, smiling'"
+  [attr.aria-label]="
+    renderState() === 'unavailable'
+      ? 'Mero, temporarily unavailable'
+      : mood() === 'sad'
+        ? 'Mero, feeling sad'
+        : 'Mero, smiling'
+  "
 >
   <!-- Warm Belly Glow Light -->
   @if (showGlow()) {
     <div class="mero-belly-glow" [style.background]="effectiveGradient()"></div>
   }
 
-  <div
-    class="mero-fallback"
-    [class.mero-fallback--hidden]="ready()"
-    [class.mero-fallback--sad]="mood() === 'sad'"
-    aria-hidden="true"
-  >
-    <span class="mero-hand mero-hand--left"></span>
-    <span class="mero-hand mero-hand--right"></span>
-    <span class="mero-body">
-      <span class="mero-eye mero-eye--left"></span>
-      <span class="mero-eye mero-eye--right"></span>
-      <span class="mero-mouth"></span>
-      <span class="mero-belly"></span>
-    </span>
-  </div>
+  @if (renderState() === 'unavailable') {
+    <span class="absolute text-xs text-muted-foreground" aria-hidden="true">Mero</span>
+  }
   <canvas
     #canvas
     class="mero-canvas"

@@ -237,8 +237,8 @@ export class MeroCustomizationService {
         this.loadError.set(null);
         this.personality.set('calm');
         const legacy = user ? this.readLegacy(user.id) : null;
-        if (legacy && this.personalityOptions.some((p) => p.id === legacy.personality)) {
-          this.personality.set(legacy.personality);
+        if (legacy && this.personalityOptions.some((p) => p.id === legacy['personality'])) {
+          this.personality.set(legacy['personality']);
         }
         if (user) void this.refresh();
       });
@@ -496,17 +496,18 @@ export class MeroCustomizationService {
 
   private legacyCandidate(userId: string) {
     const legacy = this.readLegacy(userId);
-    const name = typeof legacy?.customGlowName === 'string' ? legacy.customGlowName.trim() : '';
+    const name =
+      typeof legacy?.['customGlowName'] === 'string' ? legacy['customGlowName'].trim() : '';
     const color =
-      typeof legacy?.customGlowColor === 'string'
-        ? legacy.customGlowColor.trim().toLowerCase()
+      typeof legacy?.['customGlowColor'] === 'string'
+        ? legacy['customGlowColor'].trim().toLowerCase()
         : '';
     const hex = color.startsWith('#') ? color : `#${color}`;
     if (!this.validName(name) || !/^#[0-9a-f]{6}$/.test(hex)) return null;
     return {
       name,
       hex,
-      selectedThemeId: legacy?.selectedThemeId === 'custom' ? 'custom' : 'golden',
+      selectedThemeId: legacy?.['selectedThemeId'] === 'custom' ? 'custom' : 'golden',
     };
   }
 

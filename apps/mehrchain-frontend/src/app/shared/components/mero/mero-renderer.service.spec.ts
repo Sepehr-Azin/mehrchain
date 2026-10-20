@@ -7,6 +7,7 @@ describe('Mero shared rendering lifecycle', () => {
   let frames: Map<number, FrameRequestCallback>;
   let nextFrame: number;
   let factory: ReturnType<typeof vi.fn<typeof createMeroScene>>;
+  let loader: ReturnType<typeof vi.fn<() => Promise<{ createMeroScene: typeof createMeroScene }>>>;
   let scene: {
     draw: ReturnType<typeof vi.fn<ReturnType<typeof createMeroScene>['draw']>>;
     dispose: ReturnType<typeof vi.fn<() => void>>;
@@ -18,13 +19,20 @@ describe('Mero shared rendering lifecycle', () => {
   beforeEach(() => {
     frames = new Map();
     nextFrame = 0;
-    scene = { draw: vi.fn(), dispose: vi.fn() };
+    scene = {
+      draw: vi.fn((target, size) => {
+        target.canvas.width = size;
+        target.canvas.height = size;
+      }),
+      dispose: vi.fn(),
+    };
     factory = vi.fn<typeof createMeroScene>().mockReturnValue(scene);
+    loader = vi.fn().mockResolvedValue({ createMeroScene: factory });
     TestBed.configureTestingModule({
       providers: [
         {
           provide: MERO_SCENE_LOADER,
-          useValue: () => Promise.resolve({ createMeroScene: factory }),
+          useValue: loader,
         },
       ],
     });
@@ -38,11 +46,17 @@ describe('Mero shared rendering lifecycle', () => {
       return nextFrame;
     });
     vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (
+      this: HTMLCanvasElement,
+    ) {
+      return { canvas: this, drawImage: vi.fn() } as unknown as CanvasRenderingContext2D;
+    });
     service = TestBed.inject(MeroRendererService);
   });
 
   afterEach(() => {
     service.ngOnDestroy();
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
@@ -50,9 +64,8 @@ describe('Mero shared rendering lifecycle', () => {
 
   function attach(next = options) {
     const canvas = document.createElement('canvas');
-    vi.spyOn(canvas, 'getContext').mockReturnValue({ canvas } as CanvasRenderingContext2D);
     const ready = vi.fn();
-    return { handle: service.attach(canvas, next, ready), ready };
+    return { handle: service.attach(canvas, next, ready), ready, canvas };
   }
 
   async function visible(handle: ReturnType<typeof service.attach>) {
@@ -81,7 +94,10 @@ describe('Mero shared rendering lifecycle', () => {
     expect(scene.draw).toHaveBeenCalledTimes(3);
     first.handle.destroy();
     expect(scene.dispose).not.toHaveBeenCalled();
+    vi.useFakeTimers();
     second.handle.destroy();
+    expect(scene.dispose).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1500);
     expect(scene.dispose).toHaveBeenCalledOnce();
     expect(frames.size).toBe(0);
   });
@@ -131,24 +147,124 @@ describe('Mero shared rendering lifecycle', () => {
     expect(frames.size).toBe(0);
   });
 
-  it('returns to the CSS fallback on context loss and releases resources', async () => {
+  it('keeps the last real frame on context loss and releases GPU resources', async () => {
     const { handle, ready } = attach();
     await visible(handle);
     frame();
-    expect(ready).toHaveBeenLastCalledWith(true);
+    expect(ready).toHaveBeenLastCalledWith('ready');
     factory.mock.calls[0][1]();
-    expect(ready).toHaveBeenLastCalledWith(false);
+    expect(ready).toHaveBeenCalledTimes(1);
+    expect(ready).toHaveBeenLastCalledWith('ready');
     expect(scene.dispose).toHaveBeenCalledOnce();
     handle.update(options);
     expect(frames.size).toBe(0);
   });
 
-  it('retains the CSS character when WebGL2 is unavailable', () => {
+  it('reports unavailability without starting Three.js when WebGL2 is unavailable', () => {
     vi.stubGlobal('WebGL2RenderingContext', undefined);
-    const { handle } = attach();
+    const { handle, ready } = attach();
     handle.setVisible(true);
     expect(frames.size).toBe(0);
     expect(factory).not.toHaveBeenCalled();
+    expect(ready).toHaveBeenLastCalledWith('unavailable');
+  });
+
+  it('waits for module loading and the first copied frame before revealing Mero', async () => {
+    let loaded!: (module: { createMeroScene: typeof createMeroScene }) => void;
+    loader.mockReturnValue(new Promise((resolve) => (loaded = resolve)));
+    const { handle, ready } = attach();
+    handle.setVisible(true);
+    expect(loader).toHaveBeenCalledOnce();
+    handle.update({ ...options, size: 224 });
+    expect(frames.size).toBe(0);
+    expect(ready).not.toHaveBeenCalled();
+    loaded({ createMeroScene: factory });
+    await vi.waitFor(() => expect(frames.size).toBe(1));
+    expect(ready).not.toHaveBeenCalled();
+    frame();
+    expect(ready).toHaveBeenLastCalledWith('ready');
+  });
+
+  it('restores matching model frames synchronously and reuses the scene during navigation', async () => {
+    const first = attach({ ...options, glowColor: '#06b6d4' });
+    await visible(first.handle);
+    frame();
+    vi.useFakeTimers();
+    first.handle.destroy();
+    vi.advanceTimersByTime(1000);
+    const second = attach({ ...options, glowColor: '#06b6d4', size: 40 });
+    expect(second.ready).toHaveBeenLastCalledWith('ready');
+    expect(second.canvas.width).toBe(first.canvas.width);
+    second.handle.setVisible(true);
+    frame(200);
+    vi.advanceTimersByTime(1500);
+    expect(factory).toHaveBeenCalledOnce();
+    expect(scene.dispose).not.toHaveBeenCalled();
+    second.handle.destroy();
+    vi.advanceTimersByTime(1500);
+    expect(scene.dispose).toHaveBeenCalledOnce();
+    const third = attach({ ...options, glowColor: '#06b6d4' });
+    expect(third.ready).toHaveBeenLastCalledWith('ready');
+    expect(attach({ ...options, mood: 'sad', glowColor: '#06b6d4' }).ready).not.toHaveBeenCalled();
+    expect(attach({ ...options, glowColor: '#f43f5e' }).ready).not.toHaveBeenCalled();
+  });
+
+  it('bounds frame caching and never shows a cached frame for another color', async () => {
+    const first = attach({ ...options, glowColor: '#000000' });
+    await visible(first.handle);
+    frame();
+    for (let index = 1; index <= 8; index++) {
+      first.handle.update({ ...options, glowColor: `#00000${index}` });
+      expect(first.ready).toHaveBeenLastCalledWith('loading');
+      frame(index * 100 + 100);
+    }
+    expect(attach({ ...options, glowColor: '#000000' }).ready).not.toHaveBeenCalled();
+    expect(attach({ ...options, glowColor: '#000008' }).ready).toHaveBeenLastCalledWith('ready');
+  });
+
+  it('reports initialization and drawing failure without showing a substitute character', async () => {
+    scene.draw.mockImplementation(() => {
+      throw new Error('GPU unavailable');
+    });
+    const { handle, ready } = attach();
+    await visible(handle);
+    frame();
+    expect(ready).toHaveBeenLastCalledWith('unavailable');
+    expect(scene.dispose).toHaveBeenCalledOnce();
+    expect(frames.size).toBe(0);
+  });
+
+  it('does not construct a scene if the page is left before the module loads', async () => {
+    const { handle, ready } = attach();
+    handle.setVisible(true);
+    handle.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(factory).not.toHaveBeenCalled();
+    expect(ready).not.toHaveBeenCalled();
+    expect(frames.size).toBe(0);
+  });
+
+  it('does not construct or schedule a scene after service destruction during module loading', async () => {
+    let loaded!: (module: { createMeroScene: typeof createMeroScene }) => void;
+    loader.mockReturnValue(new Promise((resolve) => (loaded = resolve)));
+    const { handle, ready } = attach();
+    handle.setVisible(true);
+    expect(loader).toHaveBeenCalledOnce();
+    service.ngOnDestroy();
+    loaded({ createMeroScene: factory });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(factory).not.toHaveBeenCalled();
+    expect(ready).not.toHaveBeenCalled();
+    expect(frames.size).toBe(0);
+  });
+
+  it('handles a rejected lazy module without retry loops or blocking the page', async () => {
+    loader.mockRejectedValue(new Error('Module unavailable'));
+    const { handle, ready } = attach();
+    handle.setVisible(true);
+    await vi.waitFor(() => expect(ready).toHaveBeenLastCalledWith('unavailable'));
+    expect(loader).toHaveBeenCalledOnce();
+    expect(frames.size).toBe(0);
   });
 
   it('passes each target color independently and redraws a static target on selection changes', async () => {

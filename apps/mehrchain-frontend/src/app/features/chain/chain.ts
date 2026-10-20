@@ -2,12 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { timer } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { ChainInvitePayload, ChainService } from '../../core/services/chain.service';
 import { CommitmentService } from '../../core/services/commitment.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ThemeService } from '../../core/services/theme.service';
 import { MeroComponent } from '../../shared/components/mero/mero';
 import { ChainCardComponent } from './components/chain-card/chain-card';
 import { InviteSectionComponent } from './components/invite-section/invite-section';
@@ -25,7 +24,6 @@ import {
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     LucideAngularModule,
     MeroComponent,
     ChainCardComponent,
@@ -40,7 +38,6 @@ export class ChainComponent {
   public chainService = inject(ChainService);
   public commitmentService = inject(CommitmentService);
   public authService = inject(AuthService);
-  public themeService = inject(ThemeService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -102,11 +99,6 @@ export class ChainComponent {
         .catch(() => this.inviteError.set('This invite is invalid, expired, or already used.'));
     });
     void this.chainService.loadConnections().then(() => this.chainService.markAsRead());
-  }
-
-  toggleTheme(): void {
-    const nextMode = this.themeService.isDark() ? 'light' : 'dark';
-    this.themeService.setTheme(nextMode);
   }
 
   getMyHabitTitle(userCommitmentId: string): string {

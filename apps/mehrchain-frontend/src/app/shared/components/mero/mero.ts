@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { MeroCustomizationService } from '../../../core/services/mero-customization.service';
 import type { MascotMood } from './mero-model';
-import { MeroRendererService } from './mero-renderer.service';
+import { MeroRendererService, MeroRenderState } from './mero-renderer.service';
 
 export type MeroSize = 'xs' | 'sm' | 'md' | 'lg' | 'hero';
 
@@ -32,7 +32,8 @@ export class MeroComponent {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private renderTarget?: ReturnType<MeroRendererService['attach']>;
   private readonly pixels = signal(128);
-  readonly ready = signal(false);
+  readonly renderState = signal<MeroRenderState>('loading');
+  readonly ready = computed(() => this.renderState() === 'ready');
 
   // Inputs
   size = input<MeroSize>('md');
@@ -52,6 +53,7 @@ export class MeroComponent {
     });
     afterNextRender(() => {
       const canvas = this.canvas().nativeElement;
+      this.pixels.set(canvas.getBoundingClientRect().width || 128);
       this.renderTarget = this.renderer.attach(
         canvas,
         {
@@ -60,9 +62,7 @@ export class MeroComponent {
           size: this.pixels(),
           glowColor: this.customizationService?.effectiveGlowColor() ?? null,
         },
-        (ready) => {
-          if (this.ready() !== ready) this.ready.set(ready);
-        },
+        (state) => this.renderState.set(state),
       );
       this.zone.runOutsideAngular(() => {
         const resize =
@@ -89,7 +89,6 @@ export class MeroComponent {
   }
 
   // Effective glow gradient
-  effectiveColor = computed(() => this.customizationService?.effectiveGlowColor() ?? null);
   effectiveGradient = computed<string>(() => {
     if (this.customGradient()) {
       return this.customGradient()!;

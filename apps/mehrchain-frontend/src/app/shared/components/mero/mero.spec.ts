@@ -7,9 +7,10 @@ describe('MeroComponent', () => {
   let component: MeroComponent;
   let fixture: ComponentFixture<MeroComponent>;
   const target = { update: vi.fn(), setVisible: vi.fn(), destroy: vi.fn() };
-  const renderer = { attach: vi.fn(() => target) };
+  const renderer = { attach: vi.fn<MeroRendererService['attach']>(() => target) };
 
   beforeEach(async () => {
+    vi.clearAllMocks();
     await TestBed.configureTestingModule({
       imports: [MeroComponent],
       providers: [...commonTestProviders, { provide: MeroRendererService, useValue: renderer }],
@@ -48,7 +49,31 @@ describe('MeroComponent', () => {
     fixture.componentRef.setInput('mood', 'sad');
     fixture.detectChanges();
     expect(element.querySelector('[role="img"]')?.getAttribute('aria-label')).toContain('sad');
-    expect(element.querySelector('.mero-fallback--sad')).toBeTruthy();
+    expect(element.querySelector('.mero-fallback')).toBeNull();
+  });
+
+  it('keeps both the character and glow hidden until a valid model frame is available', async () => {
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.mero--ready')).toBeNull();
+    expect(element.querySelector('.mero-canvas--ready')).toBeNull();
+    renderer.attach.mock.lastCall![2]('ready');
+    fixture.detectChanges();
+    expect(element.querySelector('.mero--ready')).toBeTruthy();
+    expect(element.querySelector('.mero-canvas--ready')).toBeTruthy();
+  });
+
+  it('uses a neutral accessible label if no model frame can be rendered', async () => {
+    await fixture.whenStable();
+    renderer.attach.mock.lastCall![2]('unavailable');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[role="img"]')?.getAttribute('aria-label')).toContain(
+      'unavailable',
+    );
+    expect(element.querySelector('.mero--ready')).toBeNull();
+    expect(element.querySelector('.mero-fallback')).toBeNull();
+    expect(element.textContent).toContain('Mero');
   });
 
   it('updates the attached renderer when the expression changes', async () => {

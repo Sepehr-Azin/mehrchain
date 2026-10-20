@@ -2,13 +2,12 @@
   <p role="alert" class="text-red-500">{{ errorMessage() }}</p>
 }
 <div class="app-page bg-background pb-6 px-5 safe-top font-sans">
-  <!-- Header with Mero mascot avatar -->
+  <!-- Page header -->
   <div class="flex items-center justify-between gap-3 mb-6">
     <div>
       <h1 class="text-2xl font-bold text-foreground">My Journey</h1>
       <p class="text-sm text-muted-foreground">Your earlier effort stays with you.</p>
     </div>
-    <app-mero size="xs" [showGlow]="false" />
   </div>
 
   <app-daily-rules [compact]="true" />

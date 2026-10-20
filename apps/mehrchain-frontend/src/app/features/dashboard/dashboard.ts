@@ -5,7 +5,6 @@ import { LucideAngularModule } from 'lucide-angular';
 import { CommitmentService } from '../../core/services/commitment.service';
 import { ChainService } from '../../core/services/chain.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ThemeService } from '../../core/services/theme.service';
 import { Commitment } from '@mehrchain/shared-data';
 import { CommitmentCardComponent } from '../../shared/components/commitment-card/commitment-card';
 import { DeleteConfirmationModal } from '../../shared/components/delete-confirmation-modal/delete-confirmation-modal';
@@ -37,7 +36,6 @@ export class DashboardComponent {
   commitmentService = inject(CommitmentService);
   customization = inject(MeroCustomizationService);
   chainService = inject(ChainService);
-  themeService = inject(ThemeService);
   notificationService = inject(NotificationService);
   router = inject(Router);
   saving = signal(false);
@@ -48,11 +46,6 @@ export class DashboardComponent {
   toastMessage = signal<string | null>(null);
   completingIds = signal<ReadonlySet<string>>(new Set());
   completionErrors = signal<Record<string, string>>({});
-
-  toggleTheme() {
-    const nextMode = this.themeService.isDark() ? 'light' : 'dark';
-    this.themeService.setTheme(nextMode);
-  }
 
   openNewCommitment() {
     this.saveError.set(null);

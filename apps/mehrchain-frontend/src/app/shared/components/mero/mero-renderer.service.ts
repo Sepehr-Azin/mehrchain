@@ -16,12 +16,16 @@ export interface MeroRenderOptions {
   glowColor?: string | null;
 }
 
+export type MeroRenderState = 'loading' | 'ready' | 'unavailable';
+
 interface MeroTarget {
   context: CanvasRenderingContext2D;
   options: MeroRenderOptions;
   visible: boolean;
   dirty: boolean;
-  ready: (value: boolean) => void;
+  state: MeroRenderState;
+  presentedKey?: string;
+  notify: (state: MeroRenderState) => void;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,7 +35,11 @@ export class MeroRendererService implements OnDestroy {
   private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly loadScene = inject(MERO_SCENE_LOADER);
   private readonly targets = new Set<MeroTarget>();
+  // Eight bounded canvas copies, at most ~4.5 MiB at the standard pixel cap.
+  // Only visual options are cached: no user data or persistent storage.
+  private readonly snapshots = new Map<string, HTMLCanvasElement>();
   private scene?: ReturnType<typeof createMeroScene>;
+  private releaseTimer?: ReturnType<typeof setTimeout>;
   private loading = false;
   private unavailable = false;
   private destroyed = false;
@@ -65,25 +73,43 @@ export class MeroRendererService implements OnDestroy {
     }
   }
 
-  attach(canvas: HTMLCanvasElement, options: MeroRenderOptions, ready: (v: boolean) => void) {
-    // No browser-only APIs during SSR. The CSS character remains visible on failure.
-    const context =
-      this.browser && typeof WebGL2RenderingContext !== 'undefined'
-        ? canvas.getContext('2d')
-        : null;
+  attach(canvas: HTMLCanvasElement, options: MeroRenderOptions, notify: MeroTarget['notify']) {
+    let context: CanvasRenderingContext2D | null = null;
+    try {
+      if (
+        this.browser &&
+        !this.destroyed &&
+        (typeof WebGL2RenderingContext !== 'undefined' || this.snapshots.size > 0)
+      )
+        context = canvas.getContext('2d');
+    } catch {
+      // An unavailable canvas must never prevent the rest of the page loading.
+    }
     const target: MeroTarget | undefined = context
-      ? { context, options, visible: false, dirty: true, ready }
+      ? { context, options, visible: false, dirty: true, state: 'loading', notify }
       : undefined;
-    if (target) this.targets.add(target);
+    if (target) {
+      this.cancelRelease();
+      this.targets.add(target);
+      this.restore(target);
+      if (typeof WebGL2RenderingContext === 'undefined') this.unavailable = true;
+      if (this.unavailable && target.state !== 'ready') this.setState(target, 'unavailable');
+    } else notify('unavailable');
     return {
       update: (next: MeroRenderOptions) => {
-        if (!target) return;
+        if (!target || !this.targets.has(target)) return;
         target.options = next;
         target.dirty = true;
+        if (target.presentedKey !== this.key(next)) {
+          if (!this.restore(target)) {
+            target.presentedKey = undefined;
+            this.setState(target, this.unavailable ? 'unavailable' : 'loading');
+          }
+        }
         this.schedule();
       },
       setVisible: (visible: boolean) => {
-        if (!target || target.visible === visible) return;
+        if (!target || !this.targets.has(target) || target.visible === visible) return;
         target.visible = visible;
         target.dirty = true;
         if (visible) this.schedule();
@@ -93,11 +119,76 @@ export class MeroRendererService implements OnDestroy {
         if (target) this.targets.delete(target);
         if (this.targets.size === 0) {
           this.cancelFrame();
-          this.scene?.dispose();
-          this.scene = undefined;
+          this.releaseWhenIdle();
         }
       },
     };
+  }
+
+  private key(options: MeroRenderOptions) {
+    return JSON.stringify([options.mood, options.glow, options.glowColor ?? null]);
+  }
+
+  private setState(target: MeroTarget, state: MeroRenderState) {
+    if (target.state === state) return;
+    target.state = state;
+    target.notify(state);
+  }
+
+  private restore(target: MeroTarget) {
+    const key = this.key(target.options);
+    const snapshot = this.snapshots.get(key);
+    if (!snapshot) return false;
+    try {
+      const canvas = target.context.canvas;
+      canvas.width = snapshot.width;
+      canvas.height = snapshot.height;
+      target.context.drawImage(snapshot, 0, 0);
+      target.presentedKey = key;
+      this.snapshots.delete(key);
+      this.snapshots.set(key, snapshot);
+      this.setState(target, 'ready');
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private remember(target: MeroTarget) {
+    const key = this.key(target.options);
+    const source = target.context.canvas;
+    // Reuse larger matching frames across sizes; CSS keeps the same square framing.
+    if ((this.snapshots.get(key)?.width ?? 0) >= source.width) return;
+    try {
+      const snapshot = this.document.createElement('canvas');
+      snapshot.width = source.width;
+      snapshot.height = source.height;
+      const context = snapshot.getContext('2d');
+      if (!context) return;
+      context.drawImage(source, 0, 0);
+      this.snapshots.delete(key);
+      this.snapshots.set(key, snapshot);
+      if (this.snapshots.size > 8) this.snapshots.delete(this.snapshots.keys().next().value!);
+    } catch {
+      // Snapshot caching is optional, including on memory-constrained devices.
+    }
+  }
+
+  private cancelRelease() {
+    if (this.releaseTimer !== undefined) clearTimeout(this.releaseTimer);
+    this.releaseTimer = undefined;
+  }
+
+  private releaseWhenIdle() {
+    if (this.destroyed || this.targets.size || this.loading || !this.scene) return;
+    this.cancelRelease();
+    this.zone.runOutsideAngular(() => {
+      this.releaseTimer = setTimeout(() => {
+        this.releaseTimer = undefined;
+        this.scene?.dispose();
+        this.scene = undefined;
+      }, 1500);
+    });
   }
 
   private readonly onVisibilityChange = () => {
@@ -127,6 +218,7 @@ export class MeroRendererService implements OnDestroy {
     if (
       !this.browser ||
       this.destroyed ||
+      this.loading ||
       this.unavailable ||
       this.document.hidden ||
       ![...this.targets].some((target) => target.visible)
@@ -146,9 +238,12 @@ export class MeroRendererService implements OnDestroy {
               this.scene = createMeroScene(this.policy.detail, () => this.fail());
             }
           })
-          .catch(() => this.fail())
+          .catch(() => {
+            if (!this.destroyed) this.fail();
+          })
           .finally(() => {
             this.loading = false;
+            this.releaseWhenIdle();
             this.schedule();
           });
       }
@@ -195,8 +290,11 @@ export class MeroRendererService implements OnDestroy {
           this.animated(target),
           target.options.glowColor ?? null,
         );
+        if (this.unavailable) return;
+        if (target.dirty) this.remember(target);
         target.dirty = false;
-        target.ready(true);
+        target.presentedKey = this.key(target.options);
+        this.setState(target, 'ready');
       }
     } catch {
       this.fail();
@@ -215,7 +313,13 @@ export class MeroRendererService implements OnDestroy {
   private fail() {
     this.unavailable = true;
     this.cancelFrame();
-    this.targets.forEach((target) => target.ready(false));
+    this.cancelRelease();
+    // The WebGL context is offscreen: each target still owns its last valid 2D frame.
+    this.targets.forEach((target) => {
+      if (target.presentedKey !== this.key(target.options) && !this.restore(target)) {
+        this.setState(target, 'unavailable');
+      }
+    });
     this.scene?.dispose();
     this.scene = undefined;
   }
@@ -228,9 +332,12 @@ export class MeroRendererService implements OnDestroy {
   ngOnDestroy() {
     this.destroyed = true;
     this.cancelFrame();
+    this.cancelRelease();
     this.document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.motion?.removeEventListener('change', this.onMotionChange);
     this.scene?.dispose();
+    this.scene = undefined;
     this.targets.clear();
+    this.snapshots.clear();
   }
 }

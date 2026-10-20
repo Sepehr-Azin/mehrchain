@@ -1,31 +1,9 @@
 <div class="app-page bg-background pb-24 px-5 safe-top font-sans">
-  <!-- Header with Mero avatar and Quick Theme Toggle -->
+  <!-- Page header; profile and appearance controls live in Profile. -->
   <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
     <div class="min-w-0">
       <h1 class="text-2xl font-bold text-foreground">My Dashboard</h1>
       <p class="text-sm text-muted-foreground">One small step today.</p>
-    </div>
-    <div class="flex items-center gap-2.5">
-      <button
-        type="button"
-        (click)="toggleTheme()"
-        class="w-9 h-9 rounded-full bg-card border border-border/70 flex items-center justify-center text-foreground hover:border-primary/50 shadow-sm transition-all active:scale-95"
-        [title]="themeService.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
-        [attr.aria-label]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
-      >
-        <lucide-icon
-          [name]="themeService.isDark() ? 'sun' : 'moon'"
-          class="w-4 h-4 text-primary"
-        ></lucide-icon>
-      </button>
-      <a
-        routerLink="/profile"
-        class="flex items-center gap-1 rounded-xl text-xs text-muted-foreground hover:text-foreground"
-        aria-label="Open profile"
-      >
-        <app-mero size="xs" [showGlow]="true" />
-        <span>Profile</span>
-      </a>
     </div>
   </div>
 
