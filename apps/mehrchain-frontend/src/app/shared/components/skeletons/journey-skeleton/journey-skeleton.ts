@@ -6,21 +6,36 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-6 animate-pulse">
+    <div
+      class="space-y-5 motion-safe:animate-pulse"
+      role="status"
+      aria-label="Loading your journey"
+    >
+      <span class="sr-only">Loading your journey…</span>
       <!-- Stats Grid Skeleton -->
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-3 gap-2" aria-hidden="true">
         @for (box of [1, 2, 3]; track $index) {
-          <div class="bg-card p-4 rounded-2xl border border-border/50 text-center shadow-soft space-y-2">
-            <div class="h-2.5 w-12 mx-auto rounded bg-muted/60"></div>
+          <div
+            class="bg-card px-2 py-3.5 rounded-2xl border border-border/50 text-center space-y-2"
+          >
+            <div class="h-8 w-full max-w-16 mx-auto rounded bg-muted/60"></div>
             <div class="h-6 w-8 mx-auto rounded bg-muted/80"></div>
           </div>
         }
       </div>
 
       <!-- Heatmap Skeleton -->
-      <div class="bg-card rounded-3xl p-5 shadow-soft border border-border/50 space-y-4">
+      <div
+        class="bg-card rounded-3xl p-4 shadow-soft border border-border/50 space-y-4"
+        aria-hidden="true"
+      >
         <div class="h-4 w-28 rounded bg-muted/80"></div>
-        <div class="h-28 w-full rounded-2xl bg-muted/30"></div>
+        <div class="h-4 w-40 max-w-full rounded bg-muted/60"></div>
+        <div class="h-64 w-full rounded-2xl bg-muted/30"></div>
+      </div>
+      <div class="space-y-2" aria-hidden="true">
+        <div class="h-4 w-32 rounded bg-muted/60"></div>
+        <div class="h-14 rounded-2xl bg-muted/30"></div>
       </div>
     </div>
   `,

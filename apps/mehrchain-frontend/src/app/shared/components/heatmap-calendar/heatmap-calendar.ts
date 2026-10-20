@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { completionDayKey } from '../../../core/utils/completion-day';
 
@@ -24,6 +24,8 @@ export class HeatmapCalendar {
   completedDates = input<string[]>([]);
   timeZone = input('UTC');
   currentDayKey = input<string | null>(null);
+  selectedDate = input<string | null>(null);
+  readonly dateSelected = output<string | null>();
   readonly todayKey = computed(
     () => this.currentDayKey() || completionDayKey(new Date().toISOString(), this.timeZone())!,
   );
@@ -52,6 +54,14 @@ export class HeatmapCalendar {
     return (
       now.getUTCFullYear() === current.getUTCFullYear() &&
       now.getUTCMonth() === current.getUTCMonth()
+    );
+  });
+  readonly canGoNext = computed(() => {
+    const today = this.accountToday();
+    const view = this.viewDate();
+    return (
+      view.getUTCFullYear() * 12 + view.getUTCMonth() <
+      today.getUTCFullYear() * 12 + today.getUTCMonth()
     );
   });
 
@@ -146,17 +156,26 @@ export class HeatmapCalendar {
     this.selectedMonth.set(
       new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() - 1, 1, 12)),
     );
+    this.dateSelected.emit(null);
   }
 
   nextMonth(): void {
+    if (!this.canGoNext()) return;
     const current = this.viewDate();
     this.selectedMonth.set(
       new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 1, 12)),
     );
+    this.dateSelected.emit(null);
   }
 
   goToToday(): void {
     this.selectedMonth.set(null);
+    this.dateSelected.emit(null);
+  }
+
+  selectDay(day: CalendarDay): void {
+    if (day.isFuture || !day.isCurrentMonth) return;
+    this.dateSelected.emit(day.dateKey);
   }
 
   private formatDateKey(d: Date): string {

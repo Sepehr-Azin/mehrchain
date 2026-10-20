@@ -59,4 +59,50 @@ describe('HeatmapCalendar (Monthly Grid)', () => {
     component.goToToday();
     expect(component.viewDate().getUTCMonth()).toBe(10);
   });
+
+  it('counts one calendar date for multiple completions and selects through an accessible button', () => {
+    fixture.componentRef.setInput('currentDayKey', '2026-10-20');
+    fixture.componentRef.setInput('completedDates', ['2026-10-19', '2026-10-19']);
+    fixture.componentRef.setInput('selectedDate', '2026-10-19');
+    fixture.detectChanges();
+    const emitted = vi.fn();
+    component.dateSelected.subscribe(emitted);
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'button[aria-pressed="true"]',
+    )!;
+    button.click();
+    expect(component.monthlyActiveCount()).toBe(1);
+    expect(button.getAttribute('aria-controls')).toBe('journey-history');
+    expect(emitted).toHaveBeenCalledWith('2026-10-19');
+  });
+
+  it('allows an empty past date but disables future dates and future-month navigation', () => {
+    fixture.componentRef.setInput('currentDayKey', '2026-10-20');
+    fixture.detectChanges();
+    const emitted = vi.fn();
+    component.dateSelected.subscribe(emitted);
+    const empty = component.monthDays().find((day) => day.dateKey === '2026-10-18')!;
+    const future = component.monthDays().find((day) => day.dateKey === '2026-10-21')!;
+    component.selectDay(empty);
+    component.selectDay(future);
+    expect(emitted).toHaveBeenCalledTimes(1);
+    expect(emitted).toHaveBeenCalledWith('2026-10-18');
+    const next = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'button[aria-label="Next month"]',
+    )!;
+    expect(next.disabled).toBe(true);
+    component.nextMonth();
+    expect(component.viewDate().getUTCMonth()).toBe(9);
+  });
+
+  it('clears the history filter on month navigation and returning to the current month', () => {
+    fixture.componentRef.setInput('currentDayKey', '2026-10-20');
+    const emitted = vi.fn();
+    component.dateSelected.subscribe(emitted);
+    component.prevMonth();
+    expect(component.canGoNext()).toBe(true);
+    component.nextMonth();
+    component.goToToday();
+    expect(emitted.mock.calls).toEqual([[null], [null], [null]]);
+  });
 });
