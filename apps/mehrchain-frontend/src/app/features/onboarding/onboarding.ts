@@ -63,6 +63,9 @@ export class OnboardingComponent implements OnInit {
   // 6: Create Profile & Sign Up
   readonly sessionError = this.authService.sessionError;
   readonly allowDemoMode = !environment.production;
+  hasPendingInvite(): boolean {
+    return this.authService.pendingInviteReturnUrl() !== null;
+  }
   step = signal<number>(0);
 
   // Habit Form State
@@ -72,7 +75,7 @@ export class OnboardingComponent implements OnInit {
   isCustomDuration = signal(false);
   customDurationText = signal<string>('');
   isCustomHabit = signal(false);
-  whyText = signal('To prove to myself that small steps matter.');
+  whyText = signal('');
   reminderTime = signal('08:30');
   isHabitPublic = signal(true);
 
@@ -280,7 +283,8 @@ export class OnboardingComponent implements OnInit {
 
   proceedToSignUp() {
     if (this.isCustomDuration() && !this.isDetailsDurationValid()) return;
-    if (!this.isCustomDuration() && this.selectedDuration() !== -1 && this.selectedDuration() <= 0) return;
+    if (!this.isCustomDuration() && this.selectedDuration() !== -1 && this.selectedDuration() <= 0)
+      return;
     this.step.set(7);
   }
 

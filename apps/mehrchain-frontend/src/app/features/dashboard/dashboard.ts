@@ -13,6 +13,8 @@ import { EditCommitmentModal } from '../../shared/components/edit-commitment-mod
 import { NewCommitmentModal } from '../../shared/components/new-commitment-modal/new-commitment-modal';
 import { MeroComponent } from '../../shared/components/mero/mero';
 import { HabitCardSkeletonComponent } from '../../shared/components/skeletons';
+import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
+import { MeroCustomizationService } from '../../core/services/mero-customization.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,12 +28,14 @@ import { HabitCardSkeletonComponent } from '../../shared/components/skeletons';
     EditCommitmentModal,
     MeroComponent,
     HabitCardSkeletonComponent,
+    DailyRulesComponent,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class DashboardComponent {
   commitmentService = inject(CommitmentService);
+  customization = inject(MeroCustomizationService);
   chainService = inject(ChainService);
   themeService = inject(ThemeService);
   notificationService = inject(NotificationService);

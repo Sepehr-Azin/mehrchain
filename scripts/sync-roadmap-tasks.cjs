@@ -428,7 +428,7 @@ const NEW_TASKS = [
 **Priority:** P1  
 **Scope:** scenario C, selected October 20: private named-color collection, server progress, completion/accepted-Chain integration and additive historical migration. Depends on T02–T05.
 
-Implementation is prepared locally in Changes for owner review. Builds, tests, Prisma generation, migration/rehearsal and deployment are not verified. This script definition update does not synchronize GitHub by itself; existing task/issue mappings stay unchanged.
+Implementation is now in local commit ddee9ff, observed at the start of T07; its original implementation session left Changes for owner review. Push, builds, tests, Prisma generation, migration/rehearsal and deployment are not verified here. This script definition update does not synchronize GitHub by itself; existing task/issue mappings stay unchanged.
 
 ### Product Contract
 - First slot requires one habit at 21 consecutive account dates. No combined short streaks, app visits or Chain bypass. Earned colors/slots never expire after a miss, archive, disconnection or habit deletion.
@@ -453,18 +453,21 @@ Implementation is prepared locally in Changes for owner review. Builds, tests, P
     key: 'T07',
     title: '[T07] Explain daily rules and make returning easy',
     priority: 'P1',
-    status: 'Ready',
+    status: 'In progress', // Implemented in Changes; owner review/acceptance pending
     isClosed: false,
     body: `## Task T07 — Explain daily rules and make returning easy
 
 **Priority:** P1  
 **Scope:** contextual copy, create/edit habit, Journey/history, archive and return states. Integrates T02–T06.
 
+**Local status (October 20):** implemented and left uncommitted in Changes for owner review. Source/format/diff/whitespace review only; no build, tests, typecheck, OpenSpec validation or runtime/PWA acceptance. See docs/t07_review_handoff.md. T05/T06 release prerequisites remain separate. This task definition was updated locally; no GitHub synchronization was run.
+
 ### Action Items
-- [ ] Briefly explain timezone/daily reset, Endless/Custom meaning and two-missed-day archive rule where habit is created. Add short contextual hint at first miss/archive/heart/unlock; keep help discoverable without repeating onboarding.
-- [ ] One missed day: allow today's step, then show streak 1 without catch-up debt. Longer absence: show preserved history and one clear Restore action; do not automatically revive habits or reconnect people.
-- [ ] Keep dated history, cumulative completions, current streak and earned rewards consistent across active/archive/Journey views. Use actual completion dates for calendars.
-- [ ] Preserve incoming invite through signup/login and keep solo journey complete. Keep “why” private and secondary.
+- [x] Shared setup/edit/quick-create daily-rule copy and discoverable Dashboard/Journey help; contextual one-miss/archive/heart/earned-slot hints.
+- [x] Today's step without catch-up debt; direct archived-return/explicit Restore flow preserving effort and requiring a new invitation to reconnect.
+- [x] Account-calendar history, server-date today/month, confirmed cumulative totals and explicit current per-habit streak wording; distinct activity IDs for same-named habits.
+- [x] Guarded invite continuation through signup/login, explicit acceptance and complete solo use; optional collapsed private motivation; actual-heart onboarding copy.
+- [ ] Owner review, selected builds/tests/typecheck/OpenSpec validation and real new/daily/one-miss/weeks-away, invite, cross-device and PWA acceptance.
 
 ### Acceptance Criteria
 - A new user, daily visitor, user after one miss and user returning after weeks can identify the next action unaided.

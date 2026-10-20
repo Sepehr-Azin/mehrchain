@@ -12,6 +12,7 @@ import { MeroComponent } from '../../shared/components/mero/mero';
 import { ChainCardComponent } from './components/chain-card/chain-card';
 import { InviteSectionComponent } from './components/invite-section/invite-section';
 import { ChainCardSkeletonComponent } from '../../shared/components/skeletons';
+import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
 import {
   ChainDisconnectReceipt,
   DISCONNECT_REASONS,
@@ -30,6 +31,7 @@ import {
     ChainCardComponent,
     InviteSectionComponent,
     ChainCardSkeletonComponent,
+    DailyRulesComponent,
   ],
   templateUrl: './chain.html',
   styleUrls: ['./chain.css'],

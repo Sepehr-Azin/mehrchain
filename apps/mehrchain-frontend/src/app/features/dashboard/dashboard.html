@@ -43,6 +43,34 @@
     </div>
   }
 
+  <app-daily-rules [compact]="true" />
+
+  @if (!commitmentService.isStale() && commitmentService.archivedCommitments().length > 0) {
+    <div class="mb-4 rounded-2xl bg-card border border-border/50 p-4 text-sm">
+      <p class="text-foreground">Ready to return? Your earlier effort is saved.</p>
+      <a
+        routerLink="/journey"
+        fragment="archived-habits"
+        class="inline-flex items-center min-h-11 text-primary underline"
+      >
+        Choose an archived habit to restore
+      </a>
+    </div>
+  }
+  @if (customization.collection(); as collection) {
+    @if (collection.capacity > collection.colors.length) {
+      <p class="mb-4 text-xs text-muted-foreground">
+        You have an earned color slot ready. It stays yours after a break.
+        <a
+          routerLink="/profile"
+          fragment="color-collection-title"
+          class="inline-flex items-center min-h-11 text-primary underline"
+          >Create your color</a
+        >
+      </p>
+    }
+  }
+
   <!-- Commitments List -->
   <div class="space-y-4">
     @if (commitmentService.isLoading() && commitmentService.commitments().length === 0) {
@@ -56,7 +84,13 @@
         </div>
         <h3 class="text-lg font-bold text-foreground mb-1.5">No Active Habits</h3>
         <p class="text-xs text-muted-foreground max-w-xs mx-auto mb-6 leading-relaxed">
-          Choose a small habit to begin.
+          @if (!commitmentService.isStale() && commitmentService.archivedCommitments().length > 0) {
+            Restore a saved habit above, or choose a new small step. Chain is optional.
+          } @else if (commitmentService.isStale()) {
+            Refresh your habits to see today's next step.
+          } @else {
+            Choose a small habit to begin. You can do the whole journey on your own.
+          }
         </p>
         <button
           type="button"

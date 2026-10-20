@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { CommitmentStore } from '../store/commitment.store';
 
@@ -46,6 +46,30 @@ describe('AuthService (Frontend)', () => {
   it('should initialize with no user if storage is empty', () => {
     expect(service.currentUser()).toBeNull();
     expect(service.isAuthenticated()).toBe(false);
+  });
+
+  it('reopens the exact guarded invite after authentication without accepting it', () => {
+    const router = TestBed.inject(Router);
+    const target = '/chain?invite=abc%2B123';
+    vi.spyOn(router, 'url', 'get').mockReturnValue('/?returnUrl=' + encodeURIComponent(target));
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    expect(service.pendingInviteReturnUrl()).toBe(target);
+    service.navigateAfterLogin();
+    expect(navigate).toHaveBeenCalledWith(target);
+  });
+
+  it('does not continue to external or non-invite return targets', () => {
+    const router = TestBed.inject(Router);
+    const url = vi.spyOn(router, 'url', 'get');
+    for (const target of [
+      'https://example.com/chain?invite=x',
+      '//example.com',
+      '/chain?other=x',
+      '/profile',
+    ]) {
+      url.mockReturnValue('/?returnUrl=' + encodeURIComponent(target));
+      expect(service.pendingInviteReturnUrl()).toBeNull();
+    }
   });
 
   it('should call register endpoint and return verification status with previewCode', async () => {

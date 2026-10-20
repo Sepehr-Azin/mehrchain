@@ -132,10 +132,27 @@ export class AuthService {
     if (environment.production) throw new Error('Demo accounts are unavailable in production.');
   }
 
-  navigateAfterLogin(): void {
+  pendingInviteReturnUrl(): string | null {
     const target = this.router.parseUrl(this.router.url).queryParams['returnUrl'];
-    if (typeof target === 'string' && target.startsWith('/chain?'))
-      this.router.navigateByUrl(target);
+    if (typeof target !== 'string' || !target.startsWith('/chain?')) return null;
+    try {
+      const tree = this.router.parseUrl(target);
+      const primary = tree.root.children['primary'];
+      return primary?.segments.length === 1 &&
+        primary.segments[0].path === 'chain' &&
+        Object.keys(tree.root.children).length === 1 &&
+        typeof tree.queryParams['invite'] === 'string' &&
+        tree.queryParams['invite'].trim()
+        ? target
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  navigateAfterLogin(): void {
+    const target = this.pendingInviteReturnUrl();
+    if (target) this.router.navigateByUrl(target);
     else this.router.navigate(['/dashboard']);
   }
 

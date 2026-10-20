@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
+import { DailyRulesComponent } from '../daily-rules/daily-rules';
 import { Commitment } from '@mehrchain/shared-data';
 import { McButtonComponent } from '../../ui';
 import {
@@ -18,6 +19,7 @@ import {
     FormsModule,
     LucideAngularModule,
     McButtonComponent,
+    DailyRulesComponent,
   ],
   templateUrl: './edit-commitment-modal.html',
 })

@@ -6,10 +6,118 @@
   <div class="flex items-center justify-between gap-3 mb-6">
     <div>
       <h1 class="text-2xl font-bold text-foreground">My Journey</h1>
-      <p class="text-sm text-muted-foreground">Track your consistency and milestones.</p>
+      <p class="text-sm text-muted-foreground">Your earlier effort stays with you.</p>
     </div>
     <app-mero size="xs" [showGlow]="false" />
   </div>
+
+  <app-daily-rules [compact]="true" />
+
+  <!-- Archived Flames Section -->
+  <mc-card id="archived-habits" variant="elevated" padding="md" class="mb-6 block">
+    <button
+      type="button"
+      class="w-full text-left flex items-center justify-between gap-3 cursor-pointer select-none"
+      (click)="toggleArchived()"
+      [attr.aria-expanded]="showArchived()"
+      aria-controls="archived-habit-list"
+    >
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground"
+        >
+          <lucide-icon name="archive" class="w-4 h-4"></lucide-icon>
+        </div>
+        <div>
+          <h3 class="font-bold text-sm text-foreground">Archived habits</h3>
+          <p class="text-[11px] text-muted-foreground">Your history and progress are preserved.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
+          {{ commitmentService.archivedCommitments().length }}
+        </span>
+        <lucide-icon
+          [name]="showArchived() ? 'chevron-up' : 'chevron-down'"
+          class="w-4 h-4 text-muted-foreground"
+        ></lucide-icon>
+      </div>
+    </button>
+
+    @if (showArchived()) {
+      <div
+        id="archived-habit-list"
+        class="mt-4 pt-3 border-t border-border/40 space-y-2.5 animate-fade-in"
+      >
+        <p class="text-xs text-muted-foreground">
+          Unfinished habits archive after two fully missed dates; you can also archive by choice.
+          Restore keeps completed days, dated history and earned colors. It starts a fresh streak
+          without catch-up. Reconnecting a Chain needs a new invitation and acceptance.
+        </p>
+        @if (commitmentService.archivedCommitments().length === 0) {
+          <div class="text-center py-6 text-xs text-muted-foreground">
+            No archived habits. You can keep going from Dashboard.
+          </div>
+        } @else {
+          @for (habit of commitmentService.archivedCommitments(); track habit.id) {
+            <div
+              class="p-3.5 rounded-2xl bg-muted/40 border border-border/40 flex flex-wrap items-center justify-between gap-3"
+            >
+              <div>
+                <p class="text-sm font-bold text-foreground">{{ habit.title }}</p>
+                <p class="text-[11px] text-muted-foreground">
+                  @if (habit.totalDays === -1) {
+                    <span>{{ habit.currentDay }} completed days · Endless</span>
+                  } @else {
+                    <span>{{ habit.currentDay }} / {{ habit.totalDays }} completed days</span>
+                  }
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <mc-button
+                  variant="outline"
+                  size="sm"
+                  [loading]="restoringIds().has(habit.id)"
+                  [disabled]="commitmentService.isStale()"
+                  (clicked)="restoreHabit(habit.id)"
+                >
+                  <lucide-icon name="rotate-ccw" class="w-3.5 h-3.5 text-primary"></lucide-icon>
+                  <span>Restore</span>
+                </mc-button>
+
+                <button
+                  type="button"
+                  (click)="permanentDeleteHabit(habit.id)"
+                  [disabled]="restoringIds().has(habit.id)"
+                  class="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                  [attr.aria-label]="'Permanently delete ' + habit.title + ' and its history'"
+                  title="Permanently delete habit and history"
+                >
+                  <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+  </mc-card>
+
+  @if (restoredTitle()) {
+    <div role="status" class="mb-4 rounded-2xl border border-border/50 p-4 text-sm text-foreground">
+      <p>
+        {{ restoredTitle() }} is restored. Your earlier completed days and earned colors are kept.
+      </p>
+      <a routerLink="/dashboard" class="inline-flex min-h-11 items-center text-primary underline"
+        >Go to today's step</a
+      >
+      <p class="text-xs text-muted-foreground">
+        If its target is already reached, choose Continue or Archive. Reconnect only with a new
+        invitation.
+      </p>
+    </div>
+  }
 
   @if (commitmentService.isLoading() && activeCommitmentsCount() === 0) {
     <app-journey-skeleton />
@@ -17,18 +125,28 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-3 gap-3 mb-6">
       <div class="bg-card p-4 rounded-2xl border border-border/50 text-center shadow-soft">
-        <p class="text-[10px] text-muted-foreground font-bold uppercase mb-1">Habits</p>
+        <p class="text-[10px] text-muted-foreground font-bold uppercase mb-1">Active habits</p>
         <p class="text-xl font-bold text-foreground">{{ activeCommitmentsCount() }}</p>
       </div>
       <div class="bg-card p-4 rounded-2xl border border-border/50 text-center shadow-soft">
-        <p class="text-[10px] text-muted-foreground font-bold uppercase mb-1">Streak</p>
+        <p class="text-[10px] text-muted-foreground font-bold uppercase mb-1">
+          Best current streak
+        </p>
         <p class="text-xl font-bold text-primary">{{ longestStreak() }}d</p>
       </div>
       <div class="bg-card p-4 rounded-2xl border border-border/50 text-center shadow-soft">
-        <p class="text-[10px] text-muted-foreground font-bold uppercase mb-1">Sparks</p>
+        <p class="text-[10px] text-muted-foreground font-bold uppercase mb-1">Completions</p>
         <p class="text-xl font-bold text-foreground">{{ totalActivities() }}</p>
       </div>
     </div>
+    <p class="mb-4 text-xs text-muted-foreground">
+      Completions include active and archived habits. Streak is the longest current streak on one
+      active habit, never a combined streak. Earned color slots stay in
+      <a routerLink="/profile" fragment="color-collection-title" class="underline text-primary"
+        >your collection</a
+      >
+      after a break.
+    </p>
 
     <!-- Activity Heatmap Calendar -->
     <div class="bg-card rounded-3xl p-5 shadow-soft border border-border/50 mb-6">
@@ -41,7 +159,15 @@
         <h2 class="font-bold text-base text-foreground">Activity Log</h2>
       </div>
 
-      <app-heatmap-calendar [completedDates]="allHistory()" />
+      <p class="mb-3 text-xs text-muted-foreground">
+        Saved completion dates · {{ timeZone() }}. Multiple habits on one date fill one calendar
+        day.
+      </p>
+      <app-heatmap-calendar
+        [completedDates]="allHistory()"
+        [timeZone]="timeZone()"
+        [currentDayKey]="commitmentService.calendar()?.currentDayKey ?? null"
+      />
     </div>
 
     <!-- Recent Activity -->
@@ -49,17 +175,17 @@
       <h3
         class="font-bold text-sm text-foreground px-1 uppercase tracking-wider text-muted-foreground"
       >
-        Recent Consistency
+        Recent completions
       </h3>
 
       @if (recentActivities().length === 0) {
         <div
           class="text-center py-8 text-muted-foreground text-sm bg-muted/30 rounded-2xl border border-border/40"
         >
-          No sparks yet. Complete a habit to log your first spark.
+          No dated completions yet. Take today's step from Dashboard when you are ready.
         </div>
       } @else {
-        @for (log of recentActivities(); track log.title + log.date) {
+        @for (log of recentActivities(); track log.id) {
           <div
             class="bg-card p-4 rounded-2xl border border-border/50 flex items-center justify-between shadow-soft animate-fade-in"
           >
@@ -82,86 +208,4 @@
       }
     </div>
   }
-
-  <!-- Archived Flames Section -->
-  <mc-card variant="elevated" padding="md" class="mb-6 block">
-    <div
-      class="flex items-center justify-between cursor-pointer select-none"
-      (click)="toggleArchived()"
-    >
-      <div class="flex items-center gap-2.5">
-        <div
-          class="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground"
-        >
-          <lucide-icon name="archive" class="w-4 h-4"></lucide-icon>
-        </div>
-        <div>
-          <h3 class="font-bold text-sm text-foreground">Archived habits</h3>
-          <p class="text-[11px] text-muted-foreground">Your history and progress are preserved.</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
-          {{ commitmentService.archivedCommitments().length }}
-        </span>
-        <lucide-icon
-          [name]="showArchived() ? 'chevron-up' : 'chevron-down'"
-          class="w-4 h-4 text-muted-foreground"
-        ></lucide-icon>
-      </div>
-    </div>
-
-    @if (showArchived()) {
-      <div class="mt-4 pt-3 border-t border-border/40 space-y-2.5 animate-fade-in">
-        <p class="text-xs text-muted-foreground">
-          Habits archive after two fully missed days. Restore starts a fresh streak. Reconnecting a
-          Chain needs a new invitation and acceptance.
-        </p>
-        @if (commitmentService.archivedCommitments().length === 0) {
-          <div class="text-center py-6 text-xs text-muted-foreground">
-            No archived habits found. All your active flames are burning bright!
-          </div>
-        } @else {
-          @for (habit of commitmentService.archivedCommitments(); track habit.id) {
-            <div
-              class="p-3.5 rounded-2xl bg-muted/40 border border-border/40 flex items-center justify-between gap-3"
-            >
-              <div>
-                <p class="text-sm font-bold text-foreground">{{ habit.title }}</p>
-                <p class="text-[11px] text-muted-foreground">
-                  @if (habit.totalDays === -1) {
-                    <span>Day {{ habit.currentDay }} • Endless Journey</span>
-                  } @else {
-                    <span>Reached Day {{ habit.currentDay }} of {{ habit.totalDays }}</span>
-                  }
-                </p>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <mc-button
-                  variant="outline"
-                  size="sm"
-                  [loading]="restoringIds().has(habit.id)"
-                  (clicked)="restoreHabit(habit.id)"
-                >
-                  <lucide-icon name="rotate-ccw" class="w-3.5 h-3.5 text-primary"></lucide-icon>
-                  <span>Restore</span>
-                </mc-button>
-
-                <button
-                  type="button"
-                  (click)="permanentDeleteHabit(habit.id)"
-                  [disabled]="restoringIds().has(habit.id)"
-                  class="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                  title="Permanently delete from database"
-                >
-                  <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                </button>
-              </div>
-            </div>
-          }
-        }
-      </div>
-    }
-  </mc-card>
 </div>

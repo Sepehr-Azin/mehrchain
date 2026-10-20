@@ -84,4 +84,26 @@ describe('Journey', () => {
     component.toggleArchived();
     expect(component.showArchived()).toBe(true);
   });
+
+  it('keeps same-named habits separate while deduplicating each habit date', () => {
+    const habit = {
+      title: 'Read',
+      category: 'growth',
+      totalDays: -1,
+      currentDay: 2,
+      currentStreak: 0,
+      isCompletedToday: false,
+      startDate: '2026-10-01T00:00:00Z',
+      history: ['2026-10-02', '2026-10-02'],
+    };
+    patchState(store, {
+      commitments: [{ ...habit, id: 'active' }],
+      archivedCommitments: [{ ...habit, id: 'archived', isArchived: true }],
+    });
+    expect(component.recentActivities()).toHaveLength(2);
+    expect(new Set(component.recentActivities().map((log) => log.id)).size).toBe(2);
+    // The confirmed cumulative total can exceed surviving dated history. Never fabricate dates.
+    expect(component.totalActivities()).toBe(4);
+    expect(component.allHistory()).toEqual(['2026-10-02', '2026-10-02']);
+  });
 });

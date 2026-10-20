@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
+import { DailyRulesComponent } from '../../../shared/components/daily-rules/daily-rules';
 import {
   validateCustomDuration,
   handleDurationKeydown,
@@ -8,7 +9,7 @@ import {
 @Component({
   selector: 'app-details-step',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, DailyRulesComponent],
   templateUrl: './details-step.html',
 })
 export class DetailsStepComponent {

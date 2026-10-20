@@ -22,6 +22,7 @@ export class CommitmentService {
   readonly syncError = this.store.syncError;
   readonly isStale = this.store.isStale;
   readonly activeUserId = this.store.activeUserId;
+  readonly calendar = this.store.calendar;
 
   // Actions
   loadForUser(userId: string): void {

@@ -1,6 +1,8 @@
 <div class="animate-fade-in flex-1 flex flex-col justify-between space-y-4">
   <div>
-    <h2 class="text-2xl font-bold mb-4 text-center text-foreground">Commit for how long?</h2>
+    <h2 class="text-2xl font-bold mb-4 text-center text-foreground">
+      Choose your completed-day target
+    </h2>
 
     <div class="grid grid-cols-2 gap-2.5 mb-2">
       <!-- Endless Journey Option -->
@@ -69,21 +71,23 @@
       <div class="mb-3"></div>
     }
 
-    <!-- Why Textarea -->
-    <div
-      class="bg-gradient-to-br from-primary/5 to-accent/5 p-3.5 rounded-2xl border border-primary/10 flex gap-3 mb-2.5"
-    >
-      <lucide-icon name="sparkles" class="w-4 h-4 text-primary shrink-0 mt-0.5"></lucide-icon>
+    <app-daily-rules />
+
+    <!-- Private motivation stays optional and secondary. -->
+    <details class="p-3 rounded-2xl border border-border/40 mb-2.5">
+      <summary class="cursor-pointer text-xs text-muted-foreground">
+        Add a private reason (optional)
+      </summary>
       <div class="w-full">
-        <span class="font-bold text-foreground block mb-1 text-xs">Why this matters?</span>
         <textarea
+          aria-label="Private reason (optional)"
           [value]="whyText()"
           (input)="whyTextChanged.emit($any($event.target).value)"
           class="w-full bg-transparent text-xs text-muted-foreground resize-none focus:outline-none border-b border-primary/20 focus:border-primary h-10"
-          placeholder="Write your reason..."
+          placeholder="A reason just for you"
         ></textarea>
       </div>
-    </div>
+    </details>
 
     <!-- Daily Phone Reminder Time -->
     <div
@@ -116,7 +120,9 @@
         </div>
         <div>
           <span class="text-xs font-bold text-foreground block">Share in Chain</span>
-          <span class="text-[10px] text-muted-foreground block">Allow linking with a partner</span>
+          <span class="text-[10px] text-muted-foreground block"
+            >Optional · your reason stays private</span
+          >
         </div>
       </div>
       <div

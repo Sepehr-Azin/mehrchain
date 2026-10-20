@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { HeatmapCalendar } from '../../shared/components/heatmap-calendar/heatmap-calendar';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommitmentService } from '../../core/services/commitment.service';
-import { ActivityLog } from '@mehrchain/shared-data';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { completionDayKey } from '../../core/utils/completion-day';
+import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
 
 import { McButtonComponent, McCardComponent } from '../../shared/ui';
 import { MeroComponent } from '../../shared/components/mero/mero';
@@ -19,20 +22,37 @@ import { JourneySkeletonComponent } from '../../shared/components/skeletons';
     McButtonComponent,
     MeroComponent,
     JourneySkeletonComponent,
+    RouterLink,
+    DailyRulesComponent,
   ],
   templateUrl: './journey.html',
   styleUrl: './journey.css',
 })
 export class Journey implements OnInit {
   commitmentService = inject(CommitmentService);
+  private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  readonly timeZone = computed(
+    () => this.commitmentService.calendar()?.timeZone ?? this.auth.currentUser()?.timeZone ?? 'UTC',
+  );
 
   errorMessage = signal<string | null>(null);
   showArchived = signal(false);
   restoringIds = signal<ReadonlySet<string>>(new Set());
+  restoredTitle = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.commitmentService
-      .fetchArchivedCommitments()
+      .syncWithBackend()
+      .then(() => {
+        if (
+          this.route.snapshot.fragment === 'archived-habits' ||
+          (this.activeCommitmentsCount() === 0 &&
+            this.commitmentService.archivedCommitments().length > 0)
+        ) {
+          this.showArchived.set(true);
+        }
+      })
       .catch((error) => this.errorMessage.set(error.message));
   }
 
@@ -42,10 +62,12 @@ export class Journey implements OnInit {
 
   async restoreHabit(id: string): Promise<void> {
     if (this.restoringIds().has(id)) return;
+    const habit = this.commitmentService.archivedCommitments().find((h) => h.id === id);
     this.restoringIds.update((ids) => new Set([...ids, id]));
     try {
       await this.commitmentService.restoreCommitment(id);
       this.errorMessage.set(null);
+      this.restoredTitle.set(habit?.title ?? 'Habit');
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'Could not restore habit.');
     } finally {
@@ -71,25 +93,26 @@ export class Journey implements OnInit {
 
   activeCommitmentsCount = computed(() => this.commitmentService.commitments().length);
 
-  recentActivities = computed(() => {
-    const logs: ActivityLog[] = [];
-    const commitments = this.historyCommitments();
-
-    commitments.forEach((c) => {
-      if (c.history) {
-        c.history.forEach((dateStr: string) => {
-          logs.push({
-            title: c.title,
-            date: dateStr,
-            icon: this.getCategoryIcon(c.category),
-          });
-        });
-      }
+  private completionEntries = computed(() => {
+    return this.historyCommitments().flatMap((habit) => {
+      const dates = new Set(
+        (habit.history ?? [])
+          .map((value) => completionDayKey(value, this.timeZone()))
+          .filter((key): key is string => key !== null),
+      );
+      return [...dates].map((date) => ({
+        id: `${habit.id}:${date}`,
+        title: habit.title,
+        date,
+        icon: this.getCategoryIcon(habit.category),
+      }));
     });
-    return logs
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10);
   });
+  recentActivities = computed(() =>
+    [...this.completionEntries()]
+      .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id))
+      .slice(0, 10),
+  );
 
   getCategoryIcon(cat: string): string {
     const icons: Record<string, string> = {
@@ -101,20 +124,11 @@ export class Journey implements OnInit {
     return icons[cat] || 'check';
   }
 
-  allHistory = computed(() => {
-    const commitments = this.historyCommitments();
-    let allDates: string[] = [];
+  allHistory = computed(() => this.completionEntries().map((entry) => entry.date));
 
-    commitments.forEach((c) => {
-      if (c.history && c.history.length > 0) {
-        allDates = [...allDates, ...c.history];
-      }
-    });
-
-    return allDates;
-  });
-
-  totalActivities = computed(() => this.allHistory().length);
+  totalActivities = computed(() =>
+    this.historyCommitments().reduce((total, habit) => total + (habit.currentDay || 0), 0),
+  );
   private historyCommitments = computed(() => {
     const byId = new Map(
       [

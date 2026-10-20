@@ -5,6 +5,12 @@
   class="onboarding-page bg-background font-sans"
 >
   <div class="onboarding-flow">
+    @if (hasPendingInvite()) {
+      <p class="rounded-xl border border-border/50 bg-card p-3 text-xs text-muted-foreground">
+        Your Chain invitation will reopen after signup or login. You choose whether to accept; your
+        solo journey is complete too.
+      </p>
+    }
     @if (sessionError()) {
       <p role="alert" class="text-red-500 text-sm">{{ sessionError() }}</p>
     }

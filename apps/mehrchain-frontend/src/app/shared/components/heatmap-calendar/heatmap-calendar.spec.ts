@@ -25,24 +25,38 @@ describe('HeatmapCalendar (Monthly Grid)', () => {
   });
 
   it('should navigate to previous and next month', () => {
-    const initialMonth = component.viewDate().getMonth();
+    const initialMonth = component.viewDate().getUTCMonth();
 
     component.prevMonth();
     fixture.detectChanges();
-    expect(component.viewDate().getMonth()).toBe((initialMonth - 1 + 12) % 12);
+    expect(component.viewDate().getUTCMonth()).toBe((initialMonth - 1 + 12) % 12);
 
     component.nextMonth();
     fixture.detectChanges();
-    expect(component.viewDate().getMonth()).toBe(initialMonth);
+    expect(component.viewDate().getUTCMonth()).toBe(initialMonth);
   });
 
   it('should correctly mark completed dates in the grid', () => {
     const today = new Date();
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayKey = today.toISOString().slice(0, 10);
 
     fixture.componentRef.setInput('completedDates', [todayKey]);
     fixture.detectChanges();
 
     expect(component.monthlyActiveCount()).toBe(1);
+  });
+
+  it('anchors today and the initial month to the server account date', () => {
+    fixture.componentRef.setInput('timeZone', 'Asia/Tehran');
+    fixture.componentRef.setInput('currentDayKey', '2026-11-01');
+    fixture.componentRef.setInput('completedDates', ['2026-10-31T21:00:00Z']);
+    fixture.detectChanges();
+    expect(component.year()).toBe(2026);
+    expect(component.viewDate().getUTCMonth()).toBe(10);
+    expect(component.monthDays().find((day) => day.isToday)?.dateKey).toBe('2026-11-01');
+    expect(component.monthlyActiveCount()).toBe(1);
+    component.prevMonth();
+    component.goToToday();
+    expect(component.viewDate().getUTCMonth()).toBe(10);
   });
 });

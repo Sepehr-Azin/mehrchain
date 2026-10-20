@@ -91,7 +91,11 @@
             class="w-full bg-card border border-border/80 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             @for (pub of publicCommitments(); track pub.id) {
-              <option [value]="pub.id">{{ pub.title }} ({{ pub.totalDays }}d)</option>
+              <option [value]="pub.id">
+                {{ pub.title }} ({{
+                  pub.totalDays === -1 ? 'Endless' : pub.totalDays + ' completed days'
+                }})
+              </option>
             }
           </select>
 
@@ -110,8 +114,10 @@
       } @else {
         <div class="space-y-2">
           <p class="text-xs text-muted-foreground leading-relaxed">
-            Create a matching public habit right now and start your mutual support chain!
+            Create a public habit with a 21-completed-day goal and accept this invitation. Your
+            reason stays private. You can also dismiss the invitation and continue on your own.
           </p>
+          <app-daily-rules />
           <button
             type="button"
             (click)="createQuickPublicHabitAndLink()"

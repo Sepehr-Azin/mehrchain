@@ -29,21 +29,21 @@
 
     <!-- Original Intention / Reason Reflection -->
     @if (commitment().why) {
-      <div
-        class="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/20 rounded-2xl p-4 text-left mb-4"
-      >
+      <details class="rounded-2xl p-3 text-left mb-4 border border-border/50">
+        <summary class="cursor-pointer text-xs text-muted-foreground">Your private reason</summary>
         <p
           class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5"
         >
           <lucide-icon name="sparkles" class="w-3.5 h-3.5"></lucide-icon>
-          <span>When you started, your reason was:</span>
+          <span>Why this matters to you</span>
         </p>
         <p class="text-sm font-semibold text-foreground italic">“{{ commitment().why }}”</p>
-      </div>
+      </details>
     }
     <p class="text-xs text-muted-foreground mb-6">
-      Your history and progress stay saved. Linked Chains will disconnect and invitations will
-      expire. You can restore this habit from Journey and reconnect with a new invitation.
+      Your history, completed days and earned color slots stay saved. Linked Chains will disconnect
+      and invitations will expire. Partners get a neutral private update. You can restore this habit
+      from Journey and reconnect with a new invitation.
     </p>
 
     <!-- Action Buttons -->
