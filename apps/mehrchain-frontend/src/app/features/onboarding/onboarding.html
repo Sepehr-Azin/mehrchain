@@ -12,7 +12,20 @@
       </p>
     }
     @if (sessionError()) {
-      <p role="alert" class="text-red-500 text-sm">{{ sessionError() }}</p>
+      <div role="alert" class="rounded-xl border border-border/50 bg-card p-3 text-sm">
+        <p>{{ sessionError() }}</p>
+        <button
+          type="button"
+          (click)="retrySession()"
+          [disabled]="sessionLoading()"
+          class="mt-2 text-primary font-semibold disabled:opacity-50"
+        >
+          Retry connection
+        </button>
+      </div>
+    }
+    @if (sessionLoading()) {
+      <p role="status" class="text-muted-foreground text-sm">Restoring your session...</p>
     }
 
     <!-- Keep back navigation and Mero next to the card, within the same flow. -->

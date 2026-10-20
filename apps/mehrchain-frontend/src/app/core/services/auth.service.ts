@@ -51,8 +51,25 @@ export class AuthService {
 
   readonly ready: Promise<void>;
   readonly sessionError = signal<string | null>(null);
+  readonly sessionLoading = signal(false);
+  private sessionRequest?: Promise<void>;
   constructor() {
-    this.ready = this.loadPersistedSession();
+    this.ready = this.retrySession();
+  }
+
+  retrySession(): Promise<void> {
+    if (this.sessionRequest) return this.sessionRequest;
+    if (this.isAuthenticated()) return Promise.resolve();
+    this.sessionLoading.set(true);
+    this.sessionError.set(null);
+    const request = this.loadPersistedSession().finally(() => {
+      if (this.sessionRequest === request) {
+        this.sessionRequest = undefined;
+        this.sessionLoading.set(false);
+      }
+    });
+    this.sessionRequest = request;
+    return request;
   }
 
   getToken(): string | null {
@@ -111,17 +128,21 @@ export class AuthService {
             .get<UserProfile>(`${this.API_URL}/me`, {
               params: { 'ngsw-bypass': 'true' },
             })
-            .pipe(timeout(60000)),
+            .pipe(timeout(90000)),
         );
         if (this.getToken() !== token) return;
         localStorage.setItem(this.AUTH_KEY, JSON.stringify(user));
         this.currentUserSignal.set(user);
         this.commitmentStore.loadForUser(user.id);
-        await this.commitmentStore.syncWithBackend();
+        // Authentication is confirmed; let the destination show its guarded loading/retry state.
+        void this.commitmentStore.syncWithBackend();
       } catch (err: any) {
         if (this.getToken() !== token) return;
         if (err.status === 401 || err.status === 403) this.logout();
-        else this.sessionError.set('Could not verify your session. Please retry sign-in.');
+        else
+          this.sessionError.set(
+            'Could not reach the server to restore your session. Please retry.',
+          );
       }
     } catch {
       this.logout();
@@ -273,7 +294,7 @@ export class AuthService {
 
       this.currentUserSignal.set(res.user);
       this.commitmentStore.loadForUser(res.user.id);
-      await this.commitmentStore.syncWithBackend();
+      void this.commitmentStore.syncWithBackend();
       return res.user;
     } catch (err: any) {
       if (this.isNetworkError(err)) {
@@ -373,7 +394,7 @@ export class AuthService {
 
       this.currentUserSignal.set(res.user);
       this.commitmentStore.loadForUser(res.user.id);
-      await this.commitmentStore.syncWithBackend();
+      void this.commitmentStore.syncWithBackend();
       return res.user;
     } catch (err: any) {
       if (this.isNetworkError(err)) {
@@ -437,7 +458,7 @@ export class AuthService {
 
       this.currentUserSignal.set(res.user);
       this.commitmentStore.loadForUser(res.user.id);
-      await this.commitmentStore.syncWithBackend();
+      void this.commitmentStore.syncWithBackend();
       return res.user;
     } catch (err: any) {
       if (this.isNetworkError(err)) {
@@ -483,6 +504,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.sessionError.set(null);
     this.commitmentStore.resetState();
     localStorage.removeItem(this.AUTH_KEY);
     localStorage.removeItem(this.TOKEN_KEY);

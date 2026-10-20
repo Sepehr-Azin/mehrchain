@@ -78,6 +78,37 @@ describe('Mero server collection', () => {
     await settle();
   }
 
+  it('shares overlapping reads and schedules one fresh read after a habit changes', async () => {
+    await login();
+    const first = service.refresh();
+    expect(service.refresh()).toBe(first);
+    const pending = http.expectOne((r) => r.url.endsWith('/mero/collection'));
+    habits.set([{ id: 'habit', currentStreak: 21 }]);
+    TestBed.tick();
+    pending.flush(snapshot());
+    await first;
+    http.expectOne((r) => r.url.endsWith('/mero/collection')).flush(earned());
+    await settle();
+    expect(service.isUnlocked()).toBe(true);
+  });
+
+  it('keeps a habit invalidation until both a read and a save have settled', async () => {
+    await login(earned());
+    const reading = service.refresh();
+    const old = http.expectOne((r) => r.url.endsWith('/mero/collection'));
+    const saving = service.selectColor(0);
+    habits.set([{ id: 'habit', currentStreak: 22 }]);
+    TestBed.tick();
+    http.expectOne((r) => r.method === 'PATCH').flush(earned());
+    await saving;
+    http.expectNone((r) => r.url.endsWith('/mero/collection'));
+    old.flush(earned());
+    await reading;
+    http.expectOne((r) => r.url.endsWith('/mero/collection')).flush(earned({ collectionDays: 1 }));
+    await settle();
+    expect(service.collection()?.collectionDays).toBe(1);
+  });
+
   it('keeps Mero fixed and follows the confirmed default in both themes', () => {
     expect(service.nickname()).toBe('Mero');
     expect(service.effectiveGlowGradient()).toBe(DEFAULT_GLOW_THEME.lightGradient);
@@ -198,15 +229,18 @@ describe('Mero server collection', () => {
     expect(service.effectiveGlowColor()).toBeNull();
   });
 
-  it('ignores an older refresh that finishes after a newer response', async () => {
+  it('ignores an older read that finishes after a confirmed save', async () => {
     await login(earned());
     const older = service.refresh();
     const old = http.expectOne((r) => r.url.endsWith('/mero/collection'));
-    const newer = service.refresh();
+    const newer = service.saveColor(1, 'Aurora', '#06b6d4');
     http
-      .expectOne((r) => r.url.endsWith('/mero/collection'))
+      .expectOne((r) => r.method === 'PUT')
       .flush(
         earned({
+          preferencesInitialized: true,
+          selectedSlot: 1,
+          colors: [{ slot: 1, name: 'Aurora', hex: '#06b6d4' }],
           acceptedPartners: 3,
           capacity: 3,
           nextDayTarget: 63,
@@ -217,5 +251,6 @@ describe('Mero server collection', () => {
     old.flush(earned());
     await older;
     expect(service.collection()?.capacity).toBe(3);
+    expect(service.effectiveGlowColor()).toBe('#06b6d4');
   });
 });

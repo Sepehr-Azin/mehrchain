@@ -453,14 +453,14 @@ Implementation is now in local commit ddee9ff, observed at the start of T07; its
     key: 'T07',
     title: '[T07] Explain daily rules and make returning easy',
     priority: 'P1',
-    status: 'In progress', // Implemented in Changes; owner review/acceptance pending
+    status: 'In progress', // Local commit observed; execution/release/acceptance pending
     isClosed: false,
     body: `## Task T07 — Explain daily rules and make returning easy
 
 **Priority:** P1  
 **Scope:** contextual copy, create/edit habit, Journey/history, archive and return states. Integrates T02–T06.
 
-**Local status (October 20):** implemented and left uncommitted in Changes for owner review. Source/format/diff/whitespace review only; no build, tests, typecheck, OpenSpec validation or runtime/PWA acceptance. See docs/t07_review_handoff.md. T05/T06 release prerequisites remain separate. This task definition was updated locally; no GitHub synchronization was run.
+**Local status (October 20, updated during T08):** implementation now exists in local commit 023b42d; push/deployment state was not queried. The original source/format/diff/whitespace review has no new build, tests, typecheck, OpenSpec validation or runtime/PWA acceptance evidence. See docs/t07_review_handoff.md and docs/development_roadmap.md. T05/T06 release prerequisites remain separate. This task definition was updated locally; no GitHub synchronization was run.
 
 ### Action Items
 - [x] Shared setup/edit/quick-create daily-rule copy and discoverable Dashboard/Journey help; contextual one-miss/archive/heart/earned-slot hints.
@@ -478,7 +478,7 @@ Implementation is now in local commit ddee9ff, observed at the start of T07; its
     key: 'T08',
     title: '[T08] Reduce startup and access friction within a free budget',
     priority: 'P1',
-    status: 'Ready',
+    status: 'In progress', // Code/tooling in Changes; measurements and acceptance pending
     isClosed: false,
     body: `## Task T08 — Reduce startup and access friction within a free budget
 
@@ -487,9 +487,12 @@ Implementation is now in local commit ddee9ff, observed at the start of T07; its
 
 ### Action Items
 - [ ] Measure warm and idle first-action latency separately for API, database and auth provider, on representative desktop/mobile networks and with/without proxy where feasible. Keep private account data out of measurements.
-- [ ] Improve waiting/retry while preserving form input and confirmed-save behavior. Pause hidden Chain polling; deduplicate foreground refresh and avoid overlapping requests.
+- [x] Preserve T04 hidden polling/heart-send/session guards; coalesce foreground events and share pending habit/Chain/inbox/Mero reads. Defer hidden/offline automatic reads and follow up once after habit changes during collection reads/saves.
+- [x] Bound and track API waits, add explicit shared session recovery, decouple confirmed auth from habit loading, preserve drafts/confirmed saves and repair neutral notice dismissal. No automatic write replay.
+- [x] Prepare anonymous bounded owner-run probes and independent idle/warm protocol; review current provider limits and record provisional keep of Pages/Render/Neon. See docs/t08_review_handoff.md and openspec/changes/reduce-access-friction/tasks.md.
+- [ ] Owner review and selected build/tests/typecheck/OpenSpec validation; verify foreground/read/save/session/PWA races and collect first-action measurements. No build, tests or live probes run in the implementation session.
 - [ ] Only if startup remains a material blocker, run bounded Workers + existing database experiment with representative auth, hashing and transactional writes. Compare free quotas, compatibility, actual latency and maintenance cost.
-- [ ] Record keep/migrate decision. Recheck provider limits first; retain working stack unless experiment demonstrates improvement.
+- [ ] Finalize keep/migrate acceptance from measurements. Provisional keep is recorded; no provider rewrite, paid plan or keep-alive service introduced.
 
 ### Acceptance Criteria
 - Identify real delay and show measured improvement or clear reason to keep current stack.

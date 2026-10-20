@@ -48,6 +48,45 @@ describe('AuthService (Frontend)', () => {
     expect(service.isAuthenticated()).toBe(false);
   });
 
+  it('shares session recovery and preserves credentials on a temporary failure', async () => {
+    await service.ready;
+    localStorage.setItem('mehrchain_auth_user_v1', JSON.stringify({ id: 'owner' }));
+    localStorage.setItem('mehrchain_auth_token_v1', 'remote-owner');
+    const recovery = service.retrySession();
+    expect(service.retrySession()).toBe(recovery);
+    await Promise.resolve();
+    httpMock
+      .expectOne((r) => r.url.endsWith('/auth/me'))
+      .flush(null, {
+        status: 503,
+        statusText: 'Unavailable',
+      });
+    await recovery;
+    expect(service.getToken()).toBe('remote-owner');
+    expect(service.isAuthenticated()).toBe(false);
+    expect(service.sessionError()).toContain('Please retry');
+    expect(service.sessionLoading()).toBe(false);
+    const retry = service.retrySession();
+    await Promise.resolve();
+    httpMock.expectOne((r) => r.url.endsWith('/auth/me')).flush({ id: 'owner' });
+    await retry;
+    expect(service.currentUser()?.id).toBe('owner');
+    expect(service.sessionError()).toBeNull();
+  });
+
+  it('finishes confirmed login without waiting for the habits request', async () => {
+    mockCommitmentStore.syncWithBackend.mockReturnValue(new Promise<void>(() => {}));
+    const login = service.login('owner', 'password');
+    httpMock
+      .expectOne((r) => r.url.endsWith('/auth/login'))
+      .flush({
+        user: { id: 'owner' },
+        accessToken: 'remote-owner',
+      });
+    expect((await login).id).toBe('owner');
+    expect(mockCommitmentStore.syncWithBackend).toHaveBeenCalledTimes(1);
+  });
+
   it('reopens the exact guarded invite after authentication without accepting it', () => {
     const router = TestBed.inject(Router);
     const target = '/chain?invite=abc%2B123';

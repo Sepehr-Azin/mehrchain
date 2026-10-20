@@ -1,4 +1,9 @@
-import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { errorInterceptor } from './error.interceptor';
@@ -34,7 +39,7 @@ describe('errorInterceptor', () => {
     http.get('/api/test').subscribe({
       next: () => expect.fail('Should have failed'),
       error: (err: Error) => {
-        expect(err.message).toContain('check your internet connection');
+        expect(err.message).toContain('Check your connection');
       },
     });
 
@@ -77,7 +82,7 @@ describe('errorInterceptor', () => {
     const req = httpMock.expectOne('/api/commitments');
     req.flush(
       { message: ['title must not be empty', 'totalDays must be a number'] },
-      { status: 400, statusText: 'Bad Request' }
+      { status: 400, statusText: 'Bad Request' },
     );
   });
 });

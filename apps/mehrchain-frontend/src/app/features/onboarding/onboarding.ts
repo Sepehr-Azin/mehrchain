@@ -62,6 +62,11 @@ export class OnboardingComponent implements OnInit {
   // 5: Duration, Why & Reminder
   // 6: Create Profile & Sign Up
   readonly sessionError = this.authService.sessionError;
+  readonly sessionLoading = this.authService.sessionLoading;
+  async retrySession(): Promise<void> {
+    await this.authService.retrySession();
+    if (this.authService.isAuthenticated()) this.authService.navigateAfterLogin();
+  }
   readonly allowDemoMode = !environment.production;
   hasPendingInvite(): boolean {
     return this.authService.pendingInviteReturnUrl() !== null;

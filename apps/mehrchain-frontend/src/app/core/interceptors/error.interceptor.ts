@@ -8,9 +8,17 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (error.status === 0) {
         normalizedMessage =
-          'Unable to connect to the server. Please check your internet connection.';
+          req.method === 'GET' || req.method === 'HEAD'
+            ? 'Unable to connect to the server. Check your connection, then retry. Your input is kept.'
+            : 'Unable to connect to the server. Refresh to check before retrying the change. Your input is kept.';
+      } else if (error.status === 502 || error.status === 503 || error.status === 504) {
+        normalizedMessage =
+          req.method === 'GET' || req.method === 'HEAD'
+            ? 'The server is temporarily unavailable. Please wait a moment and retry.'
+            : 'Could not confirm the change. Refresh to check before retrying. Your input is kept.';
       } else if (error.status === 401) {
         const isAuthEndpoint =
+          req.url.includes('/auth/google') ||
           req.url.includes('/auth/login') ||
           req.url.includes('/auth/register') ||
           req.url.includes('/auth/verify-email') ||
@@ -22,7 +30,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           } else if (typeof error.error === 'string') {
             normalizedMessage = error.error;
           } else {
-            normalizedMessage = 'Invalid email or password.';
+            normalizedMessage = req.url.includes('/auth/google')
+              ? 'Google sign-in could not be verified. Please try again.'
+              : 'Invalid email or password.';
           }
         } else {
           // Token expired, unauthorized or invalid during remote operation

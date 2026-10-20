@@ -12,6 +12,7 @@ import {
 import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ColdStartService } from '../services/cold-start.service';
+import { ForegroundRefreshService } from '../services/foreground-refresh.service';
 
 export interface CommitmentState {
   commitments: Commitment[];
@@ -159,6 +160,7 @@ export const CommitmentStore = signalStore(
       syncWithBackend(): Promise<void> {
         if (!store.activeUserId() || !remote()) return Promise.resolve();
         if (syncRequest) return syncRequest;
+        cancelRefresh();
         patchState(store, { isLoading: true, syncError: null });
         const user = store.activeUserId();
         const session = sessionVersion;
@@ -172,7 +174,7 @@ export const CommitmentStore = signalStore(
                   .get<CommitmentSync>(`${API}/sync`, {
                     params: { 'ngsw-bypass': 'true' },
                   })
-                  .pipe(timeout(60000)),
+                  .pipe(timeout(90000)),
               ),
             );
             if (
@@ -231,6 +233,12 @@ export const CommitmentStore = signalStore(
         )
           return;
         patchState(store, { isStale: true });
+        // A deadline may expire while hidden. Resume will refresh once visible/online.
+        if (
+          (typeof document !== 'undefined' && document.visibilityState === 'hidden') ||
+          (typeof navigator !== 'undefined' && navigator.onLine === false)
+        )
+          return;
         await methods.syncWithBackend();
       },
       stopDayRefresh(): void {
@@ -414,25 +422,8 @@ export const CommitmentStore = signalStore(
   withHooks({
     onInit(store) {
       const destroyRef = inject(DestroyRef);
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        const resume = () => {
-          if (document.visibilityState === 'visible') void store.refreshCalendar();
-        };
-        const reconnect = () => {
-          void store.refreshCalendar();
-        };
-        document.addEventListener('visibilitychange', resume);
-        window.addEventListener('focus', resume);
-        window.addEventListener('pageshow', resume);
-        window.addEventListener('online', reconnect);
-        destroyRef.onDestroy(() => {
-          store.stopDayRefresh();
-          document.removeEventListener('visibilitychange', resume);
-          window.removeEventListener('focus', resume);
-          window.removeEventListener('pageshow', resume);
-          window.removeEventListener('online', reconnect);
-        });
-      }
+      inject(ForegroundRefreshService).onResume(() => void store.refreshCalendar(), destroyRef);
+      destroyRef.onDestroy(() => store.stopDayRefresh());
       effect(() => {
         const id = store.activeUserId();
         const data = store.commitments();

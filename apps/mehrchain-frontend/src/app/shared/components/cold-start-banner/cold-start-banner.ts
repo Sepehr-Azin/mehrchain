@@ -15,6 +15,6 @@ export class ColdStartBannerComponent {
   public coldStartService = inject(ColdStartService);
 
   dismiss(): void {
-    this.coldStartService.finishRequest();
+    this.coldStartService.dismiss();
   }
 }

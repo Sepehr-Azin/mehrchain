@@ -63,4 +63,21 @@ describe('ColdStartService', () => {
     expect(resolved).toBe(true);
     expect(service.isColdStarting()).toBe(false);
   });
+
+  it('dismisses the notice without decrementing requests and resets for a later batch', () => {
+    service.startRequest();
+    service.startRequest();
+    vi.advanceTimersByTime(5000);
+    service.dismiss();
+    service.finishRequest();
+    service.startRequest();
+    vi.advanceTimersByTime(5000);
+    expect(service.isColdStarting()).toBe(false);
+    service.finishRequest();
+    service.finishRequest();
+    service.startRequest();
+    vi.advanceTimersByTime(5000);
+    expect(service.isColdStarting()).toBe(true);
+    service.finishRequest();
+  });
 });

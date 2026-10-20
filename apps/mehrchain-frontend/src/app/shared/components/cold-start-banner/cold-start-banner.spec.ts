@@ -32,7 +32,7 @@ describe('ColdStartBannerComponent', () => {
     const banner = fixture.nativeElement.querySelector('[role="status"]');
     expect(banner).toBeTruthy();
     expect(banner.querySelector('h4')?.textContent).toBe('Still connecting...');
-    expect(banner.textContent).toContain('Free servers need a moment to warm up');
+    expect(banner.textContent).toContain('This is taking longer than usual');
   });
 
   it('should dismiss banner when close button is clicked', () => {

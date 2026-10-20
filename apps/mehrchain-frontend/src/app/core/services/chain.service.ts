@@ -10,6 +10,7 @@ import {
 import { CommitmentService } from './commitment.service';
 import { AuthService } from './auth.service';
 import { ColdStartService } from './cold-start.service';
+import { ForegroundRefreshService } from './foreground-refresh.service';
 import { environment } from '../../../environments/environment';
 
 export interface HabitChain {
@@ -140,34 +141,15 @@ export class ChainService {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
-    const resume = () => {
-      if (document.visibilityState === 'visible') {
-        this.supportStale.set(true);
-        void this.loadConnections();
-      }
-    };
-    const reconnect = () => {
+    inject(ForegroundRefreshService).onResume(() => {
       this.supportStale.set(true);
       void this.loadConnections();
-    };
+    }, destroyRef);
     destroyRef.onDestroy(() => {
       this.destroyed = true;
       this.sessionVersion++;
       clearTimeout(this.refreshTimer);
     });
-    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', resume);
-      window.addEventListener('focus', resume);
-      window.addEventListener('pageshow', resume);
-      window.addEventListener('online', reconnect);
-      destroyRef.onDestroy(() => {
-        clearTimeout(this.refreshTimer);
-        document.removeEventListener('visibilitychange', resume);
-        window.removeEventListener('focus', resume);
-        window.removeEventListener('pageshow', resume);
-        window.removeEventListener('online', reconnect);
-      });
-    }
     // React to user change
     effect(() => {
       const user = this.authService.currentUser();
@@ -279,7 +261,6 @@ export class ChainService {
 
   loadConnections(): Promise<ChainConnection[]> {
     if (this.destroyed) return Promise.resolve([]);
-    void this.loadDisconnectReceipts();
     const token = this.authService.getToken();
     const userId = this.authService.currentUser()?.id;
     if (!isRemoteToken(token)) {
@@ -289,6 +270,15 @@ export class ChainService {
     }
     if (this.loadRequest?.token === token && this.loadRequest.userId === userId)
       return this.loadRequest.promise;
+    if (
+      (typeof document !== 'undefined' && document.visibilityState === 'hidden') ||
+      (typeof navigator !== 'undefined' && navigator.onLine === false)
+    ) {
+      this.supportStale.set(true);
+      return Promise.resolve(this._connections());
+    }
+    clearTimeout(this.refreshTimer);
+    void this.loadDisconnectReceipts();
     const session = this.sessionVersion;
     const version = this.mutationVersion;
     const started = performance.now();

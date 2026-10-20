@@ -6,7 +6,8 @@ import { Injectable, signal } from '@angular/core';
 export class ColdStartService {
   private activeRequestsCount = signal<number>(0);
   readonly isColdStarting = signal<boolean>(false);
-  private timer: any = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private dismissed = false;
 
   /**
    * Starts tracking a potentially long-running remote request (e.g. Render free tier cold start).
@@ -16,7 +17,7 @@ export class ColdStartService {
     const current = this.activeRequestsCount();
     this.activeRequestsCount.set(current + 1);
 
-    if (!this.timer && !this.isColdStarting()) {
+    if (!this.timer && !this.isColdStarting() && !this.dismissed) {
       this.timer = setTimeout(() => {
         if (this.activeRequestsCount() > 0) {
           this.isColdStarting.set(true);
@@ -40,7 +41,15 @@ export class ColdStartService {
         this.timer = null;
       }
       this.isColdStarting.set(false);
+      this.dismissed = false;
     }
+  }
+
+  dismiss(): void {
+    this.dismissed = true;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    this.isColdStarting.set(false);
   }
 
   /**

@@ -7,6 +7,7 @@ import { ColdStartService } from './cold-start.service';
 import { AuthService } from './auth.service';
 import { CommitmentService } from './commitment.service';
 import { ThemeService } from './theme.service';
+import { ForegroundRefreshService } from './foreground-refresh.service';
 
 export type MeroGlowThemeId =
   | 'golden'
@@ -145,6 +146,8 @@ export class MeroCustomizationService {
   private version = 0;
   private destroyed = false;
   private boundSession: string | null = null;
+  private refreshRequest?: { key: string; promise: Promise<void> };
+  private refreshPending = false;
 
   readonly collection = computed(() => {
     const state = this.confirmed();
@@ -226,6 +229,8 @@ export class MeroCustomizationService {
         if (key === this.boundSession) return;
         this.boundSession = key;
         this.version++;
+        this.refreshRequest = undefined;
+        this.refreshPending = false;
         this.confirmed.set(null);
         this.loading.set(false);
         this.saving.set(false);
@@ -239,28 +244,17 @@ export class MeroCustomizationService {
       });
     });
     // A confirmed habit mutation/calendar refresh can earn a slot on this page.
+    let previousCommitments = this.commitmentService.commitments();
     effect(() => {
-      this.commitmentService.commitments();
+      const commitments = this.commitmentService.commitments();
+      if (commitments === previousCommitments) return;
+      previousCommitments = commitments;
       untracked(() => {
-        if (this.collection()) void this.refresh();
+        if (this.refreshRequest || this.saving()) this.refreshPending = true;
+        else if (this.collection()) void this.refresh();
       });
     });
-    const resume = () => {
-      if (typeof document === 'undefined' || document.visibilityState === 'visible')
-        void this.refresh();
-    };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('focus', resume);
-      window.addEventListener('online', resume);
-      window.addEventListener('pageshow', resume);
-      document.addEventListener('visibilitychange', resume);
-      destroy.onDestroy(() => {
-        window.removeEventListener('focus', resume);
-        window.removeEventListener('online', resume);
-        window.removeEventListener('pageshow', resume);
-        document.removeEventListener('visibilitychange', resume);
-      });
-    }
+    inject(ForegroundRefreshService).onResume(() => void this.refresh(), destroy);
     destroy.onDestroy(() => {
       this.destroyed = true;
       this.version++;
@@ -329,8 +323,32 @@ export class MeroCustomizationService {
     }
   }
 
-  async refresh(): Promise<void> {
-    if (this.saving() || this.destroyed || !this.auth.currentUser()) return;
+  refresh(): Promise<void> {
+    if (this.saving() || this.destroyed || !this.auth.currentUser()) return Promise.resolve();
+    const key = `${this.auth.currentUser()!.id}:${this.auth.getToken()}`;
+    if (this.refreshRequest?.key === key) return this.refreshRequest.promise;
+    if (
+      (typeof document !== 'undefined' && document.visibilityState === 'hidden') ||
+      (typeof navigator !== 'undefined' && navigator.onLine === false)
+    )
+      return Promise.resolve();
+    const promise = this.loadCollection().finally(() => {
+      if (this.refreshRequest?.promise !== promise) return;
+      this.refreshRequest = undefined;
+      this.refreshIfPending();
+    });
+    this.refreshRequest = { key, promise };
+    return promise;
+  }
+
+  private refreshIfPending(): void {
+    // Keep the invalidation until both an older read and any save have settled.
+    if (!this.refreshPending || this.refreshRequest || this.saving()) return;
+    this.refreshPending = false;
+    void this.refresh();
+  }
+
+  private async loadCollection(): Promise<void> {
     let session: { userId: string; token: string };
     try {
       session = this.session();
@@ -346,7 +364,7 @@ export class MeroCustomizationService {
         firstValueFrom(
           this.http
             .get<MeroCollection>(`${this.api}/collection`, { params: { 'ngsw-bypass': 'true' } })
-            .pipe(timeout(20000)),
+            .pipe(timeout(90000)),
         ),
       );
       if (!this.current(session, version)) return;
@@ -412,7 +430,10 @@ export class MeroCustomizationService {
     } catch (error) {
       throw new Error(this.message(error));
     } finally {
-      if (this.current(session, version)) this.saving.set(false);
+      if (this.current(session, version)) {
+        this.saving.set(false);
+        this.refreshIfPending();
+      }
     }
   }
 
@@ -491,7 +512,7 @@ export class MeroCustomizationService {
 
   private message(error: unknown): string {
     if (error instanceof TimeoutError) {
-      return 'The server is taking longer than expected. Your draft is kept; refresh or retry.';
+      return 'Could not confirm the request. Your draft is kept; refresh to check before retrying.';
     }
     if (error instanceof HttpErrorResponse) {
       if (typeof error.error?.message === 'string') return error.error.message;
