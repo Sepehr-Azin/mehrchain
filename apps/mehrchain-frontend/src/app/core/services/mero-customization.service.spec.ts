@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { CommitmentService } from './commitment.service';
 import { ThemeService } from './theme.service';
 import { ColdStartService } from './cold-start.service';
+import { ForegroundRefreshService } from './foreground-refresh.service';
 
 const snapshot = (changes: Partial<MeroCollection> = {}): MeroCollection => ({
   unlockedAt: null,
@@ -45,6 +46,7 @@ describe('Mero server collection', () => {
   };
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     localStorage.clear();
     user = signal(null);
     habits = signal([]);
@@ -61,6 +63,7 @@ describe('Mero server collection', () => {
         { provide: CommitmentService, useValue: { commitments: habits } },
         { provide: ThemeService, useValue: { isDark: dark } },
         { provide: ColdStartService, useValue: { startRequest: vi.fn(), finishRequest: vi.fn() } },
+        { provide: ForegroundRefreshService, useValue: { onResume: vi.fn() } },
       ],
     });
     service = TestBed.inject(MeroCustomizationService);
@@ -68,7 +71,11 @@ describe('Mero server collection', () => {
     TestBed.tick();
   });
   afterEach(() => {
-    http.verify();
+    try {
+      http.verify();
+    } finally {
+      TestBed.resetTestingModule();
+    }
   });
 
   async function login(data = snapshot()) {

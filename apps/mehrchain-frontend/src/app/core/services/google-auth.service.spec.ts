@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { GoogleAuthService } from './google-auth.service';
 import { AuthService } from './auth.service';
 import { ThemeService } from './theme.service';
+import { environment } from '../../../environments/environment';
 
 describe('GoogleAuthService', () => {
   let service: GoogleAuthService;
@@ -36,6 +37,14 @@ describe('GoogleAuthService', () => {
   });
 
   it('should reject if Google client ID is not configured', async () => {
-    await expect(service.signInWithGoogle()).rejects.toThrow('Google sign-in is not configured yet');
+    const configuredClientId = environment.googleClientId;
+    environment.googleClientId = '';
+    try {
+      await expect(service.signInWithGoogle()).rejects.toThrow(
+        'Google sign-in is not configured yet',
+      );
+    } finally {
+      environment.googleClientId = configuredClientId;
+    }
   });
 });
