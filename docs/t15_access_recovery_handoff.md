@@ -32,3 +32,15 @@ local proxy so these probes use the operator's network route.
 These observations precede deployment of this local retry change and do not prove
 a performance improvement. Independent idle samples and real phone/PWA/network
 acceptance remain open; a warm second route cannot be labeled independently cold.
+
+## Later operator-labeled idle attempt
+
+At 21:45:03 Asia/Tehran, after more than 16 minutes without an API probe from this
+session, the proxy idle sample failed after 2175.4 ms with the script's sanitized
+`connection-or-redirect` classification. It did not establish API readiness or
+prove a specific provider cause. A separate follow-up labeled warm, at 21:48:04,
+returned the same matching HTTP 200 revision after 62878 ms. That label does not
+prove the origin was already warm, and this slow result is retained rather than
+folded into the earlier fast observations. Other users' traffic and target-phone
+networks were not controlled. Further independent idle/mobile acceptance remains
+open; these are baseline observations of the live code, not of the local retry fix.

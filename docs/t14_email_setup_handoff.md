@@ -2,14 +2,21 @@
 
 The authenticated Render environment was inspected during T12. It contains
 DATABASE_URL, GOOGLE_CLIENT_ID, JWT_SECRET, NODE_ENV and NODE_VERSION, with no
-linked environment groups. RESEND_API_KEY and MAIL_FROM are absent. Visiting
-Resend domains redirects to login; Google sign-in also requires an interactive
-login. No usable Resend credential or verified sending domain was provided.
+linked environment groups. RESEND_API_KEY and MAIL_FROM are absent. Initially,
+Resend domains redirected to login and required an interactive sign-in.
+No usable Resend credential or verified sending domain was provided.
 No credentials were created, account settings changed or verification mail sent.
 
-T14 remains pending access, rather than complete. To finish:
+The owner subsequently signed in to Resend. Its Domains page contains no domains,
+and the owner confirmed they have no active purchased domain. T14 now waits for
+an owned sending domain and sending credential, rather than login. No domain,
+API key or charge was created. Resend's shared test sender cannot deliver to the
+intended public recipients. To finish:
 
-1. Sign in to the intended Resend account and identify a verified sending domain.
+1. Acquire a domain (or use an owned domain/subdomain with DNS access), add it in
+   Resend and publish the provider's SPF/DKIM records. Wait for verification.
+   Resend does not supply a free production sending domain; see its
+   [domain requirements](https://resend.com/docs/dashboard/domains/introduction).
 2. Store the sending key privately in Render as RESEND_API_KEY and set MAIL_FROM
    to an address on that verified domain. Do not commit either value or put it
    in frontend configuration.
