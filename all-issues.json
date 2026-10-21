@@ -213,10 +213,10 @@
   {
     "number": 20,
     "title": "feat(visual): Three.js On-Demand visual engine, Spark action button & Mero animation audit",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "not_planned",
     "created_at": "2026-09-23T18:55:03Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:06:56Z",
     "labels": []
   },
   {
@@ -429,10 +429,10 @@
   {
     "number": 44,
     "title": "Move Badges to Profile, clean streak card, and set custom duration placeholder",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-03T16:56:36Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:06:35Z",
     "labels": []
   },
   {
@@ -471,10 +471,10 @@
   {
     "number": 48,
     "title": "[R2] Secure and deploy real authentication (P0, depends on R1, Oct 5)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:19:32Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:06:59Z",
     "labels": [
       "release-recovery",
       "P0"
@@ -483,10 +483,10 @@
   {
     "number": 49,
     "title": "[R3] Configure the frontend's real sign-in path (P0, depends on R2, Oct 5–6)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:19:38Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:07:02Z",
     "labels": [
       "release-recovery",
       "P0"
@@ -495,10 +495,10 @@
   {
     "number": 50,
     "title": "[R4] Persist the solo habit journey and make failures honest (P0, depends on R1–R3, Oct 5–6)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:19:43Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:07:20Z",
     "labels": [
       "release-recovery",
       "P0"
@@ -507,10 +507,10 @@
   {
     "number": 51,
     "title": "[R5] Use server-issued invites for the entire chain flow (P0, depends on R4, Oct 6–7)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:19:47Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:07:23Z",
     "labels": [
       "release-recovery",
       "P0"
@@ -519,10 +519,10 @@
   {
     "number": 52,
     "title": "[R6] Verify heart, deletion, and user data isolation (P0, Oct 7)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:19:52Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:07:27Z",
     "labels": [
       "release-recovery",
       "P0"
@@ -531,10 +531,10 @@
   {
     "number": 53,
     "title": "[R7] Deploy and run a two-account release smoke test (P0, depends on R0–R6, Oct 7)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:19:57Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:07:30Z",
     "labels": [
       "release-recovery",
       "P0"
@@ -543,13 +543,103 @@
   {
     "number": 54,
     "title": "[R8] Run the private field test and decide on launch (P0 Decision Gate, Oct 7–8)",
-    "state": "open",
-    "state_reason": null,
+    "state": "closed",
+    "state_reason": "completed",
     "created_at": "2026-10-04T17:20:02Z",
-    "closed_at": null,
+    "closed_at": "2026-10-18T05:07:34Z",
     "labels": [
       "release-recovery",
       "P0"
     ]
+  },
+  {
+    "number": 55,
+    "title": "[T00] Restore signup by aligning the deployed timezone contract",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-18T05:08:03Z",
+    "closed_at": "2026-10-18T05:08:09Z",
+    "labels": []
+  },
+  {
+    "number": 56,
+    "title": "[T01] Simplify the interface and desktop PWA",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-18T05:08:13Z",
+    "closed_at": "2026-10-18T05:08:18Z",
+    "labels": []
+  },
+  {
+    "number": 57,
+    "title": "[T02] Make daily completion and streak correct",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-18T05:08:21Z",
+    "closed_at": "2026-10-18T05:08:26Z",
+    "labels": []
+  },
+  {
+    "number": 58,
+    "title": "[T03] Archive habits and disconnect chains consistently",
+    "state": "closed",
+    "state_reason": "completed",
+    "created_at": "2026-10-18T05:08:28Z",
+    "closed_at": "2026-10-18T05:08:31Z",
+    "labels": []
+  },
+  {
+    "number": 59,
+    "title": "[T04] Make Chain and hearts quiet and minimal",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-18T05:08:33Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 60,
+    "title": "[T05] Ask and deliver a disconnect reason",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-18T05:08:39Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 61,
+    "title": "[T06] Make the day-21 named color durable",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-18T05:08:45Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 62,
+    "title": "[T07] Explain daily rules and make returning easy",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-18T05:08:51Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 63,
+    "title": "[T08] Reduce startup and access friction within a free budget",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-18T05:08:57Z",
+    "closed_at": null,
+    "labels": []
+  },
+  {
+    "number": 64,
+    "title": "[T09] Verify the complete experience with two real accounts",
+    "state": "open",
+    "state_reason": null,
+    "created_at": "2026-10-18T05:09:03Z",
+    "closed_at": null,
+    "labels": []
   }
 ]

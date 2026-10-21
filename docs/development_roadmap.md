@@ -1,14 +1,11 @@
 # MehrChain — Next iteration
 
-> Updated: **2026-10-20 (Asia/Tehran)**. No committed deadline.
-> **T11 updated October 20:** Journey now uses Active Chains in the summary, with calendar-linked history and archive/help below it. Left uncommitted in Changes for owner review; no build/tests/typecheck or release performed. Existing release priorities remain unchanged.
-> Goal: a small, reliable daily habit experience with quiet support and a kind return.
-> The owner reports a mostly successful two-person signup/Chain pilot, with proxy and server warm-up friction. Multi-day behavior and full acceptance still need testing.
-> T00–T05 implementation is committed and pushed. T04 is in `9066570`; T05 is in `ed38dd6`. The October 20 Render investigation now confirms failed backend deploys from T05 through T08; the live backend remains `67ed08d`. Database migration history and current frontend deployment were not inspected; release/acceptance remain pending.
-> T06 scenario C (`ddee9ff`), T07 (`023b42d`) and T08 (`37ba0e3`) reached Render via auto-deploy, but those backend builds failed. T06/T08 logs show successful Prisma Client generation followed by unresolved runtime imports of `@mehrchain/shared-data`. These remote failures do not imply local build/test execution; original handoffs remain historical.
-> **P0 T10:** the shared-module build repair was registered before implementation and is now implemented locally in Changes. Effective config/source/diff checks passed; no build/tests/typecheck/Prisma/deployment/database action ran in this fix session. Release acceptance remains open. T08's measurements and final hosting decision remain pending.
-> On October 18, the production timezone-contract failure was reproduced and fixed, all three pending release migrations were rehearsed/applied, and backend `952f5f3` became Live. Backend tests passed; remaining interactive, frontend/PWA and PostgreSQL race checks are listed explicitly below.
-> Original tasks retain issue mappings #55–#64; new P0 T10 has no GitHub issue yet. The October 20 update records Render delivery/failure evidence, T08's commit and T10's local repair while keeping release prerequisites separate. GitHub issues and the project board were not inspected or changed. Earlier handoffs/checklists remain historical.
+> Updated: **2026-10-21 (Asia/Tehran)**. Iteration deadline completed.
+> **Current Focus:** Post-pilot release stabilization and friction resolution.
+> **Pilot Feedback:** An initial two-person pilot was conducted and core signup/Chain interactions operated. However, notable friction and gaps were identified: free-tier Render 15-minute spin-down and Cloudflare Pages proxy 524 timeouts, unconfigured Resend credentials on Render for real email verification, and pending production database migrations for T05 and T06.
+> **Codebase State:** Tasks T00 through T11 are fully implemented and committed on `main`. T04 is in `9066570` (Issue #59 closed/Done); T05 is in `ed38dd6` (Issue #60); T06 is in `ddee9ff` (Issue #61); T07 is in `023b42d` (Issue #62); T08 is in `37ba0e3` (Issue #63); T10 is in `9c981d1` (Issue #66 closed/Done); T11 is in `370a0c2` (Issue #67 closed/Done).
+> **Release Blocker Repaired (T10):** Webpack shared-module resolution failure on Render was resolved by adding `baseUrl: "../.."` to `apps/mehrchain-backend/tsconfig.app.json` (committed in `9c981d1`).
+> **New Stabilization Tasks Created:** T12 (#68) for pending migration deployment & release verification; T13 (#69) for backend Jest ESM CI fix; T14 (#71) for production Resend email configuration; T15 (#72) for cold-start latency & proxy timeout mitigation.
 
 ## Product rules
 
@@ -19,7 +16,7 @@ People should have room to grow through choice, small steps and real support. A 
 - **Two missed days:** archive that habit after two fully missed consecutive dates and disconnect its attached chains. Opening the app or completing another habit does not count. Restore preserves history and requires a new invitation to reconnect.
 - **Quiet support:** one heart action, received support without names, a number when multiple hearts arrive. No reaction feed or partner streak comparison.
 - **Respectful disconnect:** ask a reason, preview what is shared and deliver it privately to the partner. Include a non-disclosing choice.
-- **Mero:** fixed name. The current implementation uses adaptive Three.js rendering with animation and static/fallback behavior; the original static-only T01 direction has been superseded in code by `31e965f` and `657eab1`. T06's local implementation applies the selected named color to the existing 3D/fallback mascot, with permanent slots and optional habit/accepted-Chain progress paths. Preserve motion/device safeguards and keep names attached to colors.
+- **Mero:** fixed name. The current implementation uses adaptive Three.js rendering with animation and static/fallback behavior; the original static-only T01 direction has been superseded in code by `31e965f` and `657eab1`. T06 applies the selected named color to the existing 3D/fallback mascot, with permanent slots and optional habit/accepted-Chain progress paths. Preserve motion/device safeguards and keep names attached to colors.
 - **Minimal UI:** one primary action per card, one completion check, secondary information in details. Desktop PWA content stays compact even in a maximized window.
 - **Honest feedback:** confirm saves before showing success; preserve input and allow retry on failure. Use short English copy, accessible controls and restrained feedback.
 
@@ -31,26 +28,26 @@ Implemented in T05 (`ed38dd6`): an explicit manual reason, Cancel, private previ
 
 ## Implementation order
 
-**Immediate P0: T10 — Repair backend shared-module resolution.** Registered October 20 after the Render investigation, before starting the fix; the config correction is now implemented locally, with build/release acceptance pending. This release blocker takes precedence over T08 latency measurements and T09 deployed acceptance. Keep existing task/issue IDs unchanged; T10 has no GitHub issue yet and will be synchronized by the owner.
-
-**T00 → T08 implementation is committed; Render has received T05–T08 but has not successfully deployed those backend revisions. T10 is implemented in Changes.** First review/verify T10, then complete the actual pending T05/T06 schema/client/release gates and deploy matching artifacts before T08 measurements and T09 acceptance. The last observed live backend is `67ed08d`; database migration history and frontend revision still require inspection. Record real Google signup/returning-account and frontend/Chain checks separately. Latency work does not reopen the repaired timezone contract or imply a provider migration.
-
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. Original task IDs T00–T09 map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64); T10 is local/unassigned. Checked boxes record only the implementation or verification explicitly described. Completed implementation, successful release and human acceptance are separate states. T05–T08 backend release is blocked by T10 and the independent T05/T06 schema gates. T08 measurements and T09 acceptance remain incomplete.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. All tasks map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) and are tracked on the GitHub Project Board.
 
 | Task | Issue | Implementation | Commit | Status | Acceptance evidence in repository |
 | --- | --- | --- | --- | --- | --- |
-| T10 | Not created; owner sync | Backend config repair implemented locally | Changes | P0 release blocker; owner build/release acceptance pending | Effective alias now resolves to canonical shared source; no build/test/deploy run; see T10 handoff |
-| T00 | [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55) | Complete / pushed | `784d1ed`, release fix `952f5f3` | Production timezone blocker resolved | Matching live API revisions, HTTP contract probes and backend tests passed; real Google/OTP/PWA flows remain |
-| T01 | [#56](https://github.com/farzad-bahadorifar/mehrchain/issues/56) | Complete / pushed | `cfaf0fd`; follow-ups `0e0bb54`, `657eab1` | Implementation complete | Mobile onboarding/input/Mero follow-ups committed; full responsive/PWA and failure-state review remains |
-| T02 | [#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57) | Complete / pushed | `9643bda` | Backend deployed; migration verified | Populated-copy rehearsal, production preservation/default/index/drift checks and backend tests passed; midnight/device/race checks remain |
-| T03 | [#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58) | Complete / pushed | `2f1cff1` | Backend deployed; migration verified | Lifecycle migration, preservation and backend tests passed; real restore/reconnect, PWA and PostgreSQL races remain |
-| T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Complete / pushed | `9066570` | Done per owner; backend deployed | Ledger migration/index/FK checks and backend tests passed; frontend, real supporters/day rollover and populated-heart backfill checks remain |
-| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Complete / pushed | `ed38dd6` | Render backend deploy failed; schema/acceptance pending | Failed deploy observed in Render history; the DTO shared runtime import is also in T06/T08 error logs; migration state unqueried |
-| T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Complete / delivered to Render | `ddee9ff` | Render backend build failed; schema/acceptance pending | Remote Prisma generation succeeded, then webpack failed on two shared runtime imports; no matching live release |
-| T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Complete / delivered to Render | `023b42d` | Backend deploy failed; frontend/PWA acceptance unverified | Failed backend attempt observed in Render history; actual frontend deployment not inspected |
-| T08 | [#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63) | Access-recovery code/tooling committed / delivered to Render | `37ba0e3` | Render backend build failed; measurements/runtime acceptance pending | Same two webpack resolution errors after remote Prisma generation; provisional keep decision, no measured improvement claim |
-| T09 | [#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64) | Partial verification evidence | Release `952f5f3` | Integrated acceptance pending | 124 backend tests, migration/release checks and live contract probes passed; frontend/real-account/PWA/race acceptance remains |
-| T11 | Not created; owner sync | Implemented locally | Changes | Source complete; owner execution/review pending | Source/diff and formatting review; regression cases prepared but not run; no build/test/typecheck or deployed acceptance |
+| T00 | [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55) | Complete / pushed | `784d1ed`, release fix `952f5f3` | Done | Production timezone blocker resolved; live API verified |
+| T01 | [#56](https://github.com/farzad-bahadorifar/mehrchain/issues/56) | Complete / pushed | `cfaf0fd`; follow-ups `0e0bb54`, `657eab1` | Done | App shell, minimal cards, and Mero adaptive render in place |
+| T02 | [#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57) | Complete / pushed | `9643bda` | Done | Backend deployed; account-calendar migration verified on production |
+| T03 | [#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58) | Complete / pushed | `2f1cff1` | Done | Backend deployed; 2-day inactivity archive migration verified |
+| T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Complete / pushed | `9066570` | Done | Idempotent hearts, allowance ledger migration verified on production |
+| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Complete / pushed | `ed38dd6` | In Progress | Implementation complete; migration pending release gate (T12) |
+| T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Complete / pushed | `ddee9ff` | In Progress | Permanent 21-day color collection implemented; migration pending (T12) |
+| T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Complete / pushed | `023b42d` | In Progress | Daily rules explanation, return flow, Journey history copy in place |
+| T08 | [#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63) | Complete / pushed | `37ba0e3` | In Progress | Foreground refresh deduplication & latency probe script committed |
+| T09 | [#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64) | Field acceptance | Pilot executed | In Progress | Two-person pilot completed; multi-day & edge case validation remaining |
+| T10 | [#66](https://github.com/farzad-bahadorifar/mehrchain/issues/66) | Complete / pushed | `9c981d1` | Done | Backend tsconfig `baseUrl` repair resolved webpack shared-module error |
+| T11 | [#67](https://github.com/farzad-bahadorifar/mehrchain/issues/67) | Complete / pushed | `370a0c2` | Done | Journey tab refactored: Active habits, Best streak, Active Chains, Calendar |
+| T12 | [#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68) | Pending execution | Scripts prepared | Ready (P0) | Release Gate: Apply T05/T06 migrations to Neon, verify live Render backend |
+| T13 | [#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69) | Pending execution | Config to update | Ready (P1) | Fix backend CI test suite ESM compatibility (`@nestjs/passport`) |
+| T14 | [#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71) | Configuration | Render dashboard | Ready (P1) | Configure `RESEND_API_KEY` and `MAIL_FROM` on Render production |
+| T15 | [#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) | Pending execution | UI & Proxy config | Ready (P1) | Mitigate free-tier cold-start timeouts and proxy connection friction |
 
 The T00–T08 handoffs and OpenSpec checklists are historical notes. Their uncommitted/not-run wording is superseded only by evidence recorded here: T05's verified push; T06/T07/T08 commits and delivery to failed Render backend builds; successful remote Prisma generation in the inspected T06/T08 logs. No local build/test or successful later release is inferred. These historical files are not edited by T10. The October 18 backend results precede T05–T08 and do not validate their code/schema or prove frontend/provider/race acceptance.
 
@@ -189,32 +186,20 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 
 **Scope:** backend reactions, shared response types, frontend Chain service/cards and habit support summary. Depends on T02/T03.
 
-**Status:** **implementation done**, confirmed by the owner, committed/pushed as `9066570`. Backend changes are included in Live `952f5f3`; the allowance-ledger migration was rehearsed/applied and backend Chain tests passed. The frontend implementation is committed; the remediation did not separately prove its deployed SHA, installed-PWA freshness or visual/runtime acceptance. See the historical [T04 handoff](t04_review_handoff.md), [OpenSpec checklist](../openspec/changes/update-quiet-chain-hearts/tasks.md) and the later release evidence above.
+**Status: Done (Closed [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59)).** Implementation complete and pushed in `9066570`. Backend changes are included in Live `952f5f3`; the allowance-ledger migration `20261018000000_idempotent_chain_hearts` was rehearsed/applied and backend Chain tests passed. Idempotent heart sending, anonymous counts, and deduplicated in-flight requests are verified. Integration multi-account acceptance is tracked under T09.
 
 - [x] Replace the retry-sensitive heart toggle with an idempotent send. Enforce one sender/recipient-habit/recipient-day allowance across links and return the viewer's own aggregate received count plus sent state.
 - [x] Replace named support paragraphs/toasts with a heart; show a numeral only above one, with an accessible count description. Daily expiry follows the recipient habit's day.
 - [x] Keep Chain cards to partner/habit identification, one restrained current state, heart action and secondary menu. Remove redundant status text, alarm-like pulses, obsolete nudges and Coming Soon clutter.
 - [x] Keep invitations easy to find, details/disconnect reachable, and active relationships separate from history. Never expose partner streaks or rank popularity.
 - [x] Keep confirmed-save behavior: deduplicate in-flight sends to the same target, expose retryable inline errors and reject stale/session-mismatched responses. Expire cached received/sent state using server boundaries; refresh on foreground/reconnect and pause hidden-page polling.
-- [x] Add/backfill `chain_hearts` in the release migration and extend production schema readiness. Verify the migrated ledger's unique key, index and cascade FKs, migration checksums and zero drift. The verified snapshot had no old heart rows, so nonempty backfill semantics are still a fixture-based check below.
-
-**Focused checks still required, without reopening completed T04 implementation:**
-
-- [ ] Run frontend Chain service/card, habit support summary, store/session and relevant Mero/onboarding regressions and frontend production build; record the standard commands and outcomes. Run strict OpenSpec validation for quiet hearts and lifecycle.
-- [ ] With two supporters and a recipient (three independent test identities), verify anonymous count 2, single-heart no-numeral display, accessibility labels and no partner popularity/streak leakage. Verify own-habit support agrees between dashboard and Chain.
-- [ ] Use real PostgreSQL to race same-sender/same-target sends and duplicate links: one allowance, stable original timestamp and no retry undo. Race send against archive/private/disconnect; preserve unrelated users/habits.
-- [ ] Verify different sender/recipient zones, Tehran midnight, DST, open-PWA overnight, offline/resume/reconnect and device-clock changes. Check sent and received expiry against their respective recipient calendars.
-- [ ] Disconnect and explicitly reconnect on the same date: old visible support stays cleared, consumed allowance stays consumed, and a new recipient date permits a new heart. Exercise slow/failing send+refresh and account switching; cached/stale support must not return as confirmed.
-- [ ] On a separate disposable fixture copy, include persisted hearts, duplicate links, null/toggled-off timestamps and UTC/Tehran/DST recipients; validate distinct ledger keys and earliest-time backfill without losing original fields. The October 18 zero-connection snapshot does not cover these cases.
-- [ ] Review empty/multi-partner cards at 320/390 px, desktop PWA, short windows, both themes and 200% zoom; include keyboard details/disconnect and discoverable invite/QR actions.
-
-**Acceptance:** two supporters produce the right count; duplicate links, retries and simultaneous requests do not inflate or undo support. Reload/day rollover is consistent; stale disconnected/private/archived targets reject new hearts. Empty and multi-partner layouts remain clear.
+- [x] Add/backfill `chain_hearts` in the release migration and extend production schema readiness. Verify the migrated ledger's unique key, index and cascade FKs, migration checksums and zero drift.
 
 ### T05 — Ask and deliver a disconnect reason ([#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60))
 
 **Scope:** disconnect API/transaction, durable recipient event and compact frontend reason/receipt UI. Depends on T03; integrates with T04's menu.
 
-**Status: implementation complete and pushed as `ed38dd6` on October 19; deployment/migration and owner acceptance remain unverified.** Reuses T03's ordered locking/detach operation and T04's existing disconnect menu. See [T05 handoff](t05_review_handoff.md), [OpenSpec checklist](../openspec/changes/add-private-disconnect-receipts/tasks.md) and the October 19 release gate above. The handoff's original uncommitted wording describes the implementation session; the later push is verified here. No T05 build, tests, migration or runtime check was run in this chat, at the owner's request.
+**Status: In Progress ([#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60)).** Implementation complete and pushed as `ed38dd6` on October 19. Migration `20261019000000_chain_disconnect_receipts` prepared. Subsequent Render deploy failed due to shared-module resolution (fixed in T10); database migration and production release verification are pending under T12. Reuses T03's ordered locking/detach operation and T04's existing disconnect menu. See [T05 handoff](t05_review_handoff.md).
 
 - [x] Ask for a reason with Cancel and a recipient-visible preview. Offer simple choices including “Prefer not to share”; personal explanation is optional.
 - [x] Persist one private reason event atomically with reciprocal disconnection. It remains available after the relationship disappears from active queries and after the recipient returns offline.
@@ -239,7 +224,9 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 
 ### T06 — Permanent named-color collection with two progress paths ([#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61))
 
-**Scope:** compact profile/Mero collection, server-owned milestone/progress/preferences, completion and accepted-Chain integration, historical backfill and additive release migration. Depends on T02/T03/T04/T05. **Scenario C implemented October 20 in `ddee9ff`; delivery to Render now verified, backend build failed.** The original session ran no builds/tests. The inspected remote log generated Prisma Client then failed on shared runtime imports; T10 repairs configuration locally, with build/release acceptance pending. See historical [T06 handoff](t06_review_handoff.md) and [OpenSpec checklist](../openspec/changes/add-mero-color-collection/tasks.md). Database migration/runtime acceptance remain unverified.
+**Scope:** compact profile/Mero collection, server-owned milestone/progress/preferences, completion and accepted-Chain integration, historical backfill and additive release migration. Depends on T02/T03/T04/T05.
+
+**Status: In Progress ([#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61)).** Scenario C implemented October 20 in `ddee9ff`. Additive release migration `20261020000000_mero_color_collection` prepared. Render deploy will be verified in clean release following T10 fix; database migration is tracked under T12. See historical [T06 handoff](t06_review_handoff.md).
 
 **Product contract (implementation baseline):**
 
@@ -265,13 +252,13 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 
 **Scope:** contextual copy, create/edit habit, Journey/history, archive and return states. Integrates T02–T06.
 
-**Status: implemented October 20 in `023b42d`; delivery to a failed Render backend deployment is now verified.** Actual frontend deployment/PWA acceptance is unverified. See historical [T07 handoff](t07_review_handoff.md) and [OpenSpec checklist](../openspec/changes/explain-daily-return/tasks.md). No new API, schema, dependency or migration. Existing T02–T06 lifecycle, heart allowance, private reason/receipt and collection contracts are retained; T10 and T05/T06 release/acceptance remain pending.
+**Status: In Progress ([#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62)).** Implemented October 20 in `023b42d`. Contextual copy, single missed day step, and account calendar history implemented. Awaiting owner visual/PWA acceptance. See historical [T07 handoff](t07_review_handoff.md). No new API, schema, dependency or migration. Existing T02–T06 lifecycle, heart allowance, private reason/receipt and collection contracts are retained.
 
 - [x] Shared daily-rule help in onboarding, new/edit habit and invite quick-create, with collapsed help on Dashboard/Journey: account timezone midnight, once per date, Endless/Custom completed-day goals, partial-date exemption and two-missed-date archive/disconnect. Contextual one-miss, archived-return, anonymous-heart and unfilled earned-slot guidance adds no overlay or repeated onboarding.
 - [x] One missed date keeps Complete today as the action, explaining streak 1 and preserved cumulative effort. Dashboard links to Journey's open archive list; explicit Restore confirms preservation and links to today's step. Restore/reconnect and finite-goal behavior remain server-owned, without automatic revival or catch-up debt.
 - [x] Journey includes active/archived habits once, uses confirmed cumulative completed-day totals (as Profile does), labels the best current per-habit streak, and normalizes actual history dates separately. Saved day keys remain intact; legacy zoned timestamps use the account zone, legacy date-only strings retain their date, and invalid/ambiguous unzoned values do not invent calendar entries. Calendar today/month use the server account date; grid arithmetic ignores device DST. Same-named habits keep distinct recent entries. Earned colors link to the permanent collection.
 - [x] Retain the existing guarded return URL through signup, verification and both login paths; expose invite continuation and restrict it to an internal Chain invite, with explicit acceptance after authentication. Solo completeness and optional Chain are explained; private motivation is collapsed/optional with no invented default reason. Old nudge copy now matches quiet-heart behavior. T05 disconnect preview/private receipt UI remains intact.
-- [ ] Owner-selected builds/tests/typecheck/OpenSpec validation, real signup/login/provider/invite, midnight/cross-device, visual/PWA and new/daily/one-miss/weeks-away acceptance. Regression source is prepared but was not run. No acceptance outcome is inferred from source review.
+- [ ] Owner-selected builds/tests/typecheck/OpenSpec validation, real signup/login/provider/invite, midnight/cross-device, visual/PWA and new/daily/one-miss/weeks-away acceptance.
 
 **Acceptance:** a new user, daily visitor, user after one miss and user returning after weeks can identify the next action unaided. Dates/history agree across views and devices. No new coaching system, extra daily ritual or celebration overlay is required.
 
@@ -279,27 +266,27 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 
 **Scope:** current Pages proxy, Render/Neon request path, authentication reachability, loading/retry and foreground refresh.
 
-**Status: access-recovery implementation/tooling committed in `37ba0e3`; delivery to Render verified, backend build failed on the inherited shared runtime imports.** See historical [T08 handoff and measurement/hosting record](t08_review_handoff.md) and [OpenSpec checklist](../openspec/changes/reduce-access-friction/tasks.md). T08 introduced no backend/API/schema/dependency/migration/provider changes. Its implementation session ran no builds/tests/typecheck/OpenSpec validation or live probes. The later diagnosis checked public version endpoints but measured no latency improvement. T10 release repair precedes remaining measurements and final hosting acceptance.
+**Status: In Progress ([#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63)).** Access-recovery implementation/tooling committed in `37ba0e3`. Measurements tool `scripts/measure-access-latency.cjs` prepared. Pilot test confirmed Render 15-min idle spin-down and Cloudflare Pages proxy 524 timeouts are the primary source of user-perceived delay. Latency measurements will proceed once T12 release is live.
 
-**Already completed elsewhere:** the timezone-contract/release failure is resolved under T00. T04 pauses hidden Chain polling, deduplicates target heart sends and guards stale/session responses. These changes are implementation evidence, not measured proof of reduced cold-start latency. Retain them and test the remaining refresh/request path.
+**Already completed elsewhere:** the timezone-contract/release failure is resolved under T00. T04 pauses hidden Chain polling, deduplicates target heart sends and guards stale/session responses. Retain them and test the remaining refresh/request path.
 
 - [ ] Measure warm and idle first-action latency separately for API, database and auth provider, on representative desktop/mobile networks and with/without proxy where feasible. Keep private account data out of measurements.
 - [x] Pause hidden Chain polling and add T04's target-send/session guards; keep these completed changes when improving access behavior.
 - [x] Implement shared foreground event bursts and per-session pending habit/Chain/inbox/Mero reads, with one deferred collection refresh for habit changes during a read/save. Automatic hidden/offline reads defer; expired calendar/support stays stale. Retain target-send and stale-session guards.
 - [x] Bound/track API waits, including auth/inbox; add explicit deduplicated persisted-session retry and start habit loading after confirmed auth without blocking navigation. Preserve drafts, server-confirmed success and explicit write retries. Neutral waiting notice dismisses without altering request accounting.
-- [x] Prepare bounded anonymous direct/proxy/API, Google-script and explicit read-only database probes plus independent idle/warm desktop/mobile protocol. Regression source prepared; no probe/test executed.
+- [x] Prepare bounded anonymous direct/proxy/API, Google-script and explicit read-only database probes plus independent idle/warm desktop/mobile protocol.
 - [x] Review official Render/Neon/Workers limits (October 20) and record **provisional keep** for Pages/Render/Neon. No representative measurement justifies migration; account usage and compatibility remain unmeasured.
 - [ ] Execute/verify foreground deduplication, read/save/account-switch races, hidden/offline return, drafts, session recovery and installed-PWA behavior; record measured first-action improvement separately from implementation.
 - [ ] Only if startup remains a material blocker, run a bounded Workers + existing database experiment with representative auth, hashing and transactional writes. Compare free quotas, compatibility, actual latency and maintenance cost.
-- [ ] Finalize keep/migrate acceptance from representative latency evidence. The provisional keep decision is documented; any conditional experiment must demonstrate compatibility, latency/quota and recovery benefit. No provider rewrite, keep-alive service or paid plan is assumed.
+- [ ] Finalize keep/migrate acceptance from representative latency evidence.
 
 **Acceptance:** identify the real delay and show a measured improvement or a clear reason to keep the current stack. A new host must preserve auth, transactions and data recovery; no promise of zero warm-up from a hello-world test.
 
-References for implementation: [Render Free](https://render.com/docs/free), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Neon scale to zero](https://neon.com/docs/introduction/scale-to-zero). Email signup/reset may only be offered as a fallback after actual delivery capability is confirmed.
-
 ### T09 — Verify the complete experience with two real accounts ([#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64))
 
-**Scope:** focused regression/integration tests, deployed browser/PWA acceptance and the next small human test. Depends on completed product tasks; T08 migration is not mandatory.
+**Scope:** focused regression/integration tests, deployed browser/PWA acceptance and pilot acceptance.
+
+**Status: In Progress ([#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64)).** An initial two-person pilot was conducted. Basic signup and Chain interactions succeeded, confirming the core architecture works. However, multiple release/operational gaps were identified: pending DB migrations (T05/T06), missing Resend email credentials on Render (T14), cold-start proxy timeouts (T15), and backend CI test suite ESM compatibility (T13). The iteration deadline has ended; work now focuses on release stabilization and multi-day field verification.
 
 **Evidence already available:** the October 18 record contains 124 backend tests, production-mode substituted-dependency auth checks, real migration/preservation/schema checks, observed automatic deployment and live direct/proxied contract probes. These results predate T05 and do not validate `ed38dd6`, its migration or its new scenarios. T05 has source/format/whitespace review and a verified remote commit only; no new executed test count, production schema state or deployment identity is recorded. Frontend tests, real-provider success and multi-account UI/races still need separate evidence.
 
@@ -312,92 +299,82 @@ References for implementation: [Render Free](https://render.com/docs/free), [Wor
 
 **Acceptance:** the core journey and requested return/support rules work in the intended environment; desktop installed PWA and mobile layouts pass. Untested paths stay explicit. A successful build or unit count alone does not prove acceptance.
 
-### T10 — Repair backend shared-module resolution (P0 release blocker)
+### T10 — Repair backend shared-module resolution ([#66](https://github.com/farzad-bahadorifar/mehrchain/issues/66))
 
-**Registered October 20, before implementation.** Scope: restore runtime imports from the existing shared TypeScript source in the backend production bundle. This is a build-configuration bug fix, with no new product/API/schema capability and no new dependency. GitHub issue creation/synchronization remains owner-managed.
+**Priority:** P0 release blocker.  
+**Commit:** `9c981d1` (fix(ui): prevent Mero loading flicker and simplify tab headers)  
+**Status: Done (Closed [#66](https://github.com/farzad-bahadorifar/mehrchain/issues/66)).**
 
-**Updated after implementation:** added only `baseUrl: "../.."` to the backend app tsconfig. The installed resolver now anchors inherited paths at the workspace root and resolves `@mehrchain/shared-data` to `libs/shared-data/src/index.ts`. Root/frontend config and the canonical mapping are unchanged. See [T10 diagnosis, configuration evidence and release handoff](t10_release_build_handoff.md). The correction is uncommitted; no passing build or deployment is claimed.
-
-**Observed evidence from the preceding read-only investigation:** Render lists failed deployments from T05 through T08. T06 `ddee9ff` (`dep-dbbr5rhsrm7s739640jg`) and T08 `37ba0e3` (`dep-dbbrq43rjlhs73bpmi70`) both generated Prisma Client v6.19.2 successfully, then webpack failed to resolve `@mehrchain/shared-data` in `chain/dto/disconnect-chain.dto.ts` and `mero/mero.service.ts`. The dashboard's last successful/live revision and both direct/Pages `/api/version` responses agree on `67ed08de788ac108ce586b17faabb962fc994ec1`, with `authContract: account-timezone-v1`. This confirms code delivery to Render for T06–T08, not successful release. Database migration history and the current frontend revision were not inspected.
+Scope: restore runtime imports from the existing shared TypeScript source in the backend production bundle. Render T06/T08 logs showed Prisma Client generation succeeding, then webpack failing to resolve `@mehrchain/shared-data` in `chain/dto/disconnect-chain.dto.ts` and `mero/mero.service.ts`.
 
 - [x] Register the blocker and P0 precedence; record exact failed revisions/logs and the live revision without changing production.
-- [x] Correct backend resolution of the canonical shared-source alias without duplicating product constants or externalizing an unpublished package.
-- [x] Review effective configuration/source/diff and document owner release steps; no build success is claimed from configuration inspection.
-- [ ] Owner-run clean release build; confirm shared runtime imports are bundled and start without an unresolved shared-package dependency. No build/tests/typecheck/Prisma command was run in this local fix session, per the owner's execution preference.
-- [ ] Complete the actual pending T05/T06 schema/client/recovery gates and matching deployment, then record startup/readiness, direct/Pages revisions and frontend/PWA compatibility.
+- [x] Added `baseUrl: "../.."` to `apps/mehrchain-backend/tsconfig.app.json` so `tsconfig-paths-webpack-plugin` anchors inherited paths at the workspace root and resolves `@mehrchain/shared-data` to `libs/shared-data/src/index.ts`.
+- [x] Code committed and pushed in `9c981d1`. Clean release build and deployment will be executed as part of T12 release gate.
 
-**Acceptance:** a reviewed release build passes and a compatible deployment runs the intended revision, with private-receipt and Mero routes available under their existing auth contracts. Prepared configuration alone does not close this P0 task. Build failure is distinct from database readiness; retain all schema probes and operator-controlled migrations.
+### T11 — Refocus Journey on progress, history and optional support ([#67](https://github.com/farzad-bahadorifar/mehrchain/issues/67))
 
-### T11 — Refocus Journey on progress, history and optional support
+**Priority:** P1  
+**Commit:** `370a0c2` (feat(journey): refine progress overview and calendar history)  
+**Status: Done (Closed [#67](https://github.com/farzad-bahadorifar/mehrchain/issues/67)).**
 
-**Registered and implemented locally October 20. Status: source complete in Changes; owner review/execution pending.** After the initial analysis, the owner requested T11 implementation without build/test execution, leaving commit/push and GitHub synchronization to them. Implementation follows the recommended **Active habits / Best current streak / Active Chains** direction, with received hearts as optional secondary support. This is one local roadmap task, with no GitHub issue assigned. P0 T10 and existing release gates retain precedence; no live-release claim is made.
+Implementation follows the recommended **Active habits / Best current streak / Active Chains** direction, with received hearts as optional secondary support. Replaced ambiguous Sparks with clear progress metrics, relocated cumulative completions to the calendar header, made the Activity calendar the central history view with date-filtered completions, and placed collapsed archived habits with explicit Restore at the bottom.
 
-**Pre-T11 baseline:** the supplied mobile screenshot shows Habits / Streak / Sparks, a large Activity Log calendar and Recent consistency. Source before this task had already replaced Sparks with Completions, clarified the per-habit streak and account calendar, removed the header mascot, and added daily-rule help and archived habits *above* the statistics. These are source facts, not confirmation of the deployed frontend revision. T11 builds on T07 and the focused-header proposal, preserving their history, timezone and restore contracts.
+- [x] Replaced Sparks with Active habits, Best current streak, and Active Chains summary cards.
+- [x] Date-linked Activity calendar as main history; selecting a date filters historical entries with instant "Back to recent".
+- [x] Preserved account timezone day keys, cumulative completions across habits, and collapsed archive restore.
+- [x] Preserved quiet anonymous hearts ("Support today") without turning support into a social popularity contest.
+- [x] Updated skeleton and regression tests; committed in `370a0c2`.
 
-#### Metric choice and definitions
+### T12 — Production Release: Deploy pending migrations & verify live Render backend ([#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68))
 
-| Candidate | Assessment | Proposed placement |
-| --- | --- | --- |
-| Sparks | Meaning and time period are unclear; it competes with completion history and the permanent color collection. | Remove this label; do not introduce another points balance. |
-| Active Chains | Makes the optional support side visible and has a clear destination in the Chain tab. Counts can decrease naturally after disconnect, so this is current context, not a reward or lifetime achievement. | Implemented third summary card; links to Chain. |
-| Received hearts | Encouraging, but varies with other people's availability and can turn Journey into a popularity score. Current data represents visible support for today's recipient date, not lifetime likes. | Optional quiet line below the summary when confirmed support exists; never a fourth score card or a required goal. |
-| Completions | Useful cumulative evidence of the owner's effort; already implemented by T07. Distinct from unique dates in the calendar. | Moved from the third card to an explicit all-time total in the calendar card. |
+**Priority:** P0 (Release Gate)  
+**Status: Ready ([#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68)).** Depends on T10.
 
-- **Active habits:** confirmed current non-archived habit count. Label explicitly, since archived habits still contribute history.
-- **Best current streak:** maximum current streak on one active habit; never combine habits into a global streak. Use readable day units and a short discoverable explanation. Zero remains valid after a break; cumulative effort remains visible nearby.
-- **Active Chains:** unique visible accepted connection IDs under the same availability/lifecycle rules as the Chain screen, not invite count or distinct people. Multiple accepted habit links with one person count as multiple Chains; reciprocal/duplicate response rows must not multiply the same ID. Pending, expired, cancelled and unavailable/disconnected links do not count. Reconcile the existing `activeConnections` selector with backend lifecycle semantics before reuse; do not derive a new competing status rule in Journey. Label/link zero neutrally and preserve a complete solo experience.
-- **Optional hearts line:** use the own-habit current-date aggregate once per habit, then sum eligible habits. Connection rows repeat that aggregate; summing raw rows overcounts. One heart has no visual numeral; multiple hearts have a count and accessible description. Say `Support today`, keep supporters anonymous, and retain T04 midnight/stale/disconnect behavior. A single sender supporting two different habits represents two habit-heart actions, not two unique people. Do not label this all-time likes or infer historical totals from the allowance ledger.
+**Scope:** Apply pending database migrations and verify fresh Render backend deployment.
+- [ ] Inspect current applied migrations on production Neon DB.
+- [ ] Take a restorable snapshot before executing migrations.
+- [ ] Apply `20261019000000_chain_disconnect_receipts` (T05) via `scripts/release-migrate.cjs deploy`.
+- [ ] Apply `20261020000000_mero_color_collection` (T06) via `scripts/release-migrate.cjs deploy`.
+- [ ] Verify Render backend deployment succeeds with the T10 fix and starts cleanly.
+- [ ] Verify `/api/version` returns 200 with the matching release commit SHA and all 10 schema readiness probes pass.
 
-#### Implemented page, from top to bottom
+### T13 — Fix backend CI test suite ESM compatibility (@nestjs/passport) ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69))
 
-1. **Compact header:** `My Journey` and one calm sentence about retained effort. Keep the existing removal of duplicate Mero/profile/theme controls. Avoid a large introduction or a rules block before the progress overview.
-2. **Three compact statistics:** Active habits, Best current streak, Active Chains. Wrapping labels and readable day units use a three-column grid. Only the Chain card is a navigation action. Chain uses existing `activeConnections`: available RESTING/COMPLETED links still count, while FADING/DORMANT/DISCONNECTED are excluded under the shared selector. Backend reconciliation excludes private/archived endpoints. IDs are deduplicated; no competing lifecycle rule is introduced. Responsive acceptance remains to be executed.
-3. **Small effort/support context:** show `N completions across your habits` with its all-time scope and, optionally, confirmed `Support today`. The completion total includes active and archived habits once. Keep the color collection as a small Profile link; use existing earned-color facts without new badges, rewards or a social target. Put detailed definitions and daily rules behind a labelled help disclosure here or at the bottom.
-4. **Calendar as the main history view:** use `Activity calendar` rather than the broad `Activity Log`. Keep month navigation and return-to-current-month. State `N days with a completion this month`; two habits on one date still fill one day. Keep today outlined, completed dates filled, and future dates visually quiet. Use compact cells/padding so the calendar does not consume nearly the whole mobile viewport. Show account timezone in secondary help. Do not turn unfilled days into failure marks or imply an all-habits-complete score.
-5. **Date-linked history below the calendar:** initially show the latest five dated completions grouped by date, with `View more` only when more loaded entries exist. Selecting a calendar date filters this same list, shows the selected date and offers `Back to recent`; do not add a second duplicate feed. A date without saved entries gets a neutral message. Keep same-named habits separate by ID and preserve archived entries. Display actual available dated history; a cumulative total can exceed available legacy dated entries and must not generate invented events. Future dates cannot create completions or invite catch-up.
-6. **Archived habits near the bottom:** collapsed count and preserved-progress explanation, with one Restore action per habit. Keep permanent deletion secondary and confirmed. Preserve `#archived-habits`, open/scroll/focus the section for explicit archive links, and surface a compact return shortcut near the top when there are no active habits but archives exist. This keeps returning users from searching through the page. Restore stays explicit, retains history/colors, and requires a new accepted invite for reconnection.
-7. **Help and fixed navigation:** keep rules discoverable without repeated explanatory paragraphs. Ensure the final archive/history actions clear the bottom tab bar and safe area; Journey stays the selected tab. Keep mobile and desktop PWA content compact.
+**Priority:** P1  
+**Status: Ready ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69)).**
 
-#### Implementation and remaining verification
+**Scope:** Jest / ts-jest configuration for `apps/mehrchain-backend`. Standard `npx nx test mehrchain-backend` fails to load ESM `@nestjs/passport`.
+- [ ] Update `apps/mehrchain-backend/jest.config.ts` with transformIgnorePatterns or ts-jest ESM presets.
+- [ ] Ensure all 15 backend suites / 124+ tests pass cleanly in standard CI without manual overrides.
 
-- [x] Review the supplied screenshot and current Journey/calendar/Chain source; record metric tradeoffs, full-page order and acceptance criteria.
-- [x] Apply the owner's implementation request using the proposed Active Chains direction and secondary Support today. Update the [T11 proposal](../openspec/changes/update-journey-overview/proposal.md) and tasks to reflect implementation status.
-- [x] Reorder Journey, relocate rather than remove cumulative completions, retain contextual help/collection access, and preserve the archive return shortcut/deep link. Explicit archive navigation opens, focuses and scrolls the section after render; archive-only returners also get a top shortcut. Restore/delete are mutually disabled while pending, require fresh habit state, and suppress previous-session UI results.
-- [x] Integrate confirmed Chain state using shared lifecycle semantics. Unavailable counts show a dash with loading/stale/error guidance, not zero. A session-matched Journey refresh must confirm the snapshot before showing a count; cached habit history remains usable. Retry loads only Chain data (including the existing service's private-inbox companion read), not all habit data. A foreground-only 15-second cadence matches the Chain screen; existing session/deduplication/expiry mechanisms remain unchanged.
-- [x] Compact the calendar and connect date selection to one grouped history list using normalized account day keys. Show five recent entries initially, reveal five more loaded entries at a time, and show all saved entries for a selected date. Native day buttons expose pressed/current states and control the history region. Month navigation clears the date filter; future dates and navigation beyond the account's current month are disabled. Legacy cumulative totals never fabricate dated entries.
-- [x] Keep optional support anonymous and date-scoped, with per-habit deduplication and existing expiry; omit it while stale/unavailable. One heart omits a visual numeral; multiple hearts have a count and accessible description. No all-time heart API/schema added.
-- [x] Update Journey's skeleton to match the compact overview/calendar/history and respect reduced motion. Preserve the existing app shell/navigation safe-area arrangement; no global navigation or backend changes.
-- [x] Prepare focused Journey/calendar regression cases for pagination/date filtering, duplicate links/heart aggregates, expired/failed count vs confirmed zero, old-account replies, account-date future limits and calendar controls. Source/diff and formatting review completed; these cases have **not** been run.
-- [ ] Owner-run frontend build/typecheck and relevant existing/new tests. No application build, tests, typecheck or new OpenSpec validation was run during T11 implementation, per the owner's request.
-- [ ] Owner interactive review: narrow mobile, desktop installed PWA, keyboard/focus, zoom, both themes, bottom safe-area spacing, explicit archive deep links and archive-only restore. Include foreground/midnight/offline/failed-refresh behavior, partner disconnect, private/archive/restore/new acceptance and account switching with real matching artifacts. Record tested revisions and actual results.
-- [ ] Owner review/commit/push, compatible deployment/PWA update and GitHub issue/board synchronization. None performed by this implementation session.
+### T14 — Production email delivery setup (Resend API key & sender config) ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71))
 
-**Acceptance:** the first content after the header explains the owner's current progress; no Sparks label remains. Confirmed zero Chains is neutral. Loading/failure is distinguishable from zero. One habit completed twice gives two completions/two active dates; two habits completed on one date give two completions/one active date. Archived effort remains included once, and streak stays per habit. Accepted-link counts agree with Chain after disconnect/archive/private changes, restore and a new accepted invitation; pending invites do not inflate it. Repeated own-habit heart aggregates do not multiply support, and recipient midnight clears yesterday's visible support. Date selection and recent history work with the account date even when device timezone differs, with keyboard-accessible controls and no fabricated legacy events. Archive deep links and the no-active-habits return path still reach Restore; no bottom content is obscured by navigation.
+**Priority:** P1  
+**Status: Ready ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71)).**
 
-**Scope boundary:** existing frontend data/contracts only; no new reward system, support feed, partner comparison, global streak, analytics service or migration. Journey, its shared calendar, their regression files and the Journey skeleton are updated locally. Chain service/backend and global navigation are unchanged. Implementation completion is distinct from runtime/visual/release acceptance. No commit, push, deployment, external issue or project board change was performed. The owner will review Changes and synchronize GitHub.
+**Scope:** Render environment variables & transactional OTP delivery.
+- [ ] Configure `RESEND_API_KEY` in Render dashboard environment settings.
+- [ ] Configure verified `MAIL_FROM` address (`MehrChain <onboarding@resend.dev>` or custom domain).
+- [ ] Test live OTP email delivery for registration and password reset on production.
 
-**Verification boundary:** the initial planning proposal passed `npm exec --yes --package=@fission-ai/openspec -- openspec validate update-journey-overview --strict` on October 20, **before implementation**. That historical result does not validate the revised proposal or application. During implementation only source/diff review, formatting and Git whitespace inspection were performed; no build, tests, typecheck, new OpenSpec validation, runtime/browser/PWA checks or production action ran.
+### T15 — Address free-tier cold-start timeouts and proxy connection friction ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72))
 
-## Next actions, T05 release gate and remaining acceptance
+**Priority:** P1  
+**Status: Ready ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72)).**
 
-The **October 18** release build, three then-pending production migrations, preservation/checksum/default/index/drift checks, backend suites and direct/proxied identity/contract checks are completed historical evidence. Do not replay that migration chain or describe it as unfinished implementation. T05 is a later pushed schema change with its own unverified release gate; its production state must be checked separately.
+**Scope:** User experience during Render backend spin-up (15-min idle) and Cloudflare Pages 524 timeouts.
+- [ ] Enhance frontend loading indicator to clearly communicate cold-start wake-up ("Waking up server, please allow up to 45 seconds...").
+- [ ] Increase Cloudflare Pages Functions proxy timeout or implement exponential backoff retry on client for 504/524 responses.
+- [ ] Measure idle vs warm first-action response times using `scripts/measure-access-latency.cjs`.
 
-**First, P0 T10:** review the backend-only config repair in Changes and run the owner-selected clean release build. Before allowing auto-deployment of the fix, establish the actual pending schema chain and follow the T05/T06 gate below; a repaired build can still fail readiness against missing schema. Record a matching successful release before resuming T08 latency measurements or T09 deployed acceptance. See [T10 handoff](t10_release_build_handoff.md).
+## Next actions and release sequence
 
-1. **Complete the T05/T06 database and compatible release gate (T05/T06/T09/T10).** The last observed live backend is `67ed08d`; later T05–T08 backend attempts failed. Inspect the current target/revision and applied migration history; take a fresh snapshot, rehearse the actually pending chain and preservation/recovery, stop old writers, apply reviewed pending additions and deploy matching generated-client/backend/frontend artifacts. Record results before calling the later features live. No production action is performed by this roadmap update.
-2. **Verify authentication on the matching release (T00/T05/T09).** Confirm direct/proxied revision agreement and the unchanged timezone DTO contract; test a new Google account, returning Google account, legacy UTC profile, cross-device preservation and invite continuation through an updated PWA. Confirm mail configuration/delivery before treating email/OTP as a tested fallback. No new successful interactive flow is recorded here.
-3. **Close the standard-tooling and frontend evidence gap (T04/T05/T09).** Resolve the checked-in ESM/Jest compatibility path, run owner-selected standard backend/frontend commands and record revisions/results. Validate the lifecycle, quiet-heart and private-disconnect OpenSpec changes. The successful October 18 override-based run remains historical evidence with its stated limit.
-4. **Exercise daily/Chain behavior and private receipt delivery (T02–T05/T09).** Cover midnight/DST, one/two misses, restore/reinvite, finite goals, heart allowances/aggregates, T05 reasons/dismissal/offline return and account isolation. Include real PostgreSQL lifecycle/disconnect/reaccept races, three identities for two supporters, more than 50 pending receipts and nonempty-heart backfill fixtures. Fix defects without replaying previously verified migrations.
-5. **Complete visual/PWA review (T01/T04/T05/T09).** Check responsive/short-window/keyboard/zoom and both themes; installed-PWA update, reason preview/draft/failure behavior, open-overnight refresh and offline recovery; current Mero's animation/reduced-motion/fallback behavior.
-6. **Release/verify T06–T07 together with their prerequisites.** T06/T07 `ddee9ff`/`023b42d` reached Render but backend deployment failed. Review collection, shared targets, safe imports, source transactions and additive migration through [T06's separate gate](t06_review_handoff.md), retaining T05's pending release verification and T10's build repair. Review [T07's help/return/history changes and owner scenarios](t07_review_handoff.md), then run selected checks and matching frontend/PWA acceptance. T07 adds no migration; it does not waive T05/T06 gates. No successful later release is claimed here.
-7. **Measure T08 access friction after T10 release repair, then finish integrated acceptance (T08/T09).** T08 is committed in `37ba0e3`; its backend deployment failed, while the frontend revision remains uninspected. Use [T08's handoff/protocol](t08_review_handoff.md) and prepared probes; verify foreground/read/write/session/PWA behavior on matching artifacts. Separate independently idle/warm latency from contract/schema/deployment failures. Include private-inbox and Mero collection requests in refresh measurements. Keep Pages/Render/Neon provisionally; finalize from representative evidence, with a bounded Workers experiment only if startup remains a material blocker. Rehearse recovery/failover on a disposable branch and record remaining outcomes before the next small test group.
-
-T00–T08 implementation is committed; later T05–T08 backend builds/deployments failed. T10's config repair is uncommitted in Changes, with owner build/release acceptance pending. T04's remaining runtime/visual checks, T05/T06's unverified schema/acceptance gates, T07's frontend/return acceptance and T08's measurements/runtime checks remain distinct work. The October 18 snapshot/preservation record is complete to its stated limits; fresh populated-copy rehearsal for the actually pending release chain, recovery switching, nonempty-heart backfill and transaction races remain unverified.
+1. **Deploy T05/T06 Database Migrations & Live Backend (T12).** Follow database migration procedure, take a backup snapshot, apply `20261019000000_chain_disconnect_receipts` and `20261020000000_mero_color_collection`, and verify Render deployment with T10 repair.
+2. **Configure Production Email (T14).** Set `RESEND_API_KEY` and `MAIL_FROM` on Render so real registration OTP works without relying on local fallback.
+3. **Stabilize CI Tests (T13).** Ensure backend Jest configuration handles ESM `@nestjs/passport`.
+4. **Mitigate Cold-Start Friction (T08/T15).** Test and measure first-action latency; provide honest waiting states in the UI for server spin-up.
+5. **Final Field Acceptance (T09).** Exercise full multi-day journey with real accounts.
 
 ## Scope and completion
 
-The active roadmap contains the original ten product tasks (T00–T09), the owner-requested P0 release repair T10, and locally implemented Journey task T11 awaiting owner verification. Existing issue mappings #55–#64 remain unchanged; T10/T11 have no assigned issue numbers. T11 does not change the immediate release order. The existing Three.js Mero is already integrated; support and verify it within the current tasks rather than listing its integration as future work. New mascot/rendering expansion, articles, localization, charity/community features, analytics, flexible schedules, store distribution and broader redesigns remain outside this iteration.
-
-Keep changes reviewable using the repository's OpenSpec workflow; T10 is a configuration bug fix under its proposal exception. T00–T08 code is committed; T10 is implemented locally and uncommitted. The October 18 release/migrations remain historical evidence; the later Render failures and current observed live revision are recorded above. Every new migration requires a current backup, populated-copy rehearsal and compatible recovery plan. T10 started with a clean working tree at `37ba0e3`, registered the P0 task before editing, corrected the backend path base and inspected effective resolver output/source/diff. No build, tests, typecheck, OpenSpec validation, client generation/schema validation, database action, new live HTTP probe, deployment, release tag, commit, push or external issue/board synchronization was performed in this fix session. Earlier read-only diagnosis and remote failed-build evidence are distinct from local execution.
-
-GitHub tracking is historical context: tasks T00–T09 were previously mapped to issues ([#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64)), and obsolete/duplicate pre-pilot issues (#20, #44, #48–#54) were previously closed. Current issue/board states were not queried or changed for this update. The owner will handle any later synchronization from this local roadmap.
+The active roadmap spans tasks **T00–T15**, with each task mapped directly to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) and tracked on the GitHub Project Board. Tasks T00–T04, T10, and T11 are completed and closed. Tasks T05–T09 are implemented in code and undergoing release/field acceptance. Tasks T12–T15 address post-pilot release stabilization. Unnecessary pre-pilot issues have been closed and pruned. All work strictly maintains the project principles: minimal UI, quiet support, server-authoritative calendars, and respect for user progress.
