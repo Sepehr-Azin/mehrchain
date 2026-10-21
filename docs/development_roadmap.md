@@ -1,11 +1,14 @@
 # MehrChain — Next iteration
 
 > Updated: **2026-10-21 (Asia/Tehran)**. Iteration deadline completed.
-> **Current Focus:** Post-pilot release stabilization and friction resolution.
+> **Current Focus:** Post-pilot release stabilization, owner-requested product corrections, and a gated signed Android v1 release.
 > **Pilot Feedback:** An initial two-person pilot was conducted and core signup/Chain interactions operated. However, notable friction and gaps were identified: free-tier Render 15-minute spin-down and Cloudflare Pages proxy 524 timeouts, unconfigured Resend credentials on Render for real email verification, and pending production database migrations for T05 and T06.
-> **Codebase State:** Tasks T00 through T11 are fully implemented and committed on `main`. T04 is in `9066570` (Issue #59 closed/Done); T05 is in `ed38dd6` (Issue #60); T06 is in `ddee9ff` (Issue #61); T07 is in `023b42d` (Issue #62); T08 is in `37ba0e3` (Issue #63); T10 is in `9c981d1` (Issue #66 closed/Done); T11 is in `370a0c2` (Issue #67 closed/Done).
+> **Codebase State:** T00–T08, T10 and T11 have committed implementations on `main`; T09 is field acceptance. Implementation does not establish release acceptance, and the October 21 product corrections below remain unimplemented. T04 is in `9066570` (Issue #59 closed/Done); T05 is in `ed38dd6` (Issue #60); T06 is in `ddee9ff` (Issue #61); T07 is in `023b42d` (Issue #62); T08 is in `37ba0e3` (Issue #63); T10 is in `9c981d1` (Issue #66 closed/Done); T11 is in `370a0c2` (Issue #67 closed/Done).
 > **Release Blocker Repaired (T10):** Webpack shared-module resolution failure on Render was resolved by adding `baseUrl: "../.."` to `apps/mehrchain-backend/tsconfig.app.json` (committed in `9c981d1`).
 > **New Stabilization Tasks Created:** T12 (#68) for pending migration deployment & release verification; T13 (#69) for backend Jest ESM CI fix; T14 (#71) for production Resend email configuration; T15 (#72) for cold-start latency & proxy timeout mitigation.
+> **October 21 Owner Additions:** T16 restores the minimal UI, visible optional Why and direct habit deletion; T17 completes optional unique username management and login; T18 adds opt-in GitHub release update discovery. These three tasks are planned in this file only; GitHub issues/Project items have not been created in this update. Their execution order follows existing release blockers rather than their numeric IDs.
+> **Android Evidence (October 21):** [APK workflow run 39544902232](https://github.com/farzad-bahadorifar/mehrchain/actions/runs/39544902232), for `752e199`, failed at backend tests; frontend tests, Capacitor sync, APK build and artifact upload were skipped. The local Android web bundle is dated August 30 (`main-SVIVLEG6.js`), whereas the local web build is dated October 20 (`main-6I3XOFP2.js`). Current native assets are not synchronized with the latest web changes. No fresh APK or native acceptance is claimed.
+> **Live-check limit (October 21):** direct Render and Pages `/api/version` reads both timed out after 40 seconds in this review. The current live SHA/schema and applied migration history could not be established; T12 must inspect them before deciding what remains to deploy. No production database was queried or changed here.
 
 ## Product rules
 
@@ -18,6 +21,9 @@ People should have room to grow through choice, small steps and real support. A 
 - **Respectful disconnect:** ask a reason, preview what is shared and deliver it privately to the partner. Include a non-disclosing choice.
 - **Mero:** fixed name. The current implementation uses adaptive Three.js rendering with animation and static/fallback behavior; the original static-only T01 direction has been superseded in code by `31e965f` and `657eab1`. T06 applies the selected named color to the existing 3D/fallback mascot, with permanent slots and optional habit/accepted-Chain progress paths. Preserve motion/device safeguards and keep names attached to colors.
 - **Minimal UI:** one primary action per card, one completion check, secondary information in details. Desktop PWA content stays compact even in a maximized window.
+- **Owner correction (October 21):** remove long explanatory panels/copy from onboarding and app screens, plus redundant navigation banners/links. Keep necessary short labels, validation, save errors and confirmation consequences. The optional habit Why input is always visible in habit forms, starts empty and uses a placeholder; it must not be hidden in an optional accordion or populated with sample motivation.
+- **Personal motivation:** only a reason deliberately entered by the user qualifies for the pre-deletion reflection and any future motivation reminder. Blank/sample values do not qualify. Habit Why is private and distinct from a Chain disconnect explanation; future Chain behavior must not expose it to partners implicitly.
+- **Removal choices:** direct permanent deletion must be available from the active habit on Home without first archiving it. Show the user's custom Why before confirming deletion. Keep cancellation and archive as separate choices; automatic two-missed-day archiving and history-preserving restore remain unchanged.
 - **Honest feedback:** confirm saves before showing success; preserve input and allow retry on failure. Use short English copy, accessible controls and restrained feedback.
 
 Implemented in T02/T03: persisted account IANA timezone; no missed-day penalty for a partial creation/restore date; Custom counts completed days; finite goals offer Continue or Archive when reached. Existing accounts/history retain UTC, and signing in or changing device timezone does not change an account's zone. The October 18 migration preserved those historical fields and UTC defaults. On October 20 the owner selected T06 scenario C: first earn a permanent color slot through one 21-day habit streak, then earn more shared slots through completed account dates or distinct accepted Chain partners. The precise contract is recorded under T06 below; this is not a global streak or an obligation to connect.
@@ -28,7 +34,7 @@ Implemented in T05 (`ed38dd6`): an explicit manual reason, Cancel, private previ
 
 ## Implementation order
 
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. All tasks map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) and are tracked on the GitHub Project Board.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. T00–T15 map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72). T16–T18 are new local roadmap tasks with issue/Project synchronization pending. Task IDs are stable references, not execution order; use the release sequence below.
 
 | Task | Issue | Implementation | Commit | Status | Acceptance evidence in repository |
 | --- | --- | --- | --- | --- | --- |
@@ -39,15 +45,18 @@ Implemented in T05 (`ed38dd6`): an explicit manual reason, Cancel, private previ
 | T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Complete / pushed | `9066570` | Done | Idempotent hearts, allowance ledger migration verified on production |
 | T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Complete / pushed | `ed38dd6` | In Progress | Implementation complete; migration pending release gate (T12) |
 | T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Complete / pushed | `ddee9ff` | In Progress | Permanent 21-day color collection implemented; migration pending (T12) |
-| T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Complete / pushed | `023b42d` | In Progress | Daily rules explanation, return flow, Journey history copy in place |
+| T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Historical implementation / pushed | `023b42d` | Needs correction (T16) | Long help panels, return links and collapsed Why superseded by October 21 owner direction |
 | T08 | [#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63) | Complete / pushed | `37ba0e3` | In Progress | Foreground refresh deduplication & latency probe script committed |
 | T09 | [#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64) | Field acceptance | Pilot executed | In Progress | Two-person pilot completed; multi-day & edge case validation remaining |
 | T10 | [#66](https://github.com/farzad-bahadorifar/mehrchain/issues/66) | Complete / pushed | `9c981d1` | Done | Backend tsconfig `baseUrl` repair resolved webpack shared-module error |
 | T11 | [#67](https://github.com/farzad-bahadorifar/mehrchain/issues/67) | Complete / pushed | `370a0c2` | Done | Journey tab refactored: Active habits, Best streak, Active Chains, Calendar |
 | T12 | [#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68) | Pending execution | Scripts prepared | Ready (P0) | Release Gate: Apply T05/T06 migrations to Neon, verify live Render backend |
-| T13 | [#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69) | Pending execution | Config to update | Ready (P1) | Fix backend CI test suite ESM compatibility (`@nestjs/passport`) |
+| T13 | [#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69) | Local config correction / uncommitted | — | Awaiting verification (P1) | Passport ESM transform configured; standard backend tests and APK CI not run |
 | T14 | [#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71) | Configuration | Render dashboard | Ready (P1) | Configure `RESEND_API_KEY` and `MAIL_FROM` on Render production |
 | T15 | [#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) | Pending execution | UI & Proxy config | Ready (P1) | Mitigate free-tier cold-start timeouts and proxy connection friction |
+| T16 | Pending issue | Planned | — | Ready (P1; v1 gate) | Minimal UI correction across T03/T06/T07/T11; visible empty Why; direct delete; collection API diagnosis |
+| T17 | Pending issue | Planned | — | Planned (P1; v1 gate) | Optional unique username add/edit/remove, server availability/uniqueness and working identifier login |
+| T18 | Pending issue | Planned | — | Planned (P1; v1 gate) | GitHub stable-release update notice, opt-in APK update and consistent release/version metadata |
 
 The T00–T08 handoffs and OpenSpec checklists are historical notes. Their uncommitted/not-run wording is superseded only by evidence recorded here: T05's verified push; T06/T07/T08 commits and delivery to failed Render backend builds; successful remote Prisma generation in the inspected T06/T08 logs. No local build/test or successful later release is inferred. These historical files are not edited by T10. The October 18 backend results precede T05–T08 and do not validate their code/schema or prove frontend/provider/race acceptance.
 
@@ -222,11 +231,15 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 
 **Acceptance:** cancel changes nothing; manual disconnect updates both sides and the partner receives the chosen reason once. Verify offline return, retries, multiple relationships and account deletion. No chat, email or push infrastructure is needed.
 
+**October 21 motivation follow-up:** the habit's personal Why and this task's disconnect reason are different data and behaviors. The owner will explain the absence/at-risk-Chain notification business rules during the T05 follow-up. T16 preserves a usable custom Why now. Before scheduling reminder implementation, define the exact account-day trigger (including one miss/approaching a second miss), delivery channel, deduplication, consent/privacy, Chain behavior and no-Why alternative. Do not infer those rules from the existing two-missed-day archive rule or claim that T05 already implements them. The v1 baseline below includes Why capture and deletion reflection; this new reminder engine remains unscheduled pending that definition.
+
 ### T06 — Permanent named-color collection with two progress paths ([#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61))
 
 **Scope:** compact profile/Mero collection, server-owned milestone/progress/preferences, completion and accepted-Chain integration, historical backfill and additive release migration. Depends on T02/T03/T04/T05.
 
 **Status: In Progress ([#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61)).** Scenario C implemented October 20 in `ddee9ff`. Additive release migration `20261020000000_mero_color_collection` prepared. Render deploy will be verified in clean release following T10 fix; database migration is tracked under T12. See historical [T06 handoff](t06_review_handoff.md).
+
+**October 21 screenshot defect:** Profile shows `Cannot GET /api/mero/collection?ngsw-bypass=true`. T12 must establish the actual deployed revision/schema; T16 must compare direct/proxied routing and fix the collection UI's raw-error presentation. A missing route must not be diagnosed as a database migration failure without evidence. Preserve the collection and its earned capacity contract below.
 
 **Product contract (implementation baseline):**
 
@@ -253,6 +266,8 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 **Scope:** contextual copy, create/edit habit, Journey/history, archive and return states. Integrates T02–T06.
 
 **Status: In Progress ([#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62)).** Implemented October 20 in `023b42d`. Contextual copy, single missed day step, and account calendar history implemented. Awaiting owner visual/PWA acceptance. See historical [T07 handoff](t07_review_handoff.md). No new API, schema, dependency or migration. Existing T02–T06 lifecycle, heart allowance, private reason/receipt and collection contracts are retained.
+
+**Superseded product direction (October 21):** the checked items below record what shipped in `023b42d`, not the newly accepted UI contract. The owner rejects the long help/explanation sections, redundant archive/collection navigation links and collapsed Why input. T16 removes those surfaces and restores a visible optional reason and direct delete. Preserve calendar/history correctness, guarded invite continuation and archive/restore behavior. T07 cannot pass final acceptance until T16 is accepted.
 
 - [x] Shared daily-rule help in onboarding, new/edit habit and invite quick-create, with collapsed help on Dashboard/Journey: account timezone midnight, once per date, Endless/Custom completed-day goals, partial-date exemption and two-missed-date archive/disconnect. Contextual one-miss, archived-return, anonymous-heart and unfilled earned-slot guidance adds no overlay or repeated onboarding.
 - [x] One missed date keeps Complete today as the action, explaining streak 1 and preserved cumulative effort. Dashboard links to Journey's open archive list; explicit Restore confirms preservation and links to today's step. Restore/reconnect and finite-goal behavior remain server-owned, without automatic revival or catch-up debt.
@@ -294,6 +309,8 @@ The October 17 investigation could not verify production. October 18 live HTTP a
 - [ ] Verify real signup/login, stable identity, sign-out/in, reload, invite-led signup, solo/public habits and reciprocal Chain acceptance using two independent browser sessions.
 - [ ] Cover midnight, one miss, two misses, long absence, restore/reconnect, finite goal, day 21, multiple hearts and reason delivery. Use a controlled clock for arithmetic and real PostgreSQL for transaction/race checks; distinguish simulated dates from observed days.
 - [ ] Verify slow/unavailable API, retry, expired session and account switch. Check deletion with disposable accounts, old-token denial and preservation of the other user's data. Confirm an updated PWA receives the new UI without losing in-flight work.
+- [ ] Accept T16–T18 on the reviewed release revision: minimal screens, custom/blank Why and direct deletion; username add/edit/remove, concurrent claims and both login identifiers; stable-release update notice, dismissal/retry and no notification for the same/older/preview version.
+- [ ] Install the freshly synchronized signed APK on a real Android phone. Verify real Google signup/login, email/username login, invite return, completion, Chain/heart, Profile collection and deletion. If WebView Google auth fails, repair that flow before declaring the Android release accepted; a successful PWA provider flow is separate evidence. Verify an APK upgrade with the same app ID/signing certificate and a higher versionCode preserves account/session and habit data.
 - [ ] Record tested frontend/backend revisions, migration names, commands, outcomes and defects in a durable acceptance record; link sanitized evidence. Keep secrets, tokens, account dumps and private backups out of version control. Use the existing [test handoff](v1_test_and_release_handoff.md) and [database procedure](database_migration_procedure.md) for relevant setup/recovery.
 - [ ] Exercise recovery on a disposable populated branch, including connecting the previous compatible backend and verifying data after switching/restoration. The retained recovery snapshot and successful copy comparison are prerequisites, not a completed failover/rollback drill. Agree retention/cleanup of recovery branches after acceptance; do not discard the recovery branch merely because the temporary rehearsal expires.
 
@@ -336,16 +353,20 @@ Implementation follows the recommended **Active habits / Best current streak / A
 - [ ] Apply `20261019000000_chain_disconnect_receipts` (T05) via `scripts/release-migrate.cjs deploy`.
 - [ ] Apply `20261020000000_mero_color_collection` (T06) via `scripts/release-migrate.cjs deploy`.
 - [ ] Verify Render backend deployment succeeds with the T10 fix and starts cleanly.
-- [ ] Verify `/api/version` returns 200 with the matching release commit SHA and all 10 schema readiness probes pass.
+- [ ] Verify direct Render and Pages `/api/version` return 200 with the matching intended release commit SHA and all required schema readiness probes pass (10 in the current source; include any added by later tasks). Deploy/refresh the matching frontend too.
+- [ ] Compare direct/proxied collection route behavior for the Profile screenshot defect; distinguish an unavailable controller/old revision from a missing schema or an authentication failure. Record the finding for T16.
 
 ### T13 — Fix backend CI test suite ESM compatibility (@nestjs/passport) ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69))
 
 **Priority:** P1  
-**Status: Ready ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69)).**
+**Status: Local configuration correction prepared; verification pending ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69)).**
 
 **Scope:** Jest / ts-jest configuration for `apps/mehrchain-backend`. Standard `npx nx test mehrchain-backend` fails to load ESM `@nestjs/passport`.
-- [ ] Update `apps/mehrchain-backend/jest.config.ts` with transformIgnorePatterns or ts-jest ESM presets.
-- [ ] Ensure all 15 backend suites / 124+ tests pass cleanly in standard CI without manual overrides.
+- [x] Update the actual backend config, `apps/mehrchain-backend/jest.config.cts`, to allow transformation of `@nestjs/passport` while retaining the dependency ignore for other packages and the PnP-file ignore. Enable `allowJs` only in `tsconfig.spec.json` so the existing ts-jest transform can compile that package's JavaScript into CommonJS.
+- [ ] Ensure every current backend suite passes cleanly in standard CI without manual overrides; record the actual suite/test counts rather than reusing October 18's historical 15/124 result.
+- [ ] Rerun the APK workflow on the reviewed revision and verify it reaches frontend checks, `mobile:build`, Capacitor sync and APK artifact creation. The October 21 run failed before these stages.
+
+**October 21 local handoff:** T12 remains the first operational release gate. This session is restricted to reviewable working-tree changes, so its production migrations/deployment were not attempted; T13 is the next code-only correction. Source inspection confirmed installed Passport 12 declares `type: module` and exports ESM `.js` files. The fix retains the existing CommonJS runner, JWT/schedule test mappings and production compiler settings. No build, test, typecheck, dependency install, Prisma generation/migration, workflow dispatch, commit or push was performed. After review, run the unmodified `npx nx test mehrchain-backend` and record actual results; then run the APK workflow with publication disabled. This local configuration change does not establish a passing suite, APK creation or T12 release acceptance.
 
 ### T14 — Production email delivery setup (Resend API key & sender config) ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71))
 
@@ -363,18 +384,93 @@ Implementation follows the recommended **Active habits / Best current streak / A
 **Status: Ready ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72)).**
 
 **Scope:** User experience during Render backend spin-up (15-min idle) and Cloudflare Pages 524 timeouts.
-- [ ] Enhance frontend loading indicator to clearly communicate cold-start wake-up ("Waking up server, please allow up to 45 seconds...").
-- [ ] Increase Cloudflare Pages Functions proxy timeout or implement exponential backoff retry on client for 504/524 responses.
+- [ ] Use a brief honest pending state and actionable retry for cold-start wake-up, consistent with T16's minimal UI; do not add persistent explanatory paragraphs or promise a fixed wait time without measurements.
+- [ ] Inspect the actual Pages/Render timeout limits before choosing a proxy change; do not assume every timeout is configurable. Bound safe read retries/backoff for 504/524 responses; preserve idempotency and explicit retry semantics for writes.
 - [ ] Measure idle vs warm first-action response times using `scripts/measure-access-latency.cjs`.
+
+### T16 — Restore minimal screens, visible Why and direct habit deletion
+
+**Priority:** P1, required before v1 product acceptance; first of the three owner additions.
+
+**Status:** Ready for scoped correction; no implementation or GitHub issue yet.
+
+**Dependencies:** use T12's deployed-route/schema findings for the collection defect. Integrates T03/T05/T06/T07/T11. Update the affected OpenSpec daily-return/lifecycle deltas when implementing; preserve historical handoffs as evidence.
+
+**Scope and acceptance:**
+
+- [ ] Remove long explanatory sections from onboarding, habit create/edit/quick-create, Home, Journey, Chain and Profile, including `How daily habits work`, `About your progress` and repeated timezone/rule prose. Keep short functional labels, input validation and concise confirmation consequences.
+- [ ] Remove the Home archived-return banner and `Choose an archived habit to restore` link, plus equivalent redundant navigation links in Journey/Chain (including the collection shortcut inside explanatory copy). Navigation stays available through the bottom bar; restore stays in Journey's archived list.
+- [ ] Place each archived habit's trash action at the right edge of its action row, keeping Restore accessible and alignment consistent on mobile/desktop and both themes.
+- [ ] Show an optional, empty Why input directly in onboarding and in-app habit create/edit forms, including Chain quick-create where applicable. Use a clear label/placeholder such as `Why does this habit matter to you?`; placeholders never become submitted values. Retain a real user's reason when editing. The current source already starts new Why state empty, but hides it in details; verify shipped/cached clients rather than assuming the old sample is still the current default.
+- [ ] Define and preserve custom-motivation eligibility: blank/whitespace and known app-supplied sample values, including `To prove to myself small steps matter`, do not qualify. Inspect legacy data/default provenance before any normalization; preserve actual user-written reasons and add an additive migration/metadata only if evidence requires it. No blanket destructive rewrite of existing reasons.
+- [ ] Restore direct permanent deletion of an active habit from Home without an archive prerequisite. The compact dialog offers Keep/Cancel, Delete permanently and a distinct Archive choice. Render a qualifying custom Why visibly before the destructive confirmation; omit the reflection when no personal reason exists. Cancellation changes nothing; failed requests retain the habit and allow retry.
+- [ ] Retain authorized server-side deletion, linked-Chain/invite cleanup and neutral T05 lifecycle receipts. Permanent deletion follows the existing history-deletion contract; Archive preserves history. Already-earned Mero slots/counters stay permanent and unrelated habits/partner data remain intact.
+- [ ] Diagnose/fix Profile collection routing against T12's matching deployment and proxy, verify the refresh action, and replace raw `Cannot GET ...` output with a short useful error/retry state. Do not remove the collection feature to hide the defect.
+- [ ] Verify the requested screenshots' corrections at phone widths and in the installed PWA; cover custom/empty/sample Why, cancel/archive/delete, reload and failed writes. Link final evidence from T09.
+
+### T17 — Complete optional unique username management and identifier login
+
+**Priority:** P1, v1 scope after T16 and operational auth prerequisites.
+
+**Status:** Planned; OpenSpec auth/profile proposal required before implementation. No GitHub issue yet.
+
+**Dependencies:** T12/T13 for a working release/checks; T14 for verified password setup/recovery; T16 takes product-correction precedence.
+
+**Current source baseline:** Prisma already has required unique `User.username`; email signup collects it, Google signup generates one, and `AuthService.login` queries email OR username. However, `LoginDto` still requires `@IsEmail()` and onboarding rejects identifiers without `@`. Profile has no username add/edit/remove flow. This is completion/correction of an existing partial capability, not a wholly new login system.
+
+- [ ] Make the user-facing username optional and server-owned, with authenticated Profile add/edit/remove for both email and Google accounts. Choose a backward-compatible nullable-field/migration or explicit public-handle model; stable user IDs, account identity, habits, Chains and Mero ownership must not depend on a mutable username.
+- [ ] Define one canonical case-insensitive username contract (reuse the existing 3–20 English letters/digits/underscore convention unless explicitly revised), availability response and behavior for edited/deleted handles. Preserve valid existing names and distinguish generated Google defaults from a user-selected handle.
+- [ ] Add bounded/debounced server availability checks, but enforce normalized uniqueness atomically at save time with a database constraint and a useful conflict response. Availability alone does not reserve a name. Verify simultaneous claims, invalid values, unchanged own name and unauthorized edits.
+- [ ] Fix API validation and frontend login so email or the current username plus password actually reaches authentication; keep existing email clients compatible. Decide whether `@username` is accepted and align placeholder, normalization and validation. Editing/removing a username invalidates that old handle for the account while email/Google access remains available.
+- [ ] For Google-created accounts, offer a verified password-setup path before username/password login is advertised. Do not treat the generated internal credential as a usable password or change the verified email/account identity.
+- [ ] Verify add/edit/remove and both login methods after reload, logout/login and another device, including blank-username accounts, Google accounts, case collisions, stale UI/session responses and preserved invites/Chains. Rehearse any additive migration on populated data and include it in the release gate.
+
+### T18 — Offer updates when a newer GitHub release is available
+
+**Priority:** P1, after T16/T17 and before the signed public v1 release. The v1 app must contain discovery so it can offer v1.0.1 and later updates.
+
+**Status:** Planned; OpenSpec version/update proposal required before implementation. No GitHub issue yet.
+
+**Dependencies:** T13's functioning APK pipeline and T17's final app/schema contract before final acceptance.
+
+**Current source baseline:** `VersionService` only tracks a hard-coded app version/changelog and Angular service-worker `VERSION_READY`; it does not query GitHub Releases or update installed APKs. `package.json` says `0.0.0`, the UI says `1.0.0`, and Android has `versionName "1.0"` / `versionCode 1`. Resolve this mismatch before release.
+
+- [ ] Read trusted release metadata for `farzad-bahadorifar/mehrchain` through a bounded/cacheable public endpoint, without embedding credentials. Compare semantic versions against the running app; only a newer eligible stable release with a valid Android asset offers an APK update. Ignore drafts, previews/RCs, identical/older versions and malformed/missing assets. A commit/push alone is not a new app release.
+- [ ] Show a compact in-app notice with the available version and Update/Later choices. Update opens the verified signed APK download/Android installation flow with the user's consent. Handle unavailable network, failed metadata/download and repeated dismissal without blocking habits or losing drafts; do not imply silent APK installation.
+- [ ] Keep PWA service-worker updates and native APK updates as platform-specific flows under consistent version UI; a PWA reload must not be presented as an Android binary upgrade.
+- [ ] Establish consistent build/release version metadata across UI, package, Android and Git tags; use a strictly increasing Android versionCode for each distributed update and retain the app ID/signing key.
+- [ ] Repair `.github/workflows/build-apk.yml` prerelease detection before publishing another RC: its current `v1.*` condition incorrectly classifies `v1.0.0-rc*` as stable. GitHub's October 21 release listing confirms rc1–rc3 have `prerelease: false`. Stable update discovery must exclude RC tag suffixes even while historical release flags remain incorrect.
+- [ ] Make official publication require a verified signed release artifact; do not publish debug/unsigned fallback binaries as the official APK. Make required generation/build/signing checks fail visibly rather than hiding failure with `|| true`. Verify APK identity, certificate, versionName/versionCode and checksums as part of the gate below.
+- [ ] Verify newer/same/older/prerelease metadata and Later/retry behavior; test an actual same-key APK upgrade from a test build to a higher-version build without account/habit loss. Record real-device results in T09; simulated metadata is separate evidence from actual installation.
 
 ## Next actions and release sequence
 
-1. **Deploy T05/T06 Database Migrations & Live Backend (T12).** Follow database migration procedure, take a backup snapshot, apply `20261019000000_chain_disconnect_receipts` and `20261020000000_mero_color_collection`, and verify Render deployment with T10 repair.
-2. **Configure Production Email (T14).** Set `RESEND_API_KEY` and `MAIL_FROM` on Render so real registration OTP works without relying on local fallback.
-3. **Stabilize CI Tests (T13).** Ensure backend Jest configuration handles ESM `@nestjs/passport`.
-4. **Mitigate Cold-Start Friction (T08/T15).** Test and measure first-action latency; provide honest waiting states in the UI for server spin-up.
-5. **Final Field Acceptance (T09).** Exercise full multi-day journey with real accounts.
+The owner additions are ordered **T16 → T17 → T18**, after existing operational blockers. This ordering supersedes the older numeric implementation sequence. All three are included in the proposed public v1 baseline; the unspecified Why reminder engine remains the T05 follow-up described above.
+
+| Order | Work | Exit condition |
+| --- | --- | --- |
+| 1 | **T12 — establish a working matching release** | Inspect actual revision/migration history first, back up/rehearse, apply only pending reviewed migrations, verify matching Render/Pages identity and schema readiness; diagnose collection routing |
+| 2 | **T13 — unblock normal tests and APK CI** | Standard backend checks pass and the workflow reaches Capacitor sync/APK artifact creation |
+| 3 | **T14 — real email delivery** | Registration/verification and password reset actually deliver and work for intended users; this provides T17's delivery prerequisite |
+| 4 | **T08/T15 — access reliability** | Measured idle/warm behavior, bounded waits/retries and usable failure recovery on real target networks |
+| 5 | **T16 — owner product corrections** | Minimal screens, always-visible empty optional Why, custom-reason deletion reflection, direct delete and working collection |
+| 6 | **T17 — username completion** | Server-enforced optional unique handle management and end-to-end email/username/Google-account access; any new migration deployed through the same gate |
+| 7 | **T18 — opt-in release update discovery** | Correct stable-version comparison, compact update prompt, coherent metadata and safe signed-release pipeline |
+| 8 | **T09 — accept the final candidate** | Current automated checks, deployed two-account/PWA flows, daily/absence/Chain cases, real Android auth and upgrade acceptance; record exact revisions and resolve release blockers |
+| 9 | **Android v1 release gate below** | Fresh accepted signed APK, matching commit/schema/version, release notes/checksum and verified installation; then `v1.0.0` publication |
+
+**Starting instruction for the next work session:** “Read this roadmap and the database procedure. Start T12 by inspecting the actual Render/Pages revision and applied migration history; do not repeat an already-applied migration. Complete backup/rehearsal and the matching deployment gate, record evidence, then continue T13. Use the table above for the remaining tasks.” Start implementation from the first unmet exit condition, not from T00 or an assumption that a checked historical item is current acceptance. This roadmap edit itself performs no production changes or feature implementation.
+
+## Android synchronization and public v1 release gate
+
+**Capacitor status (October 21):** configured dependencies are `@capacitor/{core,android,ios,cli} ^8.5.0`; that is a dependency declaration, not proof of asset sync or the latest available framework version. The ignored local Android assets still contain the August 30 build. `npm run mobile:build` already builds the production frontend and runs `cap sync`; the APK workflow calls it on its checked-out revision, but the latest inspected workflow skipped it after failing backend tests. No automatic native update follows merely from editing/pushing web code. This is distinct from T06's earned-color *capacity*, whose formula is preserved above and whose runtime still needs T12/T09 evidence.
+
+1. **Get a current test APK without publishing.** After T13 and the desired feature changes pass, run **Build & Release Android APK → Run workflow** on the reviewed branch with `publish_release=false`, or use a normal main/PR build. Download the new `mehrchain-apk-builds` artifact and record its SHA/run ID; do not reuse the October 6 handoff's artifact, whose documented retention ended October 20. Locally, the equivalent asset step is `npm run mobile:build`; this runs Capacitor sync but does not itself build/sign an APK. Gradle/CI performs APK packaging afterwards.
+2. **Freeze a candidate and accept it.** Complete T12–T18 and T09's applicable checks on the exact candidate, including matching production frontend/backend/schema, real Android Google and email/username entry, collection, save/retry, direct delete, and multi-account flows. Record multi-day field results separately from controlled-clock checks. Resolve/disposition existing release-risk findings from the test handoff; historical test counts or old successful APK runs cannot accept this revision.
+3. **Prepare the signed candidate before a public tag.** Reconcile UI/package/Android version to `1.0.0`; select a versionCode greater than every previously distributed build and keep it increasing for future updates. Confirm the four signing secrets from the [signing guide](android_signing_guide.md) privately, the signing certificate/app ID, correct production API/Google config, fresh build identity and release notes. Build with publication disabled, verify the signed APK and checksum, install it on a phone and test a same-key upgrade. Keep signing material private. T18 must fix RC classification and block official publication without a signed artifact first.
+4. **Tag only the accepted commit.** Check that remote tag `v1.0.0` does not already exist; the October 21 release listing only established existing previews through `v1.0.0-rc3`. After acceptance, create an annotated `v1.0.0` tag on the reviewed committed revision and push that tag. The existing `v*` workflow immediately builds and publishes a public GitHub Release when successful, so pushing the tag is the publication step, not a harmless way to request a test APK. No tag, push or Release is performed by this roadmap update.
+5. **Verify the published result.** Verify the tagged workflow's signed artifact against the accepted candidate's identity/certificate/version, published checksum and release notes; download/install the actual release and confirm a later eligible release produces T18's optional update notice. If Android auth/installation is still failing, Android v1 is not ready even if PWA acceptance passes. A PWA-only release requires an explicit separate scope decision.
 
 ## Scope and completion
 
-The active roadmap spans tasks **T00–T15**, with each task mapped directly to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) and tracked on the GitHub Project Board. Tasks T00–T04, T10, and T11 are completed and closed. Tasks T05–T09 are implemented in code and undergoing release/field acceptance. Tasks T12–T15 address post-pilot release stabilization. Unnecessary pre-pilot issues have been closed and pruned. All work strictly maintains the project principles: minimal UI, quiet support, server-authoritative calendars, and respect for user progress.
+The active roadmap spans **T00–T18**. T00–T15 retain their existing GitHub issue references; T16–T18 are local planned tasks awaiting issue/Project synchronization. T00–T04, T10 and T11 retain their recorded completed status. T05–T08 have historical implementations with release/field acceptance outstanding; T07 also requires T16's owner corrections. T09 is acceptance work, T12–T15 are stabilization, and T16–T18 are the newly requested v1 work. Completion requires evidence for the exact released revision, including the signed Android gate; documentation, a push, Capacitor dependency versions or a successful old build do not establish that result.
