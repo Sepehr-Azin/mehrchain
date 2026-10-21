@@ -361,6 +361,8 @@ Implementation follows the recommended **Active habits / Best current streak / A
 **Priority:** P1  
 **Status: Local configuration correction prepared; verification pending ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69)).**
 
+**October 21 remote evidence:** the existing APK run [39645196942](https://github.com/farzad-bahadorifar/mehrchain/actions/runs/39645196942) on `c8d193d` completed the unmodified backend test step successfully. It then failed frontend checks, so web/Capacitor/APK stages were skipped. Pages run `39645194595` succeeded on the same revision. No workflow was dispatched here; backend suite/test counts were not available from the inspected job metadata. T13's ESM correction has remote backend-step evidence, while full APK acceptance remains pending.
+
 **Scope:** Jest / ts-jest configuration for `apps/mehrchain-backend`. Standard `npx nx test mehrchain-backend` fails to load ESM `@nestjs/passport`.
 - [x] Update the actual backend config, `apps/mehrchain-backend/jest.config.cts`, to allow transformation of `@nestjs/passport` while retaining the dependency ignore for other packages and the PnP-file ignore. Enable `allowJs` only in `tsconfig.spec.json` so the existing ts-jest transform can compile that package's JavaScript into CommonJS.
 - [ ] Ensure every current backend suite passes cleanly in standard CI without manual overrides; record the actual suite/test counts rather than reusing October 18's historical 15/124 result.
