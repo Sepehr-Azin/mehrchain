@@ -345,16 +345,16 @@ Implementation follows the recommended **Active habits / Best current streak / A
 ### T12 — Production Release: Deploy pending migrations & verify live Render backend ([#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68))
 
 **Priority:** P0 (Release Gate)  
-**Status: Ready ([#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68)).** Depends on T10.
+**Status: Backend/database release repaired; frontend/PWA acceptance pending ([#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68)).** Depends on T10. See [October 21 execution evidence](t12_release_execution_2026-10-21.md).
 
 **Scope:** Apply pending database migrations and verify fresh Render backend deployment.
-- [ ] Inspect current applied migrations on production Neon DB.
-- [ ] Take a restorable snapshot before executing migrations.
-- [ ] Apply `20261019000000_chain_disconnect_receipts` (T05) via `scripts/release-migrate.cjs deploy`.
-- [ ] Apply `20261020000000_mero_color_collection` (T06) via `scripts/release-migrate.cjs deploy`.
-- [ ] Verify Render backend deployment succeeds with the T10 fix and starts cleanly.
+- [x] Inspect current applied migrations on production Neon DB.
+- [x] Take a restorable snapshot before executing migrations.
+- [x] Apply `20261019000000_chain_disconnect_receipts` (T05) via `scripts/release-migrate.cjs deploy`.
+- [x] Apply `20261020000000_mero_color_collection` (T06) via `scripts/release-migrate.cjs deploy`.
+- [x] Verify Render backend deployment succeeds with the T10 fix and starts cleanly.
 - [ ] Verify direct Render and Pages `/api/version` return 200 with the matching intended release commit SHA and all required schema readiness probes pass (10 in the current source; include any added by later tasks). Deploy/refresh the matching frontend too.
-- [ ] Compare direct/proxied collection route behavior for the Profile screenshot defect; distinguish an unavailable controller/old revision from a missing schema or an authentication failure. Record the finding for T16.
+- [x] Compare direct/proxied collection route behavior: the old live revision lacked the route; the new deployment failed readiness against missing schema. After migration/deployment, both routes return 401 without authentication. Authenticated collection/PWA acceptance remains pending.
 
 ### T13 — Fix backend CI test suite ESM compatibility (@nestjs/passport) ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69))
 

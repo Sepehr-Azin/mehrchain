@@ -12,18 +12,13 @@ async function backup() {
     await client.connect();
     await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
     const records = {};
-    for (const table of [
-      'users',
-      'commitments',
-      'commitment_logs',
-      'chain_connections',
-      'chain_invites',
-      '_prisma_migrations',
-    ]) {
-      const exists = await client.query('SELECT to_regclass($1) AS name', ['public.' + table]);
-      records[table] = exists.rows[0].name
-        ? (await client.query(`SELECT * FROM "${table}"`)).rows
-        : [];
+    // Include the heart allowance ledger and all later release tables, too.
+    const tables = await client.query(
+      "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
+    );
+    for (const { tablename: table } of tables.rows) {
+      const identifier = '"' + table.replace(/"/g, '""') + '"';
+      records[table] = (await client.query(`SELECT * FROM public.${identifier}`)).rows;
       console.log(`${table}: ${records[table].length} rows`);
     }
     await client.query('COMMIT');
