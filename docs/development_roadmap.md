@@ -383,11 +383,11 @@ Implementation follows the recommended **Active habits / Best current streak / A
 ### T15 — Address free-tier cold-start timeouts and proxy connection friction ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72))
 
 **Priority:** P1  
-**Status: Ready ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72)).**
+**Status: Local bounded-read retry correction implemented; idle/PWA acceptance pending ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72)).** See [T15 handoff and warm measurements](t15_access_recovery_handoff.md).
 
 **Scope:** User experience during Render backend spin-up (15-min idle) and Cloudflare Pages 524 timeouts.
-- [ ] Use a brief honest pending state and actionable retry for cold-start wake-up, consistent with T16's minimal UI; do not add persistent explanatory paragraphs or promise a fixed wait time without measurements.
-- [ ] Inspect the actual Pages/Render timeout limits before choosing a proxy change; do not assume every timeout is configurable. Bound safe read retries/backoff for 504/524 responses; preserve idempotency and explicit retry semantics for writes.
+- [x] Use a brief honest pending state and actionable retry for cold-start wake-up, consistent with T16's minimal UI; no persistent explanatory paragraph or fixed wait promise.
+- [x] Inspect provider timeout documentation and checked-in proxies; retain their forwarding contract. GET/HEAD retry transient gateway errors once within the remaining budget; writes are never automatically replayed. Execution of the new retry regression source remains pending.
 - [ ] Measure idle vs warm first-action response times using `scripts/measure-access-latency.cjs`.
 
 ### T16 — Restore minimal screens, visible Why and direct habit deletion

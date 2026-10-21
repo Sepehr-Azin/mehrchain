@@ -50,6 +50,40 @@ describe('API request deadline', () => {
     expect(tracking.finishRequest).toHaveBeenCalledTimes(1);
   });
 
+  it('retries a gateway timeout once for a read, then stops', () => {
+    const error = vi.fn();
+    const url = `${environment.apiUrl}/auth/me`;
+    http.get(url).subscribe({ error });
+    requests.expectOne(url).flush(null, { status: 524, statusText: 'Origin timed out' });
+    vi.advanceTimersByTime(1000);
+    requests.expectOne(url).flush(null, { status: 504, statusText: 'Gateway timeout' });
+    vi.advanceTimersByTime(1000);
+    requests.expectNone(url);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(tracking.startRequest).toHaveBeenCalledTimes(1);
+    expect(tracking.finishRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not replay a write after a 524 response', () => {
+    const error = vi.fn();
+    const url = `${environment.apiUrl}/commitments`;
+    http.post(url, { title: 'Kept draft' }).subscribe({ error });
+    requests.expectOne(url).flush(null, { status: 524, statusText: 'Origin timed out' });
+    vi.advanceTimersByTime(1000);
+    requests.expectNone(url);
+    expect(error.mock.calls[0][0].message).toContain('Refresh to check before retrying');
+  });
+
+  it('cancels a scheduled read retry on unsubscribe', () => {
+    const url = `${environment.apiUrl}/auth/me`;
+    const subscription = http.get(url).subscribe();
+    requests.expectOne(url).flush(null, { status: 504, statusText: 'Gateway timeout' });
+    subscription.unsubscribe();
+    vi.advanceTimersByTime(1000);
+    requests.expectNone(url);
+    expect(tracking.finishRequest).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves unrelated requests outside the API deadline and tracking', () => {
     http.get('https://example.com/asset').subscribe();
     const request = requests.expectOne('https://example.com/asset');

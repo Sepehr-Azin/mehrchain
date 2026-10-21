@@ -11,7 +11,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           req.method === 'GET' || req.method === 'HEAD'
             ? 'Unable to connect to the server. Check your connection, then retry. Your input is kept.'
             : 'Unable to connect to the server. Refresh to check before retrying the change. Your input is kept.';
-      } else if (error.status === 502 || error.status === 503 || error.status === 504) {
+      } else if ([502, 503, 504, 524].includes(error.status)) {
         normalizedMessage =
           req.method === 'GET' || req.method === 'HEAD'
             ? 'The server is temporarily unavailable. Please wait a moment and retry.'

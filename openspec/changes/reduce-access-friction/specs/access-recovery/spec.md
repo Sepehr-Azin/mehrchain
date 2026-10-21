@@ -36,6 +36,12 @@ Temporary session verification failures SHALL retain credentials for explicit re
 - **WHEN** the user dismisses a notice while multiple requests remain pending
 - **THEN** dismissal hides the notice without decrementing the pending-request count
 
+#### Scenario: Transient gateway failure on a safe read
+- **WHEN** an API GET or HEAD returns 502, 503, 504 or 524 within its request budget
+- **THEN** the client retries at most once after a short delay within the remaining budget
+- **AND** cancellation cancels the delayed retry, while writes are never replayed
+- **AND** an exhausted request offers concise retry guidance without assuming a cold-start cause
+
 ### Requirement: Honest access measurements and hosting decision
 
 Measurements SHALL distinguish operator-labeled idle/warm attempts, route,
