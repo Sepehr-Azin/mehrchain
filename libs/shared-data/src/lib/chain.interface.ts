@@ -11,7 +11,7 @@ export type ChainStatus =
 export type ChainInviteStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'CANCELLED';
 
 export interface ChainPartner {
-  username: string;
+  username: string | null;
   name?: string | null;
 }
 

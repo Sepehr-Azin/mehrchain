@@ -49,7 +49,7 @@
         </div>
         <div>
           <h3 class="text-sm font-extrabold text-foreground">
-            &#64;{{ incomingInvite()?.inviterName }} invited you to chain!
+            {{ incomingInvite()?.inviterName }} invited you to chain!
           </h3>
           <p class="text-xs text-muted-foreground mt-0.5">
             Their habit:
@@ -61,7 +61,7 @@
       @if (publicCommitments().length > 0) {
         <div class="space-y-2.5">
           <label class="text-[11px] font-bold text-muted-foreground block">
-            Choose your public habit to link with &#64;{{ incomingInvite()?.inviterName }}:
+            Choose your public habit to link with {{ incomingInvite()?.inviterName }}:
           </label>
           <select
             [value]="inviteSelectedCommitmentId()"
@@ -142,9 +142,20 @@
           <article class="text-xs text-muted-foreground border-t border-border/50 pt-3">
             <p class="break-words text-foreground">
               @if (receipt.reason !== 'HABIT_UNAVAILABLE') {
-                &#64;{{ receipt.partner.username }} disconnected this chain.
+                {{
+                  receipt.partner.username
+                    ? '@' + receipt.partner.username
+                    : receipt.partner.name || 'Your partner'
+                }}
+                disconnected this chain.
               } @else {
-                Chain with &#64;{{ receipt.partner.username }} ended.
+                Chain with
+                {{
+                  receipt.partner.username
+                    ? '@' + receipt.partner.username
+                    : receipt.partner.name || 'your partner'
+                }}
+                ended.
               }
             </p>
             <p class="mt-1 break-words">Your linked habit: {{ receipt.recipientHabitTitle }}</p>

@@ -58,8 +58,8 @@ export class UsersService {
 
   async getPublicProfile(username: string) {
     const clean = username.trim().replace(/^@/, '').toLowerCase();
-    const user = await this.prisma.user.findUnique({
-      where: { username: clean },
+    const user = await this.prisma.user.findFirst({
+      where: { username: { equals: clean, mode: 'insensitive' }, isEmailVerified: true },
       select: {
         id: true,
         username: true,

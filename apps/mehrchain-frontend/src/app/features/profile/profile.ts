@@ -9,6 +9,8 @@ import { CommitmentService } from '../../core/services/commitment.service';
 import { VersionService } from '../../core/services/version.service';
 import { MeroComponent } from '../../shared/components/mero/mero';
 import { MeroMoodService } from '../../core/services/mero-mood.service';
+import { UsernameSettingsComponent } from '../../shared/components/username-settings/username-settings';
+import { PasswordSetupComponent } from '../../shared/components/password-setup/password-setup';
 
 export interface PresetCustomColor {
   name: string;
@@ -26,7 +28,14 @@ export interface ProfileBadge {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, FormsModule, LucideAngularModule, MeroComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    MeroComponent,
+    UsernameSettingsComponent,
+    PasswordSetupComponent,
+  ],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })

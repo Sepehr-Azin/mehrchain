@@ -132,8 +132,6 @@ export class OnboardingComponent implements OnInit {
   // Forgot Password State
   isForgotPasswordMode = signal(false);
   forgotPasswordEmail = signal('');
-  forgotPasswordSubmitted = signal(false);
-  isResettingPassword = signal(false);
 
   toggleSignUpPassword() {
     this.showSignUpPassword.update((v) => !v);
@@ -319,10 +317,10 @@ export class OnboardingComponent implements OnInit {
 
     const username = this.signUpUsername().trim().toLowerCase();
     const email = this.signUpEmail().trim();
-    const password = this.signUpPassword().trim();
+    const password = this.signUpPassword();
 
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    if (!username || !usernameRegex.test(username)) {
+    if (username && !usernameRegex.test(username)) {
       this.signUpError.set('Username must be 3-20 characters (letters, numbers, underscore).');
       return;
     }
@@ -370,7 +368,9 @@ export class OnboardingComponent implements OnInit {
         msg.includes('conflict') ||
         msg.includes('duplicate')
       ) {
-        if (msg.includes('username')) {
+        if (msg.includes('username or email')) {
+          this.signUpError.set('That username or email is already in use.');
+        } else if (msg.includes('username')) {
           this.signUpError.set('This username is already taken. Please pick another.');
         } else {
           this.isDuplicateEmailError.set(true);
@@ -542,7 +542,6 @@ export class OnboardingComponent implements OnInit {
     this.loginError.set('');
     this.isNoAccountFound.set(false);
     this.isForgotPasswordMode.set(false);
-    this.forgotPasswordSubmitted.set(false);
 
     const emailToUse = prefillEmail !== undefined ? prefillEmail : this.signUpEmail().trim();
     if (emailToUse) {
@@ -561,7 +560,7 @@ export class OnboardingComponent implements OnInit {
 
   switchToSignUpFromLogin() {
     const email = this.loginEmail().trim();
-    if (email) {
+    if (email.includes('@') && !email.startsWith('@')) {
       this.signUpEmail.set(email);
     }
     this.closeLoginModal();
@@ -577,34 +576,14 @@ export class OnboardingComponent implements OnInit {
     this.isLoginModalOpen.set(false);
     this.isNoAccountFound.set(false);
     this.isForgotPasswordMode.set(false);
-    this.forgotPasswordSubmitted.set(false);
   }
 
   toggleForgotPassword(show: boolean) {
     this.isForgotPasswordMode.set(show);
     this.loginError.set('');
     this.isNoAccountFound.set(false);
-    this.forgotPasswordSubmitted.set(false);
     if (show) {
       this.forgotPasswordEmail.set(this.loginEmail().trim() || this.signUpEmail().trim());
-    }
-  }
-
-  handleForgotPassword() {
-    if (this.isResettingPassword()) return;
-
-    const email = this.forgotPasswordEmail().trim();
-    if (!email || !email.includes('@')) {
-      this.loginError.set('Please enter a valid email address.');
-      return;
-    }
-    this.loginError.set('');
-    this.isResettingPassword.set(true);
-
-    try {
-      this.forgotPasswordSubmitted.set(true);
-    } finally {
-      this.isResettingPassword.set(false);
     }
   }
 
@@ -614,10 +593,13 @@ export class OnboardingComponent implements OnInit {
     this.loginError.set('');
     this.isNoAccountFound.set(false);
     const email = this.loginEmail().trim();
-    const password = this.loginPassword().trim();
+    const password = this.loginPassword();
 
-    if (!email || !email.includes('@')) {
-      this.loginError.set('Please enter your valid email.');
+    if (
+      !email ||
+      !(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || /^@?[a-zA-Z0-9_]{3,20}$/.test(email))
+    ) {
+      this.loginError.set('Enter your email or username.');
       return;
     }
 

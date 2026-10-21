@@ -55,21 +55,9 @@
           <div class="space-y-1 flex-1">
             <p class="font-bold text-sm text-foreground">Server Connection Issue</p>
             <p class="text-muted-foreground text-xs leading-relaxed">
-              Unable to reach the cloud server. Free servers take 30–50s to wake up, or connection
-              may be restricted by network filtering.
+              Could not connect. Your input is kept; retry when ready.
             </p>
           </div>
-        </div>
-
-        <div
-          class="p-2.5 rounded-xl bg-muted/60 border border-border text-[11px] text-muted-foreground flex items-start gap-2"
-        >
-          <lucide-icon name="info" class="w-3.5 h-3.5 text-primary shrink-0 mt-0.5"></lucide-icon>
-          <span
-            ><strong>Tip:</strong> Connect via VPN (e.g. Germany/Europe) and click
-            <strong>Retry Online</strong>, or choose <strong>Demo Mode</strong> to test
-            locally.</span
-          >
         </div>
 
         <div class="flex flex-col sm:flex-row items-center gap-2 pt-1">
@@ -148,9 +136,9 @@
         <label
           class="block text-xs font-bold text-muted-foreground uppercase mb-1 ml-1 flex justify-between"
         >
-          <span>Username</span>
+          <span>Username (optional)</span>
           <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold lowercase"
-            >Unique ID (3-20 chars)</span
+            >3–20 characters</span
           >
         </label>
         <div class="relative flex items-center">
@@ -165,6 +153,7 @@
             placeholder="your_username"
             autocomplete="username"
             aria-label="Username"
+            maxlength="20"
             autocapitalize="none"
             class="w-full bg-muted/40 rounded-xl py-3.5 pl-10 pr-4 text-sm text-foreground border border-border focus:border-primary focus:bg-card focus:outline-none transition-colors font-medium"
           />

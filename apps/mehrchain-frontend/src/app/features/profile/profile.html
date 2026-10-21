@@ -40,6 +40,20 @@
   }
 
   <!-- Mero keeps a fixed name; existing named-color preferences remain available. -->
+  <app-username-settings />
+  <section
+    class="mb-5 rounded-2xl border border-border bg-card p-4 space-y-3"
+    aria-label="Password settings"
+  >
+    <h2 class="text-sm font-bold text-foreground">
+      {{ currentUser()?.hasPassword ? 'Reset password' : 'Set a password by email' }}
+    </h2>
+    <app-password-setup
+      [email]="currentUser()?.email || ''"
+      [lockedEmail]="true"
+      (saved)="authService.logout()"
+    />
+  </section>
   <div class="bg-card rounded-3xl p-5 border border-border/70 shadow-sm mb-6 text-center">
     <app-mero size="lg" [showGlow]="true" [mood]="meroMood.mood() === 'sad' ? 'sad' : 'happy'" />
     <h2 class="mt-2 text-xl font-bold text-foreground">Mero</h2>

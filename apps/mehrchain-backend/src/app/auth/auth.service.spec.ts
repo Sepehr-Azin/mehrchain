@@ -12,6 +12,7 @@ describe('AuthService (Unit Tests)', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       delete: jest.fn(),
     },
   };
@@ -89,7 +90,7 @@ describe('AuthService (Unit Tests)', () => {
       });
 
       expect(result.requiresVerification).toBe(true);
-      expect(mockPrisma.user.update).toHaveBeenCalled();
+      expect(mockPrisma.user.updateMany).toHaveBeenCalled();
       expect(mockMailService.sendVerificationEmail).toHaveBeenCalled();
     });
   });
@@ -264,6 +265,30 @@ describe('AuthService (Unit Tests)', () => {
   });
 
   describe('googleLogin', () => {
+    it('discards an unverified signup password when Google establishes email ownership', async () => {
+      const passwordHash = await bcrypt.hash('untrusted-password', 4);
+      const existing = {
+        id: 'claimed',
+        email: 'tester@gmail.com',
+        passwordHash,
+        isEmailVerified: false,
+      };
+      mockPrisma.user.findUnique.mockResolvedValueOnce(existing).mockResolvedValueOnce({
+        ...existing,
+        isEmailVerified: true,
+        passwordSetAt: null,
+        authVersion: 1,
+      });
+      const result = await service.googleLogin({ idToken: 'mock_google_tester@gmail.com' });
+      const update = mockPrisma.user.updateMany.mock.calls[0][0];
+      expect(update.where).toEqual({ id: 'claimed', isEmailVerified: false });
+      expect(await bcrypt.compare('untrusted-password', update.data.passwordHash)).toBe(false);
+      expect(update.data.passwordSetAt).toBeNull();
+      expect(update.data.authVersion).toEqual({ increment: 1 });
+      expect(result.user.id).toBe('claimed');
+      expect(result.user.hasPassword).toBe(false);
+    });
+
     it('should log in existing user with mock token', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'google-user-1',
@@ -281,15 +306,15 @@ describe('AuthService (Unit Tests)', () => {
     });
 
     it('should create new verified user for first-time Google login', async () => {
-      mockPrisma.user.findUnique
-        .mockResolvedValueOnce(null) // user by email
-        .mockResolvedValueOnce(null); // username check
+      mockPrisma.user.findUnique.mockResolvedValueOnce(null);
 
       mockPrisma.user.create.mockResolvedValue({
         id: 'new-google-user-id',
         name: 'Google User',
         email: 'newuser@gmail.com',
-        username: 'newuser',
+        username: null,
+        usernameSource: 'none',
+        passwordSetAt: null,
         isEmailVerified: true,
         role: 'USER',
         createdAt: new Date(),
@@ -297,6 +322,8 @@ describe('AuthService (Unit Tests)', () => {
 
       const result = await service.googleLogin({ idToken: 'mock_google_newuser@gmail.com' });
       expect(result.user.email).toBe('newuser@gmail.com');
+      expect(result.user.username).toBeNull();
+      expect(result.user.hasPassword).toBe(false);
       expect(mockPrisma.user.create).toHaveBeenCalled();
     });
   });
@@ -313,7 +340,7 @@ describe('AuthService (Unit Tests)', () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
 
       const result = await service.getMe('user-1');
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ ...mockUser, hasPassword: false });
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
@@ -375,11 +402,8 @@ describe('AuthService (Unit Tests)', () => {
       expect(result).not.toHaveProperty('previewCode');
     });
     it('does not overwrite an unverified username owned by another email', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'other',
-        email: 'other@example.com',
-        isEmailVerified: false,
-      });
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.user.create.mockRejectedValueOnce({ code: 'P2002' });
       await expect(
         service.register({
           username: 'taken',
@@ -388,6 +412,7 @@ describe('AuthService (Unit Tests)', () => {
         }),
       ).rejects.toThrow(ConflictException);
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
+      expect(mockPrisma.user.updateMany).not.toHaveBeenCalled();
     });
   });
 
@@ -399,19 +424,17 @@ describe('AuthService (Unit Tests)', () => {
   ])('rejects invalid Google claims %j without creating a user', async (invalid) => {
     const previous = process.env['GOOGLE_CLIENT_ID'];
     process.env['GOOGLE_CLIENT_ID'] = 'real-web-client';
-    const spy = jest
-      .spyOn(axios, 'get')
-      .mockResolvedValue({
-        data: {
-          email: 'real@example.com',
-          email_verified: 'true',
-          aud: 'real-web-client',
-          iss: 'https://accounts.google.com',
-          sub: 'google-id',
-          exp: String(Math.floor(Date.now() / 1000) + 300),
-          ...invalid,
-        },
-      });
+    const spy = jest.spyOn(axios, 'get').mockResolvedValue({
+      data: {
+        email: 'real@example.com',
+        email_verified: 'true',
+        aud: 'real-web-client',
+        iss: 'https://accounts.google.com',
+        sub: 'google-id',
+        exp: String(Math.floor(Date.now() / 1000) + 300),
+        ...invalid,
+      },
+    });
     try {
       await expect(service.googleLogin({ idToken: 'real-signed-token' })).rejects.toThrow(
         UnauthorizedException,
@@ -427,18 +450,16 @@ describe('AuthService (Unit Tests)', () => {
   it('keeps the same database identity for repeated verified Google sign-ins', async () => {
     const previous = process.env['GOOGLE_CLIENT_ID'];
     process.env['GOOGLE_CLIENT_ID'] = 'real-web-client';
-    const spy = jest
-      .spyOn(axios, 'get')
-      .mockResolvedValue({
-        data: {
-          email: 'real@example.com',
-          email_verified: 'true',
-          aud: 'real-web-client',
-          iss: 'https://accounts.google.com',
-          sub: 'google-id',
-          exp: String(Math.floor(Date.now() / 1000) + 300),
-        },
-      });
+    const spy = jest.spyOn(axios, 'get').mockResolvedValue({
+      data: {
+        email: 'real@example.com',
+        email_verified: 'true',
+        aud: 'real-web-client',
+        iss: 'https://accounts.google.com',
+        sub: 'google-id',
+        exp: String(Math.floor(Date.now() / 1000) + 300),
+      },
+    });
     mockPrisma.user.findUnique.mockResolvedValue({
       id: 'stable-id',
       email: 'real@example.com',

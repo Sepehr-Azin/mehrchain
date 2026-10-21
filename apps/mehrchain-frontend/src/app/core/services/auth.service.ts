@@ -7,7 +7,9 @@ import { CommitmentStore } from '../store/commitment.store';
 
 export interface UserProfile {
   id: string;
-  username: string;
+  username: string | null;
+  usernameSource?: 'legacy' | 'chosen' | 'none';
+  hasPassword?: boolean;
   name?: string;
   email: string;
   role?: string;
@@ -19,7 +21,7 @@ export interface UserProfile {
 export interface RegisterResponse {
   requiresVerification: boolean;
   email: string;
-  username?: string;
+  username?: string | null;
   message: string;
   previewCode?: string;
   isOfflineMode?: boolean;
@@ -78,6 +80,52 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  usernameAvailability(username: string) {
+    return this.http.get<{ username: string; available: boolean }>(
+      `${this.API_URL}/username-availability`,
+      {
+        params: { username, 'ngsw-bypass': 'true' },
+      },
+    );
+  }
+
+  async updateUsername(username: string | null): Promise<UserProfile> {
+    const userId = this.currentUser()?.id;
+    const token = this.getToken();
+    if (!userId || this.isLocalToken(token))
+      throw new Error('Sign in online to manage your username.');
+    const user = await firstValueFrom(
+      this.http.patch<UserProfile>(`${this.API_URL}/username`, { username }),
+    );
+    if (this.currentUser()?.id !== userId || this.getToken() !== token)
+      throw new Error('Your session changed. Sign in again.');
+    try {
+      localStorage.setItem(this.AUTH_KEY, JSON.stringify(user));
+    } catch {
+      /* Optional profile cache. */
+    }
+    this.currentUserSignal.set(user);
+    return user;
+  }
+
+  requestPassword(email: string) {
+    return firstValueFrom(
+      this.http.post<{ accepted: boolean; message: string }>(`${this.API_URL}/password/request`, {
+        email,
+      }),
+    );
+  }
+
+  resetPassword(email: string, code: string, password: string) {
+    return firstValueFrom(
+      this.http.post<{ success: boolean; message: string }>(`${this.API_URL}/password/reset`, {
+        email,
+        code,
+        password,
+      }),
+    );
   }
 
   /**

@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Header, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -9,6 +19,8 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { UpdateUsernameDto } from './dto/update-username.dto';
+import { RequestPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 
 @ApiTags('Authentication')
 @UseGuards(ThrottlerGuard)
@@ -50,7 +62,7 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ auth: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: 'Authenticate user with email and password' })
+  @ApiOperation({ summary: 'Authenticate with email or current username and password' })
   @ApiResponse({ status: 200, description: 'User successfully authenticated with JWT accessToken' })
   @ApiResponse({ status: 401, description: 'Invalid credentials or unverified email' })
   @ApiResponse({ status: 429, description: 'Too many requests — rate limit exceeded' })
@@ -76,6 +88,38 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Current authenticated user profile' })
   getMe(@CurrentUser() user: { id: string }) {
     return this.authService.getMe(user.id);
+  }
+
+  @Get('username-availability')
+  @Header('Cache-Control', 'private, no-store')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ auth: { ttl: 60000, limit: 20 } })
+  usernameAvailability(@Query('username') username: string, @CurrentUser() user: { id: string }) {
+    return this.authService.usernameAvailability(user.id, username);
+  }
+
+  @Patch('username')
+  @Header('Cache-Control', 'private, no-store')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ auth: { ttl: 60000, limit: 5 } })
+  updateUsername(@Body() dto: UpdateUsernameDto, @CurrentUser() user: { id: string }) {
+    return this.authService.updateUsername(user.id, dto.username);
+  }
+
+  @Post('password/request')
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ auth: { ttl: 60000, limit: 3 } })
+  requestPassword(@Body() dto: RequestPasswordDto) {
+    return this.authService.requestPassword(dto);
+  }
+
+  @Post('password/reset')
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ auth: { ttl: 60000, limit: 5 } })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Delete('account')

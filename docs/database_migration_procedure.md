@@ -21,6 +21,19 @@ The old `20261004210000_production_baseline` history record has a checksum that 
 
 ## Release migration chain
 
+### October 21 optional usernames and password access addition
+
+T17 prepares `20261021000000_optional_usernames`, after T06. It makes usernames
+nullable, preserves original names with legacy provenance, adds password/session
+state and a separate recovery-challenge table. A case-insensitive unique index
+rejects atomic collisions; pre-existing mixed-case collisions fail the migration
+for explicit review. No historical username, password hash or ownership key is
+rewritten. A populated disposable-copy rehearsal succeeded; production remains
+on the T05/T06 schema from the [T12 execution](t12_release_execution_2026-10-21.md).
+Use a fresh snapshot/rehearsal and matching release before deploying T17. See the
+[T17 handoff](t17_review_handoff.md) for compatibility, generated-client and rollback
+boundaries. Do not apply T17 merely because T12's older gate succeeded.
+
 ### October 20 Mero color collection addition
 
 T06 adds `20261020000000_mero_color_collection` after T05. It creates private

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { IsOptional, IsString, Matches, MinLength } from 'class-validator';
 import { IsValidEmail } from '../validators/is-valid-email.decorator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @ApiPropertyOptional({
@@ -11,14 +12,20 @@ export class RegisterDto {
   @IsOptional()
   timeZone?: string;
 
-  @ApiProperty({ example: 'farzad', description: 'Unique username (3-20 characters)' })
+  @ApiPropertyOptional({
+    example: 'farzad',
+    description: 'Optional unique username (3-20 characters)',
+  })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() || undefined : value,
+  )
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Matches(/^[a-zA-Z0-9_]{3,20}$/, {
     message:
       'Username must be 3-20 characters and contain only English letters, numbers, and underscores.',
   })
-  username!: string;
+  username?: string;
 
   @ApiPropertyOptional({ example: 'Farzad B.', description: 'Display name (optional)' })
   @IsString()

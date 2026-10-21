@@ -3,11 +3,15 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  HttpException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import axios from 'axios';
 import { randomBytes } from 'node:crypto';
+import { Prisma } from '@prisma/client';
+import { normalizedUsername, usernameConflict } from './username';
+import { RequestPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { LoginDto } from './dto/login.dto';
@@ -16,6 +20,20 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { accountTimeZone } from '../commitments/commitment-calendar';
+
+const profileSelect = {
+  id: true,
+  username: true,
+  usernameSource: true,
+  name: true,
+  email: true,
+  role: true,
+  timeZone: true,
+  createdAt: true,
+  passwordSetAt: true,
+  authVersion: true,
+} satisfies Prisma.UserSelect;
+type ProfileUser = Prisma.UserGetPayload<{ select: typeof profileSelect }>;
 
 @Injectable()
 export class AuthService {
@@ -26,75 +44,45 @@ export class AuthService {
   ) {}
 
   /**
-   * Registers a new user account with unique username, generates an OTP verification code, and sends email.
+   * Registers with an optional unique username and sends an email verification code.
    */
   async register(dto: RegisterDto) {
     const timeZone = accountTimeZone(dto.timeZone);
     const cleanEmail = dto.email.trim().toLowerCase();
-    const cleanUsername = dto.username.trim().toLowerCase();
-    const displayName = (dto.name || dto.username).trim();
-
-    // Check if username is already taken
-    const existingUsername = await this.prisma.user.findUnique({
-      where: { username: cleanUsername },
-    });
-
-    if (existingUsername && existingUsername.email !== cleanEmail) {
-      throw new ConflictException('This username is already taken. Please choose another one.');
-    }
-
-    // Check if email already exists
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: cleanEmail },
-    });
-
-    if (existingEmail && existingEmail.isEmailVerified) {
-      throw new ConflictException('This email is already registered.');
-    }
-
-    // Generate 6-digit OTP and 15-minute expiration
+    const username = normalizedUsername(dto.username);
+    const displayName = dto.name?.trim() || username || 'Friend';
+    const existing = await this.prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (existing?.isEmailVerified) throw new ConflictException('This email is already registered.');
     const otpCode = this.mailService.generateOtpCode();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    const targetUser = existingEmail;
-
-    if (targetUser && !targetUser.isEmailVerified) {
-      // Refresh unverified record
-      await this.prisma.user.update({
-        where: { id: targetUser.id },
-        data: {
-          username: cleanUsername,
-          name: displayName,
-          email: cleanEmail,
-          passwordHash,
-          verificationCode: otpCode,
-          verificationCodeExpiresAt: expiresAt,
-        },
-      });
-    } else {
-      // Create fresh unverified user record
-      await this.prisma.user.create({
-        data: {
-          timeZone,
-          username: cleanUsername,
-          name: displayName,
-          email: cleanEmail,
-          passwordHash,
-          isEmailVerified: false,
-          verificationCode: otpCode,
-          verificationCodeExpiresAt: expiresAt,
-        },
-      });
+    const data = {
+      username,
+      usernameSource: username ? 'chosen' : 'none',
+      name: displayName,
+      email: cleanEmail,
+      passwordHash: await this.hashPassword(dto.password),
+      passwordSetAt: new Date(),
+      verificationCode: otpCode,
+      verificationCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    };
+    try {
+      if (existing) {
+        // Do not overwrite a signup that was verified after the initial read.
+        const updated = await this.prisma.user.updateMany({
+          where: { id: existing.id, isEmailVerified: false },
+          data,
+        });
+        if (updated.count !== 1) throw new ConflictException('This email is already registered.');
+      } else {
+        await this.prisma.user.create({ data: { ...data, timeZone, isEmailVerified: false } });
+      }
+    } catch (error) {
+      usernameConflict(error);
     }
-
-    // Send email with OTP code
     await this.mailService.sendVerificationEmail(cleanEmail, displayName, otpCode);
-
     return {
       requiresVerification: true,
       email: cleanEmail,
-      username: cleanUsername,
+      username,
       message: 'Verification code sent to your email address.',
       ...(process.env['NODE_ENV'] !== 'production' ? { previewCode: otpCode } : {}),
     };
@@ -135,27 +123,10 @@ export class AuthService {
         verificationCode: null,
         verificationCodeExpiresAt: null,
       },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        email: true,
-        role: true,
-        timeZone: true,
-        createdAt: true,
-      },
+      select: profileSelect,
     });
 
-    const accessToken = this.jwtService.sign({
-      sub: updatedUser.id,
-      email: updatedUser.email,
-      username: updatedUser.username,
-    });
-
-    return {
-      user: updatedUser,
-      accessToken,
-    };
+    return this.authResult(updatedUser);
   }
 
   /**
@@ -187,7 +158,11 @@ export class AuthService {
       },
     });
 
-    await this.mailService.sendVerificationEmail(cleanEmail, user.name || user.username, otpCode);
+    await this.mailService.sendVerificationEmail(
+      cleanEmail,
+      user.name || user.username || 'Friend',
+      otpCode,
+    );
 
     return {
       success: true,
@@ -201,48 +176,22 @@ export class AuthService {
    */
   async login(dto: LoginDto) {
     const identifier = dto.email.trim().toLowerCase();
-
-    const user = await this.prisma.user.findFirst({
+    const username = identifier.replace(/^@/, '');
+    let user = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: identifier }, { username: identifier }],
+        OR: [{ email: identifier }, { username: { equals: username, mode: 'insensitive' } }],
       },
     });
-
-    if (!user) {
-      throw new UnauthorizedException(
-        'No account found with this email or username. Please sign up.',
-      );
+    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash)))
+      throw new UnauthorizedException('Invalid email, username or password.');
+    if (!user.isEmailVerified)
+      throw new UnauthorizedException('Verify your email before signing in.');
+    if (!user.passwordSetAt) {
+      const passwordSetAt = new Date();
+      await this.prisma.user.update({ where: { id: user.id }, data: { passwordSetAt } });
+      user = { ...user, passwordSetAt };
     }
-
-    const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!isMatch) {
-      throw new UnauthorizedException('Incorrect password. Please try again.');
-    }
-
-    if (!user.isEmailVerified) {
-      throw new UnauthorizedException(
-        'Your email address is not verified yet. Please enter the verification code sent to your inbox.',
-      );
-    }
-
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-    });
-
-    return {
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        timeZone: user.timeZone,
-        createdAt: user.createdAt,
-      },
-      accessToken,
-    };
+    return this.authResult(user);
   }
 
   /**
@@ -308,29 +257,25 @@ export class AuthService {
 
     if (user) {
       if (!user.isEmailVerified) {
-        user = await this.prisma.user.update({
-          where: { id: user.id },
+        // A pre-claimed, unverified signup must not give its password to the
+        // Google-verified account owner. Preserve already-verified credentials
+        // if another request verified the row after our initial read.
+        await this.prisma.user.updateMany({
+          where: { id: user.id, isEmailVerified: false },
           data: {
             isEmailVerified: true,
             verificationCode: null,
             verificationCodeExpiresAt: null,
+            passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
+            passwordSetAt: null,
+            authVersion: { increment: 1 },
           },
         });
+        user = await this.prisma.user.findUnique({ where: { email: cleanEmail } });
+        if (!user) throw new UnauthorizedException('User not found.');
       }
     } else {
-      // Generate a unique clean username
-      const baseUsername =
-        cleanEmail
-          .split('@')[0]
-          .replace(/[^a-zA-Z0-9_]/g, '')
-          .toLowerCase() || 'user';
-      let candidateUsername = baseUsername;
-      let counter = 1;
-
-      while (await this.prisma.user.findUnique({ where: { username: candidateUsername } })) {
-        candidateUsername = `${baseUsername}${counter++}`;
-      }
-
+      // Google accounts choose their own optional public username later.
       const randomPassword = randomBytes(32).toString('hex');
       const passwordHash = await bcrypt.hash(randomPassword, 10);
 
@@ -338,53 +283,29 @@ export class AuthService {
         data: {
           timeZone: accountTimeZone(dto.timeZone),
           email: cleanEmail,
-          username: candidateUsername,
-          name: name || candidateUsername,
+          username: null,
+          usernameSource: 'none',
+          name: name || 'Friend',
           passwordHash,
           isEmailVerified: true,
         },
       });
     }
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-    });
-
-    return {
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        timeZone: user.timeZone,
-        createdAt: user.createdAt,
-      },
-      accessToken,
-    };
+    return this.authResult(user);
   }
 
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        email: true,
-        role: true,
-        timeZone: true,
-        createdAt: true,
-      },
+      select: profileSelect,
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found.');
     }
 
-    return user;
+    return this.profile(user);
   }
 
   async deleteAccount(userId: string) {
@@ -404,5 +325,132 @@ export class AuthService {
       success: true,
       message: 'User account and all associated habit data have been permanently deleted.',
     };
+  }
+  private profile(user: ProfileUser) {
+    return {
+      id: user.id,
+      username: user.username,
+      usernameSource: user.usernameSource,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      timeZone: user.timeZone,
+      createdAt: user.createdAt,
+      hasPassword: !!user.passwordSetAt,
+    };
+  }
+
+  private authResult(user: ProfileUser) {
+    return {
+      user: this.profile(user),
+      accessToken: this.jwtService.sign({
+        sub: user.id,
+        email: user.email,
+        authVersion: user.authVersion ?? 0,
+      }),
+    };
+  }
+
+  private hashPassword(password: string) {
+    if (
+      typeof password !== 'string' ||
+      password.length < 6 ||
+      Buffer.byteLength(password, 'utf8') > 72
+    )
+      throw new BadRequestException(
+        'Use a password of at least 6 characters, up to 72 UTF-8 bytes.',
+      );
+    return bcrypt.hash(password, 10);
+  }
+
+  async usernameAvailability(userId: string, value: string) {
+    const username = normalizedUsername(value);
+    if (!username) throw new BadRequestException('Enter a username to check.');
+    const owner = await this.prisma.user.findFirst({
+      where: { username: { equals: username, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return { username, available: !owner || owner.id === userId };
+  }
+
+  async updateUsername(userId: string, value: string | null) {
+    const username = normalizedUsername(value);
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { username, usernameSource: username ? 'chosen' : 'none' },
+      });
+    } catch (error) {
+      usernameConflict(error);
+    }
+    return this.getMe(userId);
+  }
+
+  async requestPassword(dto: RequestPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
+    const accepted = {
+      accepted: true,
+      message: 'If an eligible account exists, a password code will be emailed.',
+    };
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user?.isEmailVerified) return accepted;
+    const code = this.mailService.generateOtpCode();
+    const codeHash = await bcrypt.hash(code, 10);
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${user.id} FOR UPDATE`;
+      const previous = await tx.passwordReset.findUnique({ where: { userId: user.id } });
+      if (previous && previous.requestedAt.getTime() > now.getTime() - 60000)
+        throw new HttpException('Wait a minute before requesting another code.', 429);
+      const challenge = {
+        codeHash,
+        requestedAt: now,
+        expiresAt: new Date(now.getTime() + 15 * 60000),
+        attempts: 0,
+      };
+      await tx.passwordReset.upsert({
+        where: { userId: user.id },
+        create: { userId: user.id, ...challenge },
+        update: challenge,
+      });
+    });
+    try {
+      await this.mailService.sendPasswordResetEmail(email, user.name || 'Friend', code);
+    } catch (error) {
+      await this.prisma.passwordReset.deleteMany({ where: { userId: user.id, codeHash } });
+      throw error;
+    }
+    return accepted;
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
+    const passwordHash = await this.hashPassword(dto.password);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    const changed =
+      user?.isEmailVerified &&
+      (await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${user.id} FOR UPDATE`;
+        const challenge = await tx.passwordReset.findUnique({ where: { userId: user.id } });
+        if (!challenge || challenge.expiresAt <= new Date() || challenge.attempts >= 5)
+          return false;
+        if (!(await bcrypt.compare(dto.code, challenge.codeHash))) {
+          // Commit the failed attempt; throwing inside this transaction would undo it.
+          await tx.passwordReset.update({
+            where: { userId: user.id },
+            data: { attempts: { increment: 1 } },
+          });
+          return false;
+        }
+        await tx.user.update({
+          where: { id: user.id },
+          data: { passwordHash, passwordSetAt: new Date(), authVersion: { increment: 1 } },
+        });
+        await tx.passwordReset.delete({ where: { userId: user.id } });
+        return true;
+      }));
+    if (!changed)
+      throw new BadRequestException('Invalid or expired password code. Request a new code.');
+    return { success: true, message: 'Password saved. Sign in again.' };
   }
 }

@@ -37,7 +37,10 @@ enum ChainInviteStatus {
 model User {
   id                        String    @id @default(uuid())
   email                     String    @unique
-  username                  String    @unique
+  username                  String?   @unique
+  usernameSource            String    @default("legacy")
+  passwordSetAt             DateTime?
+  authVersion               Int       @default(0)
   name                      String?
   passwordHash              String
   role                      String    @default("USER")
@@ -48,6 +51,7 @@ model User {
   metadata                  Json? // Extensible metadata for future gamification & preferences
 
   commitments Commitment[]
+  passwordReset PasswordReset?
   meroProgress MeroProgress?
   meroColors MeroColor[]
   meroDays MeroCollectionDay[]
@@ -68,6 +72,17 @@ model User {
 
   @@index([username])
   @@map("users")
+}
+
+model PasswordReset {
+  userId String @id
+  codeHash String
+  expiresAt DateTime
+  requestedAt DateTime @default(now())
+  attempts Int @default(0)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
 }
 
 // Private permanent reward state, independent of habit/connection lifetimes.

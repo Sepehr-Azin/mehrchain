@@ -20,11 +20,11 @@ describe('Production schema readiness', () => {
 
   it('allows a migrated database to finish initialization', async () => {
     await service.onModuleInit();
-    expect(service.$queryRaw).toHaveBeenCalledTimes(10);
+    expect(service.$queryRaw).toHaveBeenCalledTimes(12);
     expect(service.$disconnect).not.toHaveBeenCalled();
   });
 
-  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])(
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])(
     'refuses readiness when required schema probe %i fails',
     async (probe) => {
       const query = jest.mocked(service.$queryRaw);

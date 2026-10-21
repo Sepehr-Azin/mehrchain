@@ -17,7 +17,12 @@ describe('Signup timezone HTTP contract', () => {
   let app: INestApplication;
   let base: string;
   const prisma = {
-    user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+    user: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
   };
 
   beforeAll(async () => {
@@ -127,8 +132,8 @@ describe('Signup timezone HTTP contract', () => {
     const result = await post('register', { ...routes[0].payload, timeZone: 'Asia/Tehran' });
     expect(result.status).toBe(201);
     expect(prisma.user.create).not.toHaveBeenCalled();
-    expect(prisma.user.update).toHaveBeenCalledTimes(1);
-    expect(prisma.user.update.mock.calls[0][0].data).not.toHaveProperty('timeZone');
+    expect(prisma.user.updateMany).toHaveBeenCalledTimes(1);
+    expect(prisma.user.updateMany.mock.calls[0][0].data).not.toHaveProperty('timeZone');
   });
 
   it('does not change an existing Google account timezone at login', async () => {

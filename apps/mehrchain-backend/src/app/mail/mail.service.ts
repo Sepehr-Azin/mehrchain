@@ -22,11 +22,31 @@ export class MailService {
    * @param name - Recipient display name
    * @param code - 6-digit OTP code
    */
-  async sendVerificationEmail(email: string, name: string, code: string): Promise<boolean> {
+  async sendVerificationEmail(
+    email: string,
+    name: string,
+    code: string,
+    purpose: 'verification' | 'password' = 'verification',
+  ): Promise<boolean> {
     const resendApiKey = process.env['RESEND_API_KEY'];
     const fromAddress =
       process.env['MAIL_FROM'] || process.env['SMTP_FROM'] || 'MehrChain <onboarding@resend.dev>';
-    const recipientName = name || 'Friend';
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    const recipientName = (name || 'Friend').replace(
+      /[&<>"']/g,
+      (character) => entities[character],
+    );
+    const heading = purpose === 'password' ? 'Password setup / reset code' : 'Verification Code';
+    const instructions =
+      purpose === 'password'
+        ? 'Enter this code in MehrChain to set or reset your password.'
+        : 'Enter this code in MehrChain to verify your email.';
 
     // HTML Email Template (English & Branded Dark Theme)
     const htmlContent = `
@@ -35,7 +55,7 @@ export class MailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MehrChain Verification Code</title>
+  <title>MehrChain ${heading}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0d1117; color: #e6edf3; margin: 0; padding: 24px; direction: ltr; text-align: left; }
     .container { max-width: 520px; margin: 0 auto; background-color: #161b22; border-radius: 20px; border: 1px solid #30363d; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -53,11 +73,11 @@ export class MailService {
   <div class="container">
     <div class="header">
       <div class="logo">MehrChain</div>
-      <h1 class="title">Verification Code</h1>
+      <h1 class="title">${heading}</h1>
     </div>
     <p class="description">
       Hello <strong>${recipientName}</strong>,<br>
-      Please enter the 6-digit code below in the app to verify your email and continue your journey:
+      ${instructions}
     </p>
     <div class="otp-box">
       <div class="otp-code">${code}</div>
@@ -75,7 +95,7 @@ export class MailService {
 </html>
     `.trim();
 
-    const textContent = `Hello ${recipientName},\n\nYour MehrChain verification code is: ${code}\nThis code is valid for 15 minutes.\n\nMehrChain — Small Acts. Big Change.`;
+    const textContent = `Hello ${name || 'Friend'},\n\n${instructions}\nYour code: ${code}\nValid for 15 minutes.`;
 
     // 1. Dispatch via Resend REST API if API Key is configured
     if (resendApiKey) {
@@ -86,7 +106,7 @@ export class MailService {
           {
             from: fromAddress,
             to: [email],
-            subject: `Your MehrChain verification code: ${code}`,
+            subject: `MehrChain ${heading}`,
             html: htmlContent,
             text: textContent,
           },
@@ -123,5 +143,9 @@ export class MailService {
     );
 
     return true;
+  }
+
+  sendPasswordResetEmail(email: string, name: string, code: string): Promise<boolean> {
+    return this.sendVerificationEmail(email, name, code, 'password');
   }
 }

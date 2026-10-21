@@ -53,7 +53,7 @@ describe('MailService (Unit Tests)', () => {
         expect.objectContaining({
           from: 'MehrChain <noreply@mehrchain.com>',
           to: ['user@test.com'],
-          subject: 'Your MehrChain verification code: 654321',
+          subject: 'MehrChain Verification Code',
           html: expect.stringContaining('654321'),
           text: expect.stringContaining('654321'),
         }),

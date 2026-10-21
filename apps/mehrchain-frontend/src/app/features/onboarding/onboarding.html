@@ -162,9 +162,7 @@
       [isPrefilledFromSignUp]="isPrefilledFromSignUp()"
       [isForgotPasswordMode]="isForgotPasswordMode()"
       [forgotPasswordEmail]="forgotPasswordEmail()"
-      [forgotPasswordSubmitted]="forgotPasswordSubmitted()"
       [isLoggingIn]="isLoggingIn()"
-      [isResettingPassword]="isResettingPassword()"
       (emailChange)="loginEmail.set($event)"
       (passwordChange)="loginPassword.set($event)"
       (togglePassword)="toggleLoginPassword()"
@@ -172,8 +170,6 @@
       (googleLogin)="handleGoogleLogin()"
       (switchToSignUp)="switchToSignUpFromLogin()"
       (toggleForgotPassword)="toggleForgotPassword($event)"
-      (forgotEmailChange)="forgotPasswordEmail.set($event)"
-      (forgotPasswordSubmit)="handleForgotPassword()"
       (close)="closeLoginModal()"
     />
   }

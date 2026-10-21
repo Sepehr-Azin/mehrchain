@@ -70,6 +70,7 @@
       }
     },
     "test": {
+      "dependsOn": ["prisma-generate"],
       "options": {
         "passWithNoTests": true
       }

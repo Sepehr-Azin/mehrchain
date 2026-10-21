@@ -2,11 +2,17 @@ import { DialogAccessibilityDirective } from '../../../shared/directives/dialog-
 import { Component, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { MeroComponent } from '../../../shared/components/mero/mero';
+import { PasswordSetupComponent } from '../../../shared/components/password-setup/password-setup';
 
 @Component({
   selector: 'app-login-modal',
   standalone: true,
-  imports: [DialogAccessibilityDirective, LucideAngularModule, MeroComponent],
+  imports: [
+    DialogAccessibilityDirective,
+    LucideAngularModule,
+    MeroComponent,
+    PasswordSetupComponent,
+  ],
   templateUrl: './login-modal.html',
 })
 export class LoginModalComponent {
@@ -18,9 +24,7 @@ export class LoginModalComponent {
   readonly isPrefilledFromSignUp = input.required<boolean>();
   readonly isForgotPasswordMode = input.required<boolean>();
   readonly forgotPasswordEmail = input.required<string>();
-  readonly forgotPasswordSubmitted = input.required<boolean>();
   readonly isLoggingIn = input<boolean>(false);
-  readonly isResettingPassword = input<boolean>(false);
 
   readonly emailChange = output<string>();
   readonly passwordChange = output<string>();
@@ -29,7 +33,5 @@ export class LoginModalComponent {
   readonly googleLogin = output<void>();
   readonly switchToSignUp = output<void>();
   readonly toggleForgotPassword = output<boolean>();
-  readonly forgotEmailChange = output<string>();
-  readonly forgotPasswordSubmit = output<void>();
   readonly close = output<void>();
 }

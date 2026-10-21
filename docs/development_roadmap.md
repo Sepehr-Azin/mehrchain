@@ -3,12 +3,12 @@
 > Updated: **2026-10-21 (Asia/Tehran)**. Iteration deadline completed.
 > **Current Focus:** Post-pilot release stabilization, owner-requested product corrections, and a gated signed Android v1 release.
 > **Pilot Feedback:** An initial two-person pilot was conducted and core signup/Chain interactions operated. However, notable friction and gaps were identified: free-tier Render 15-minute spin-down and Cloudflare Pages proxy 524 timeouts, unconfigured Resend credentials on Render for real email verification, and pending production database migrations for T05 and T06.
-> **Codebase State:** T00–T08, T10 and T11 have committed implementations on `main`; T09 is field acceptance. Implementation does not establish release acceptance, and the October 21 product corrections below remain unimplemented. T04 is in `9066570` (Issue #59 closed/Done); T05 is in `ed38dd6` (Issue #60); T06 is in `ddee9ff` (Issue #61); T07 is in `023b42d` (Issue #62); T08 is in `37ba0e3` (Issue #63); T10 is in `9c981d1` (Issue #66 closed/Done); T11 is in `370a0c2` (Issue #67 closed/Done).
+> **Codebase State:** T00–T08, T10 and T11 have historical committed implementations; T09 is field acceptance. The later October 21 session repaired the T12 production backend/schema gate and prepared local T13/T15/T16/T17 corrections. Local implementation does not establish final release acceptance; T14 delivery, new T17 production schema, current automated/PWA/device checks and Android gates remain open. Historical task commits remain recorded below.
 > **Release Blocker Repaired (T10):** Webpack shared-module resolution failure on Render was resolved by adding `baseUrl: "../.."` to `apps/mehrchain-backend/tsconfig.app.json` (committed in `9c981d1`).
 > **New Stabilization Tasks Created:** T12 (#68) for pending migration deployment & release verification; T13 (#69) for backend Jest ESM CI fix; T14 (#71) for production Resend email configuration; T15 (#72) for cold-start latency & proxy timeout mitigation.
-> **October 21 Owner Additions:** T16 restores the minimal UI, visible optional Why and direct habit deletion; T17 completes optional unique username management and login; T18 adds opt-in GitHub release update discovery. These three tasks are planned in this file only; GitHub issues/Project items have not been created in this update. Their execution order follows existing release blockers rather than their numeric IDs.
+> **October 21 Owner Additions:** T16's minimal UI/visible Why/direct delete and T17's optional username/password-access corrections are implemented locally. T18's opt-in GitHub release discovery remains planned. GitHub issues/Project items for these additions remain unsynchronized. The current handoffs distinguish implementation from operational/field acceptance.
 > **Android Evidence (October 21):** [APK workflow run 39544902232](https://github.com/farzad-bahadorifar/mehrchain/actions/runs/39544902232), for `752e199`, failed at backend tests; frontend tests, Capacitor sync, APK build and artifact upload were skipped. The local Android web bundle is dated August 30 (`main-SVIVLEG6.js`), whereas the local web build is dated October 20 (`main-6I3XOFP2.js`). Current native assets are not synchronized with the latest web changes. No fresh APK or native acceptance is claimed.
-> **Live-check limit (October 21):** direct Render and Pages `/api/version` reads both timed out after 40 seconds in this review. The current live SHA/schema and applied migration history could not be established; T12 must inspect them before deciding what remains to deploy. No production database was queried or changed here.
+> **Later October 21 live evidence:** T12 applied only the missing T05/T06 migrations with snapshot/rehearsal and restored matching Render/Pages backend identity on `c8d193d`. The existing APK run on that commit passed backend tests and failed frontend tests before packaging; local frontend-fixture corrections await rerun. T17's additional migration was rehearsed only on a disposable copy. No local suite/build or new code push was performed in this session. See T12–T17 handoffs below.
 
 ## Product rules
 
@@ -43,19 +43,19 @@ Implemented in T05 (`ed38dd6`): an explicit manual reason, Cancel, private previ
 | T02 | [#57](https://github.com/farzad-bahadorifar/mehrchain/issues/57) | Complete / pushed | `9643bda` | Done | Backend deployed; account-calendar migration verified on production |
 | T03 | [#58](https://github.com/farzad-bahadorifar/mehrchain/issues/58) | Complete / pushed | `2f1cff1` | Done | Backend deployed; 2-day inactivity archive migration verified |
 | T04 | [#59](https://github.com/farzad-bahadorifar/mehrchain/issues/59) | Complete / pushed | `9066570` | Done | Idempotent hearts, allowance ledger migration verified on production |
-| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Complete / pushed | `ed38dd6` | In Progress | Implementation complete; migration pending release gate (T12) |
-| T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Complete / pushed | `ddee9ff` | In Progress | Permanent 21-day color collection implemented; migration pending (T12) |
+| T05 | [#60](https://github.com/farzad-bahadorifar/mehrchain/issues/60) | Complete / pushed | `ed38dd6` | Field acceptance pending | T12 applied migration; current receipt/retry acceptance remains |
+| T06 | [#61](https://github.com/farzad-bahadorifar/mehrchain/issues/61) | Complete / pushed | `ddee9ff` | Field acceptance pending | T12 applied migration and restored route; authenticated/PWA acceptance remains |
 | T07 | [#62](https://github.com/farzad-bahadorifar/mehrchain/issues/62) | Historical implementation / pushed | `023b42d` | Needs correction (T16) | Long help panels, return links and collapsed Why superseded by October 21 owner direction |
 | T08 | [#63](https://github.com/farzad-bahadorifar/mehrchain/issues/63) | Complete / pushed | `37ba0e3` | In Progress | Foreground refresh deduplication & latency probe script committed |
 | T09 | [#64](https://github.com/farzad-bahadorifar/mehrchain/issues/64) | Field acceptance | Pilot executed | In Progress | Two-person pilot completed; multi-day & edge case validation remaining |
 | T10 | [#66](https://github.com/farzad-bahadorifar/mehrchain/issues/66) | Complete / pushed | `9c981d1` | Done | Backend tsconfig `baseUrl` repair resolved webpack shared-module error |
 | T11 | [#67](https://github.com/farzad-bahadorifar/mehrchain/issues/67) | Complete / pushed | `370a0c2` | Done | Journey tab refactored: Active habits, Best streak, Active Chains, Calendar |
-| T12 | [#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68) | Pending execution | Scripts prepared | Ready (P0) | Release Gate: Apply T05/T06 migrations to Neon, verify live Render backend |
-| T13 | [#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69) | Local config correction / uncommitted | — | Awaiting verification (P1) | Passport ESM transform configured; standard backend tests and APK CI not run |
-| T14 | [#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71) | Configuration | Render dashboard | Ready (P1) | Configure `RESEND_API_KEY` and `MAIL_FROM` on Render production |
-| T15 | [#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) | Pending execution | UI & Proxy config | Ready (P1) | Mitigate free-tier cold-start timeouts and proxy connection friction |
-| T16 | Pending issue | Planned | — | Ready (P1; v1 gate) | Minimal UI correction across T03/T06/T07/T11; visible empty Why; direct delete; collection API diagnosis |
-| T17 | Pending issue | Planned | — | Planned (P1; v1 gate) | Optional unique username add/edit/remove, server availability/uniqueness and working identifier login |
+| T12 | [#68](https://github.com/farzad-bahadorifar/mehrchain/issues/68) | Backend/schema deployed | `aa8554b` evidence; live `c8d193d` | Frontend/PWA acceptance pending | Snapshot/rehearsal, both pending migrations, matching direct/proxy identity and collection 401 verified |
+| T13 | [#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69) | ESM fix committed; frontend fixtures corrected locally | `c8d193d`, `6400edf` | APK rerun pending | Existing remote backend test step passed; frontend/packaging require current acceptance |
+| T14 | [#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71) | Setup handoff | `03b1c1e` | Pending owned sending domain/key | Resend login works; no domain exists and owner has no active domain |
+| T15 | [#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72) | Local implementation | `7d4e701` | Phone/PWA/network acceptance pending | Bounded safe-read retry; honest warm/failed-idle/slow-follow-up baseline observations |
+| T16 | Pending issue | Local implementation | `932e857` | Phone/PWA acceptance pending | Minimal screens, visible Why, direct delete and short collection retry state |
+| T17 | Pending issue | Local implementation and disposable migration rehearsal | See T17 handoff | Production/checks/delivery acceptance pending | Optional unique usernames, identifier login, verified password setup/recovery and session guards |
 | T18 | Pending issue | Planned | — | Planned (P1; v1 gate) | GitHub stable-release update notice, opt-in APK update and consistent release/version metadata |
 
 The T00–T08 handoffs and OpenSpec checklists are historical notes. Their uncommitted/not-run wording is superseded only by evidence recorded here: T05's verified push; T06/T07/T08 commits and delivery to failed Render backend builds; successful remote Prisma generation in the inspected T06/T08 logs. No local build/test or successful later release is inferred. These historical files are not edited by T10. The October 18 backend results precede T05–T08 and do not validate their code/schema or prove frontend/provider/race acceptance.
@@ -359,7 +359,7 @@ Implementation follows the recommended **Active habits / Best current streak / A
 ### T13 — Fix backend CI test suite ESM compatibility (@nestjs/passport) ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69))
 
 **Priority:** P1  
-**Status: Local configuration correction prepared; verification pending ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69)).**
+**Status: Backend ESM correction has remote CI evidence; local frontend fixture fixes await rerun ([#69](https://github.com/farzad-bahadorifar/mehrchain/issues/69)).**
 
 **October 21 remote evidence:** the existing APK run [39645196942](https://github.com/farzad-bahadorifar/mehrchain/actions/runs/39645196942) on `c8d193d` completed the unmodified backend test step successfully. It then failed frontend checks, so web/Capacitor/APK stages were skipped. Pages run `39645194595` succeeded on the same revision. No workflow was dispatched here; backend suite/test counts were not available from the inspected job metadata. T13's ESM correction has remote backend-step evidence, while full APK acceptance remains pending.
 
@@ -373,7 +373,7 @@ Implementation follows the recommended **Active habits / Best current streak / A
 ### T14 — Production email delivery setup (Resend API key & sender config) ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71))
 
 **Priority:** P1  
-**Status: Pending Resend login and verified sender/key ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71)).** October 21 Render inspection confirmed both variables are absent; Resend requires interactive login. See [setup handoff](t14_email_setup_handoff.md). Independent code corrections continue; email delivery acceptance remains a release gate.
+**Status: Pending owned sending domain and sender/key ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71)).** October 21 Render inspection confirmed both variables are absent. The owner signed in to Resend, but its Domains page is empty and the owner confirmed they have no active domain. See [setup handoff](t14_email_setup_handoff.md). Email delivery acceptance remains a release gate.
 
 **Scope:** Render environment variables & transactional OTP delivery.
 - [ ] Configure `RESEND_API_KEY` in Render dashboard environment settings.
@@ -414,11 +414,11 @@ Implementation follows the recommended **Active habits / Best current streak / A
 
 **Priority:** P1, v1 scope after T16 and operational auth prerequisites.
 
-**Status:** Planned; OpenSpec auth/profile proposal required before implementation. No GitHub issue yet.
+**Status:** Local implementation complete, with authorized OpenSpec proposal and disposable populated-copy migration rehearsal. Production migration, current suites/builds and real email/device acceptance remain pending. See [T17 handoff](t17_review_handoff.md); no GitHub issue was created.
 
 **Dependencies:** T12/T13 for a working release/checks; T14 for verified password setup/recovery; T16 takes product-correction precedence.
 
-**Current source baseline:** Prisma already has required unique `User.username`; email signup collects it, Google signup generates one, and `AuthService.login` queries email OR username. However, `LoginDto` still requires `@IsEmail()` and onboarding rejects identifiers without `@`. Profile has no username add/edit/remove flow. This is completion/correction of an existing partial capability, not a wholly new login system.
+**Original source baseline before this task:** Prisma required unique `User.username`; email signup collected it and Google generated one. Login queried email OR username but DTO/onboarding validation rejected usernames, and Profile had no management flow. The local implementation now corrects those gaps; see the handoff for migration and acceptance boundaries. Existing names retain explicit legacy provenance instead of guessing which were generated.
 
 - [ ] Make the user-facing username optional and server-owned, with authenticated Profile add/edit/remove for both email and Google accounts. Choose a backward-compatible nullable-field/migration or explicit public-handle model; stable user IDs, account identity, habits, Chains and Mero ownership must not depend on a mutable username.
 - [ ] Define one canonical case-insensitive username contract (reuse the existing 3–20 English letters/digits/underscore convention unless explicitly revised), availability response and behavior for edited/deleted handles. Preserve valid existing names and distinguish generated Google defaults from a user-selected handle.
@@ -461,7 +461,7 @@ The owner additions are ordered **T16 → T17 → T18**, after existing operatio
 | 8 | **T09 — accept the final candidate** | Current automated checks, deployed two-account/PWA flows, daily/absence/Chain cases, real Android auth and upgrade acceptance; record exact revisions and resolve release blockers |
 | 9 | **Android v1 release gate below** | Fresh accepted signed APK, matching commit/schema/version, release notes/checksum and verified installation; then `v1.0.0` publication |
 
-**Starting instruction for the next work session:** “Read this roadmap and the database procedure. Start T12 by inspecting the actual Render/Pages revision and applied migration history; do not repeat an already-applied migration. Complete backup/rehearsal and the matching deployment gate, record evidence, then continue T13. Use the table above for the remaining tasks.” Start implementation from the first unmet exit condition, not from T00 or an assumption that a checked historical item is current acceptance. This roadmap edit itself performs no production changes or feature implementation.
+**Starting instruction for the next work session:** Read this roadmap and the T12–T17 handoffs. Review/check the local candidate first; T05/T06 are already applied to production, while T17 is rehearsed only on a disposable copy. T14 needs an owned DNS-verifiable sending domain and Render mail configuration. Recheck actual revisions/history before any release, use a fresh snapshot and the isolated release gate for T17, and complete automated/APK/PWA/device acceptance. Continue from the first unmet exit condition; T18 remains planned.
 
 ## Android synchronization and public v1 release gate
 

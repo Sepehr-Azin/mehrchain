@@ -90,7 +90,9 @@ export class ChainComponent {
           if (this.route.snapshot.queryParams['invite'] !== code) return;
           this.incomingInvite.set({
             inviteCode: invite.inviteCode,
-            inviterName: invite.sender?.username || 'Friend',
+            inviterName: invite.sender?.username
+              ? `@${invite.sender.username}`
+              : invite.sender?.name || 'Friend',
             habitTitle: invite.senderCommitment?.title || 'Habit',
             category: invite.senderCommitment?.category as any,
           });
