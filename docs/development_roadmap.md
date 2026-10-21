@@ -371,11 +371,11 @@ Implementation follows the recommended **Active habits / Best current streak / A
 ### T14 — Production email delivery setup (Resend API key & sender config) ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71))
 
 **Priority:** P1  
-**Status: Ready ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71)).**
+**Status: Pending Resend login and verified sender/key ([#71](https://github.com/farzad-bahadorifar/mehrchain/issues/71)).** October 21 Render inspection confirmed both variables are absent; Resend requires interactive login. See [setup handoff](t14_email_setup_handoff.md). Independent code corrections continue; email delivery acceptance remains a release gate.
 
 **Scope:** Render environment variables & transactional OTP delivery.
 - [ ] Configure `RESEND_API_KEY` in Render dashboard environment settings.
-- [ ] Configure verified `MAIL_FROM` address (`MehrChain <onboarding@resend.dev>` or custom domain).
+- [ ] Configure `MAIL_FROM` on a verified sending domain. `onboarding@resend.dev` is limited to test mail to the Resend account owner and does not satisfy production delivery.
 - [ ] Test live OTP email delivery for registration and password reset on production.
 
 ### T15 — Address free-tier cold-start timeouts and proxy connection friction ([#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72))
