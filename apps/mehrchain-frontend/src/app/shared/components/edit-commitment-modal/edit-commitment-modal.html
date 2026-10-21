@@ -75,14 +75,11 @@
         </div>
 
         <!-- Why (Personal Motivation) -->
-        <details>
-          <summary class="cursor-pointer text-xs text-muted-foreground">
-            Private reason (optional)
-          </summary>
+        <div>
           <label
             class="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5"
           >
-            <span>Why this matters to you</span>
+            <span>Why (optional)</span>
           </label>
           <textarea
             [ngModel]="why()"
@@ -90,10 +87,10 @@
             name="why"
             aria-label="Why this matters to you"
             rows="2"
-            placeholder="e.g. To stay healthy and show up for my family"
+            placeholder="Why does this habit matter to you?"
             class="w-full bg-muted/40 border border-border rounded-2xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
           ></textarea>
-        </details>
+        </div>
 
         <!-- Target Duration -->
         <div>
@@ -168,8 +165,6 @@
             </p>
           }
         </div>
-
-        <app-daily-rules />
 
         <!-- Daily Reminder Time -->
         <div>

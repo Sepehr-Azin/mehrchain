@@ -3,7 +3,6 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { DailyRulesComponent } from '../daily-rules/daily-rules';
 import {
   validateCustomDuration,
   handleDurationKeydown,
@@ -11,13 +10,7 @@ import {
 
 @Component({
   selector: 'app-new-commitment-modal',
-  imports: [
-    DialogAccessibilityDirective,
-    CommonModule,
-    FormsModule,
-    LucideAngularModule,
-    DailyRulesComponent,
-  ],
+  imports: [DialogAccessibilityDirective, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './new-commitment-modal.html',
   styleUrl: './new-commitment-modal.css',
 })

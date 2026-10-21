@@ -1,61 +1,57 @@
 <div class="app-overlay">
-  <!-- Backdrop -->
   <div
-    class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-    (click)="cancel.emit()"
+    class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+    (click)="!isSubmitting() && cancel.emit()"
   ></div>
-
-  <!-- Dialog Card -->
   <div
     appDialog
     aria-label="Remove habit"
-    (dialogDismiss)="cancel.emit()"
-    class="app-dialog bg-card rounded-[2rem] p-6 shadow-2xl border border-border/50 text-center"
+    (dialogDismiss)="!isSubmitting() && cancel.emit()"
+    class="app-dialog bg-card rounded-3xl p-6 shadow-2xl border border-border/50"
   >
-    <!-- Mero / Flame Avatar Header -->
-    <div
-      class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500"
-    >
-      <lucide-icon name="flame" class="w-7 h-7 text-amber-500"></lucide-icon>
-    </div>
-
-    <!-- Title -->
-    <h3 class="text-xl font-bold text-foreground mb-2">Archive this habit?</h3>
-
-    <!-- Habit Title -->
-    <p class="text-sm font-semibold text-primary mb-4">
-      {{ commitment().title }}
-    </p>
-
-    <!-- Original Intention / Reason Reflection -->
-    @if (commitment().why) {
-      <details class="rounded-2xl p-3 text-left mb-4 border border-border/50">
-        <summary class="cursor-pointer text-xs text-muted-foreground">Your private reason</summary>
-        <p
-          class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5"
-        >
-          <lucide-icon name="sparkles" class="w-3.5 h-3.5"></lucide-icon>
-          <span>Why this matters to you</span>
-        </p>
-        <p class="text-sm font-semibold text-foreground italic">“{{ commitment().why }}”</p>
-      </details>
+    <h3 class="text-xl font-bold text-foreground mb-2">Remove this habit?</h3>
+    <p class="text-sm font-semibold text-primary mb-4 break-words">{{ commitment().title }}</p>
+    @if (reason(); as why) {
+      <div class="rounded-2xl p-3 mb-4 border border-border/50">
+        <p class="text-xs text-muted-foreground mb-2">Your private Why</p>
+        <p class="text-sm text-foreground whitespace-pre-wrap break-words">{{ why }}</p>
+      </div>
     }
-    <p class="text-xs text-muted-foreground mb-6">
-      Your history, completed days and earned color slots stay saved. Linked Chains will disconnect
-      and invitations will expire. Partners get a neutral private update. You can restore this habit
-      from Journey and reconnect with a new invitation.
+    <p class="text-xs text-muted-foreground mb-4">
+      Delete removes this habit and its history. Archive keeps history. Both end linked Chains and
+      invitations; earned colors stay saved.
     </p>
-
-    <!-- Action Buttons -->
-    <div class="flex flex-col gap-2.5">
-      <mc-button variant="primary" size="lg" [fullWidth]="true" (clicked)="cancel.emit()">
-        Keep This Habit
-      </mc-button>
-
-      <mc-button variant="danger" size="md" [fullWidth]="true" (clicked)="confirm.emit()">
-        <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-        <span>Archive habit</span>
-      </mc-button>
+    @if (errorMessage()) {
+      <p role="alert" class="text-sm text-destructive mb-4">{{ errorMessage() }}</p>
+    }
+    <div class="flex flex-col gap-3">
+      <mc-button
+        variant="primary"
+        size="lg"
+        [fullWidth]="true"
+        [disabled]="isSubmitting()"
+        (clicked)="cancel.emit()"
+        >Keep habit</mc-button
+      >
+      @if (allowArchive()) {
+        <mc-button
+          variant="secondary"
+          size="md"
+          [fullWidth]="true"
+          [disabled]="isSubmitting()"
+          (clicked)="archive.emit()"
+          >Archive</mc-button
+        >
+      }
+      <mc-button
+        variant="danger"
+        size="md"
+        [fullWidth]="true"
+        [disabled]="isSubmitting()"
+        [loading]="isSubmitting()"
+        (clicked)="confirm.emit()"
+        >Delete permanently</mc-button
+      >
     </div>
   </div>
 </div>

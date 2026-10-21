@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommitmentService } from '../../core/services/commitment.service';
 import { ChainService } from '../../core/services/chain.service';
@@ -12,14 +12,12 @@ import { EditCommitmentModal } from '../../shared/components/edit-commitment-mod
 import { NewCommitmentModal } from '../../shared/components/new-commitment-modal/new-commitment-modal';
 import { MeroComponent } from '../../shared/components/mero/mero';
 import { HabitCardSkeletonComponent } from '../../shared/components/skeletons';
-import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
 import { MeroCustomizationService } from '../../core/services/mero-customization.service';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     CommonModule,
-    RouterLink,
     CommitmentCardComponent,
     LucideAngularModule,
     NewCommitmentModal,
@@ -27,7 +25,6 @@ import { MeroCustomizationService } from '../../core/services/mero-customization
     EditCommitmentModal,
     MeroComponent,
     HabitCardSkeletonComponent,
-    DailyRulesComponent,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -42,6 +39,8 @@ export class DashboardComponent {
   saveError = signal<string | null>(null);
   isModalOpen = signal(false);
   deletingCommitment = signal<Commitment | null>(null);
+  removing = signal(false);
+  removalError = signal<string | null>(null);
   editingCommitment = signal<Commitment | null>(null);
   toastMessage = signal<string | null>(null);
   completingIds = signal<ReadonlySet<string>>(new Set());
@@ -118,30 +117,48 @@ export class DashboardComponent {
   }
 
   promptDelete(id: string) {
+    if (this.commitmentService.isStale() || this.completingIds().has(id)) return;
     const found = this.commitmentService.commitments().find((c) => c.id === id);
     if (found) {
+      this.removalError.set(null);
       this.deletingCommitment.set(found);
     }
   }
 
   cancelDelete() {
+    if (this.removing()) return;
     this.deletingCommitment.set(null);
   }
 
   async confirmDelete() {
+    return this.removeSelected(true);
+  }
+
+  async archiveSelected() {
+    return this.removeSelected(false);
+  }
+
+  private async removeSelected(permanent: boolean) {
     const target = this.deletingCommitment();
-    if (target) {
+    if (target && !this.removing()) {
+      this.removing.set(true);
+      this.removalError.set(null);
       try {
-        await this.commitmentService.removeCommitment(target.id);
+        if (permanent) await this.commitmentService.permanentDeleteCommitment(target.id);
+        else await this.commitmentService.removeCommitment(target.id);
         this.deletingCommitment.set(null);
       } catch (error) {
-        this.showToast(error instanceof Error ? error.message : 'Could not archive habit.');
+        this.removalError.set(
+          error instanceof Error ? error.message : 'Could not remove habit. Retry.',
+        );
+      } finally {
+        this.removing.set(false);
       }
     }
   }
 
   async handleArchive(id: string) {
-    if (this.completingIds().has(id)) return;
+    if (this.completingIds().has(id) || this.removing()) return;
     this.completingIds.update((ids) => new Set([...ids, id]));
     try {
       await this.commitmentService.removeCommitment(id);

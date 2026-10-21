@@ -71,23 +71,22 @@
       <div class="mb-3"></div>
     }
 
-    <app-daily-rules />
-
-    <!-- Private motivation stays optional and secondary. -->
-    <details class="p-3 rounded-2xl border border-border/40 mb-2.5">
-      <summary class="cursor-pointer text-xs text-muted-foreground">
-        Add a private reason (optional)
-      </summary>
+    <!-- Optional motivation starts empty and stays visible. -->
+    <div class="p-3 rounded-2xl border border-border/40 mb-2.5">
       <div class="w-full">
+        <label for="onboarding-why" class="block text-xs text-muted-foreground mb-2"
+          >Why (optional)</label
+        >
         <textarea
-          aria-label="Private reason (optional)"
+          id="onboarding-why"
+          aria-label="Why (optional)"
           [value]="whyText()"
           (input)="whyTextChanged.emit($any($event.target).value)"
           class="w-full bg-transparent text-xs text-muted-foreground resize-none focus:outline-none border-b border-primary/20 focus:border-primary h-10"
-          placeholder="A reason just for you"
+          placeholder="Why does this habit matter to you?"
         ></textarea>
       </div>
-    </details>
+    </div>
 
     <!-- Daily Phone Reminder Time -->
     <div

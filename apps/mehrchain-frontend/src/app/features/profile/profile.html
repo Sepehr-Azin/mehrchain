@@ -40,10 +40,6 @@
   }
 
   <!-- Mero keeps a fixed name; existing named-color preferences remain available. -->
-  <p class="mb-5 text-xs text-muted-foreground">
-    Habit days follow {{ currentUser()?.timeZone || 'UTC' }} and reset at midnight. Your account
-    timezone stays fixed when you travel or change device settings.
-  </p>
   <div class="bg-card rounded-3xl p-5 border border-border/70 shadow-sm mb-6 text-center">
     <app-mero size="lg" [showGlow]="true" [mood]="meroMood.mood() === 'sad' ? 'sad' : 'happy'" />
     <h2 class="mt-2 text-xl font-bold text-foreground">Mero</h2>
@@ -81,8 +77,7 @@
     @if (customization.collection(); as collection) {
       @if (isCustomThemeUnlocked()) {
         <p class="text-xs text-muted-foreground">
-          {{ collection.colors.length }} saved / {{ collection.capacity }} earned slots. Your colors
-          and slots stay yours after a break.
+          {{ collection.colors.length }} saved / {{ collection.capacity }} earned slots.
         </p>
         <div class="flex flex-wrap items-center gap-2">
           <button
@@ -213,30 +208,12 @@
               {{ customization.saving() ? 'Saving…' : 'Save & apply color' }}
             </button>
           </fieldset>
-          <p class="text-[11px] text-muted-foreground">
-            Editing a slot is free. Other saved colors stay in your collection.
-          </p>
         </form>
 
-        <details class="border-t border-border/60 pt-3">
-          <summary class="text-xs font-bold text-foreground cursor-pointer">
-            Next slot · two ways to earn it
-          </summary>
-          <div class="space-y-2 mt-2 text-xs text-muted-foreground">
-            <p>
-              {{ collection.collectionDays }} / {{ collection.nextDayTarget }} completed days after
-              your first milestone. At most one per date; breaks keep your progress.
-            </p>
-            <p>
-              Or {{ collection.acceptedPartners }} / {{ collection.nextPartnerTarget }} different
-              accepted Chain partners. Reconnecting the same person adds none.
-            </p>
-            <p>Either path earns the same next slot. Reaching both does not add an extra slot.</p>
-            <a routerLink="/chain" class="inline-block text-primary py-1"
-              >Explore Chain · optional</a
-            >
-          </div>
-        </details>
+        <p class="text-xs text-muted-foreground">
+          Next slot: {{ collection.collectionDays }} / {{ collection.nextDayTarget }} days or
+          {{ collection.acceptedPartners }} / {{ collection.nextPartnerTarget }} partners.
+        </p>
       } @else {
         <p class="text-sm text-foreground">
           Your first color opens after one habit reaches 21 consecutive days.

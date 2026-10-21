@@ -22,10 +22,11 @@ import { ChainService } from '../../core/services/chain.service';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { completionDayKey } from '../../core/utils/completion-day';
-import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
 
 import { McButtonComponent, McCardComponent } from '../../shared/ui';
 import { JourneySkeletonComponent } from '../../shared/components/skeletons';
+import { Commitment } from '@mehrchain/shared-data';
+import { DeleteConfirmationModal } from '../../shared/components/delete-confirmation-modal/delete-confirmation-modal';
 
 interface JourneyActivity {
   id: string;
@@ -43,8 +44,8 @@ interface JourneyActivity {
     McCardComponent,
     McButtonComponent,
     JourneySkeletonComponent,
+    DeleteConfirmationModal,
     RouterLink,
-    DailyRulesComponent,
   ],
   templateUrl: './journey.html',
   styleUrl: './journey.css',
@@ -73,6 +74,7 @@ export class Journey implements OnInit {
   restoringIds = signal<ReadonlySet<string>>(new Set());
   restoredTitle = signal<string | null>(null);
   readonly deletingIds = signal<ReadonlySet<string>>(new Set());
+  readonly habitToDelete = signal<Commitment | null>(null);
   readonly selectedDate = signal<string | null>(null);
   private readonly recentLimit = signal(5);
   private readonly chainSnapshotOwner = signal<string | null>(null);
@@ -139,6 +141,7 @@ export class Journey implements OnInit {
         this.restoredTitle.set(null);
         this.restoringIds.set(new Set());
         this.deletingIds.set(new Set());
+        this.habitToDelete.set(null);
       });
     });
     effect(() => {
@@ -243,7 +246,14 @@ export class Journey implements OnInit {
     )
       return;
     if (!this.archivedHabits().some((h) => h.id === id)) return;
-    if (confirm('Are you sure you want to permanently delete this habit and all its history?')) {
+    this.errorMessage.set(null);
+    this.habitToDelete.set(this.archivedHabits().find((habit) => habit.id === id) ?? null);
+  }
+
+  async confirmPermanentDelete(): Promise<void> {
+    const id = this.habitToDelete()?.id;
+    if (!id || this.deletingIds().has(id) || this.commitmentService.isStale()) return;
+    {
       const userId = this.auth.currentUser()?.id;
       const token = this.auth.getToken();
       const current = () =>
@@ -252,6 +262,7 @@ export class Journey implements OnInit {
       try {
         await this.commitmentService.permanentDeleteCommitment(id);
         if (!current()) return;
+        this.habitToDelete.set(null);
         this.errorMessage.set(null);
       } catch (error) {
         if (current())

@@ -394,7 +394,7 @@ Implementation follows the recommended **Active habits / Best current streak / A
 
 **Priority:** P1, required before v1 product acceptance; first of the three owner additions.
 
-**Status:** Ready for scoped correction; no implementation or GitHub issue yet.
+**Status:** Local implementation complete; execution/PWA acceptance pending. See [T16 handoff](t16_review_handoff.md). No GitHub issue was created in this session.
 
 **Dependencies:** use T12's deployed-route/schema findings for the collection defect. Integrates T03/T05/T06/T07/T11. Update the affected OpenSpec daily-return/lifecycle deltas when implementing; preserve historical handoffs as evidence.
 

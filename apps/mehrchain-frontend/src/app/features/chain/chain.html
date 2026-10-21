@@ -92,10 +92,20 @@
       } @else {
         <div class="space-y-2">
           <p class="text-xs text-muted-foreground leading-relaxed">
-            Create a public habit with a 21-completed-day goal and accept this invitation. Your
-            reason stays private. You can also dismiss the invitation and continue on your own.
+            Create a public habit to accept this invitation.
           </p>
-          <app-daily-rules />
+          <label for="quick-habit-why" class="block text-xs text-muted-foreground"
+            >Why (optional)</label
+          >
+          <textarea
+            id="quick-habit-why"
+            [value]="quickWhy()"
+            (input)="quickWhy.set($any($event.target).value)"
+            [disabled]="isLinking()"
+            placeholder="Why does this habit matter to you?"
+            rows="2"
+            class="w-full rounded-xl border border-border bg-card p-3 text-sm text-foreground"
+          ></textarea>
           <button
             type="button"
             (click)="createQuickPublicHabitAndLink()"

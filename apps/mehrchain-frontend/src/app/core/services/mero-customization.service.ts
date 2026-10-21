@@ -382,7 +382,8 @@ export class MeroCustomizationService {
         this.confirmed.set({ ...session, data });
       }
     } catch (error) {
-      if (this.current(session, version)) this.loadError.set(this.message(error));
+      if (this.current(session, version))
+        this.loadError.set('Could not load your collection. Refresh to retry.');
     } finally {
       if (this.current(session, version)) this.loading.set(false);
     }

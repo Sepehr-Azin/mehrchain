@@ -1,5 +1,4 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -27,7 +26,7 @@ export interface ProfileBadge {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, FormsModule, LucideAngularModule, MeroComponent, RouterLink],
+  imports: [CommonModule, FormsModule, LucideAngularModule, MeroComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })

@@ -84,24 +84,6 @@
       }
     </section>
 
-    @if (activeCommitmentsCount() === 0) {
-      <div
-        class="mb-5 rounded-2xl border border-border/50 bg-card p-4 text-sm text-muted-foreground"
-      >
-        @if (archivedHabits().length > 0) {
-          <p>Your earlier progress is here whenever you are ready.</p>
-          <button type="button" (click)="openArchived()" class="journey-text-action">
-            Find a habit to restore
-          </button>
-        } @else if (commitmentService.isStale()) {
-          <p>Your habits are not up to date. Refresh to see your saved progress.</p>
-        } @else {
-          <p>Your journey starts with a small step.</p>
-          <a routerLink="/dashboard" class="journey-text-action">Go to today's step</a>
-        }
-      </div>
-    }
-
     <section
       class="bg-card rounded-3xl p-4 shadow-soft border border-border/50 mb-5"
       aria-labelledby="journey-calendar-title"
@@ -160,7 +142,6 @@
             No saved completions for this date. Earlier effort stays with you.
           } @else {
             <p>No dated completions saved yet.</p>
-            <a routerLink="/dashboard" class="journey-text-action">Go to today's step</a>
           }
         </div>
       } @else {
@@ -270,7 +251,7 @@
                     }
                   </p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex w-full items-center justify-between gap-2">
                   <mc-button
                     variant="outline"
                     size="md"
@@ -314,48 +295,18 @@
         role="status"
         class="mt-3 rounded-2xl border border-border/50 p-3 text-sm text-foreground"
       >
-        <p>
-          {{ restoredTitle() }} is restored. Your earlier completed days and earned colors are kept.
-        </p>
-        <a routerLink="/dashboard" class="journey-text-action">Go to today's step</a>
-        <p class="text-xs text-muted-foreground">
-          If its target is already reached, choose Continue or Archive. Reconnect only with a new
-          invitation.
-        </p>
+        <p>{{ restoredTitle() }} restored.</p>
       </div>
     }
   </mc-card>
-
-  <details class="rounded-xl border border-border/50 p-3 text-xs text-muted-foreground">
-    <summary class="min-h-6 cursor-pointer font-semibold text-foreground">
-      About your progress
-    </summary>
-    <div class="mt-2 space-y-2 leading-relaxed">
-      <p>
-        Completions include active and archived habits once. Several completions on one date fill
-        one calendar day. Older totals may include effort without saved dates.
-      </p>
-      <p>
-        Best current streak is the longest current streak on one active habit, never a combined
-        streak. A break keeps earlier completions.
-      </p>
-      <p>
-        Active Chains count available accepted habit connections, not people or pending invites.
-        Chains are optional.
-      </p>
-      <p>
-        Support today counts hearts received across your habits, without naming supporters. It
-        resets at midnight in your account timezone.
-      </p>
-      <p>Saved dates and today use {{ timeZone() }}, your account timezone.</p>
-      <p>
-        Earned color slots stay in
-        <a routerLink="/profile" fragment="color-collection-title" class="underline text-primary"
-          >your collection</a
-        >
-        after a break.
-      </p>
-    </div>
-  </details>
-  <app-daily-rules [compact]="true" />
 </div>
+@if (habitToDelete(); as habit) {
+  <app-delete-confirmation-modal
+    [commitment]="habit"
+    [allowArchive]="false"
+    [isSubmitting]="deletingIds().has(habit.id)"
+    [errorMessage]="errorMessage()"
+    (confirm)="confirmPermanentDelete()"
+    (cancel)="habitToDelete.set(null)"
+  />
+}

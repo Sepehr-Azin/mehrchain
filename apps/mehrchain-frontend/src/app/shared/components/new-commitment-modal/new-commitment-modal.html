@@ -90,23 +90,20 @@
       </div>
 
       <!-- Why Textarea -->
-      <details class="mb-4">
-        <summary class="cursor-pointer text-xs text-muted-foreground">
-          Add a private reason (optional)
-        </summary>
+      <div class="mb-4">
         <label
           for="new-habit-why"
           class="block text-xs font-bold text-muted-foreground uppercase mb-1.5 ml-1"
-          >Why this matters to you</label
+          >Why (optional)</label
         >
         <input
           type="text"
           [(ngModel)]="why"
           id="new-habit-why"
-          placeholder="A reason just for you"
+          placeholder="Why does this habit matter to you?"
           class="w-full bg-muted/40 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground/60 border border-border focus:border-primary focus:bg-card focus:outline-none"
         />
-      </details>
+      </div>
 
       <!-- Duration -->
       <div class="mb-4">
@@ -180,8 +177,6 @@
           </p>
         }
       </div>
-
-      <app-daily-rules />
 
       <!-- Reminder Time -->
       <div

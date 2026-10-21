@@ -73,3 +73,23 @@ effort in Journey, and explain that restoring requires a new invitation to recon
 - **WHEN** a foreground or day-boundary refresh returns an automatically archived habit
 - **THEN** active and archived collections update together and the unavailable local Chain endpoint is hidden
 - **AND** Journey retains its dated completion history and offers Restore
+
+### Requirement: Direct permanent deletion with private reflection
+
+Home SHALL offer direct permanent deletion of an active habit without requiring
+archive first. The dialog SHALL show a qualifying user-written Why before the
+destructive confirmation, with distinct Keep, Archive and Delete permanently choices.
+Blank and known app-supplied samples SHALL NOT qualify; stored reasons SHALL NOT be
+destructively normalized. Deletion SHALL retain owner authorization and atomic
+Chain/invite cleanup with neutral lifecycle receipts; earned Mero progress stays permanent.
+
+#### Scenario: Personal reason and failed deletion
+- **WHEN** an owner opens deletion for an active habit with a personal reason
+- **THEN** the reason is visible, Keep changes nothing and Archive preserves history
+- **AND** Delete removes the habit/history only after server confirmation
+- **AND** a failure retains the habit/dialog and permits retry without duplicate pending writes
+
+#### Scenario: Legacy sample or archived habit
+- **WHEN** the reason is blank or a known historical sample
+- **THEN** the reflection is omitted without rewriting the saved data
+- **AND** archived deletion uses the same confirmation without offering Archive again

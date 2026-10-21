@@ -43,10 +43,6 @@
     }
   </div>
 
-  @if (!stale() && receivedHeartCount() > 0) {
-    <p class="mb-3 text-xs text-muted-foreground">Quiet support for today. No reply needed.</p>
-  }
-
   @if (isMenuOpen()) {
     <div
       [id]="'habit-details-' + commitment().id"
@@ -85,12 +81,6 @@
           </div>
         }
       </dl>
-      @if (receivedHeartCount() > 0) {
-        <p class="mt-3 text-muted-foreground">
-          Quiet support for today, without sender names. Hearts clear at your account midnight and
-          do not change your progress.
-        </p>
-      }
       <div class="flex flex-wrap gap-2 mt-3">
         <button
           type="button"
@@ -126,10 +116,7 @@
     !commitment().isCompletedToday &&
     commitment().consecutiveMissedDays === 1
   ) {
-    <p class="mb-3 text-xs text-muted-foreground">
-      Take today's step after a missed date. Your next completion starts a streak of 1; earlier
-      completed days still count. No catch-up needed.
-    </p>
+    <p class="mb-3 text-xs text-muted-foreground">Next completion starts a streak of 1.</p>
   }
   <div [attr.aria-busy]="pending()">
     @if (goalReached()) {

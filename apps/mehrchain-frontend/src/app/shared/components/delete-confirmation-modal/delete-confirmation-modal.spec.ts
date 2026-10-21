@@ -57,4 +57,36 @@ describe('DeleteConfirmationModal', () => {
 
     expect(confirmSpy).toHaveBeenCalled();
   });
+
+  it.each([
+    '',
+    '   ',
+    'To prove to myself small steps matter',
+    'To prove to myself that small steps matter.',
+  ])('does not reflect an empty or supplied sample reason: %s', (why) => {
+    fixture.componentRef.setInput('commitment', { ...mockCommitment, why });
+    fixture.detectChanges();
+    expect(component.reason()).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Your private Why');
+  });
+
+  it('keeps archive separate from permanent deletion', () => {
+    const archive = vi.fn();
+    const remove = vi.fn();
+    component.archive.subscribe(archive);
+    component.confirm.subscribe(remove);
+    fixture.nativeElement.querySelector('mc-button[variant="secondary"] button').click();
+    expect(archive).toHaveBeenCalledTimes(1);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('retains the visible reason and disables all choices while saving', () => {
+    fixture.componentRef.setInput('isSubmitting', true);
+    fixture.detectChanges();
+    const buttons = [
+      ...fixture.nativeElement.querySelectorAll('mc-button button'),
+    ] as HTMLButtonElement[];
+    expect(buttons.every((button) => button.disabled)).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain(mockCommitment.why);
+  });
 });

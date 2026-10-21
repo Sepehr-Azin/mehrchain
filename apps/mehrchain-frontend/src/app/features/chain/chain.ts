@@ -11,7 +11,6 @@ import { MeroComponent } from '../../shared/components/mero/mero';
 import { ChainCardComponent } from './components/chain-card/chain-card';
 import { InviteSectionComponent } from './components/invite-section/invite-section';
 import { ChainCardSkeletonComponent } from '../../shared/components/skeletons';
-import { DailyRulesComponent } from '../../shared/components/daily-rules/daily-rules';
 import {
   ChainDisconnectReceipt,
   DISCONNECT_REASONS,
@@ -29,7 +28,6 @@ import {
     ChainCardComponent,
     InviteSectionComponent,
     ChainCardSkeletonComponent,
-    DailyRulesComponent,
   ],
   templateUrl: './chain.html',
   styleUrls: ['./chain.css'],
@@ -61,6 +59,7 @@ export class ChainComponent {
   });
 
   readonly isLinking = signal(false);
+  readonly quickWhy = signal('');
   readonly inviteError = signal<string | null>(null);
   readonly toastMessage = signal<string | null>(null);
 
@@ -83,6 +82,7 @@ export class ChainComponent {
       const code = params['invite'];
       this.incomingInvite.set(null);
       this.inviteError.set(null);
+      this.quickWhy.set('');
       if (!code) return;
       this.chainService
         .getInvite(code)
@@ -136,10 +136,12 @@ export class ChainComponent {
         category: invite.category || 'growth',
         totalDays: 21,
         isPublic: true,
+        why: this.quickWhy().trim(),
       });
       this.inviteSelectedCommitmentId.set(habit.id);
       await this.chainService.acceptInvite(invite.inviteCode, habit.id);
       this.showToast('Habit created and chain connected!');
+      this.quickWhy.set('');
       this.dismissIncomingInvite();
     } catch {
       this.showToast('Could not complete the link. If your habit was saved, select it and retry.');

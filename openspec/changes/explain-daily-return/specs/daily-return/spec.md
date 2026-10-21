@@ -1,16 +1,17 @@
 ## ADDED Requirements
 
-### Requirement: Discoverable daily rules
+### Requirement: Minimal habit forms and private motivation
 
-The frontend SHALL explain account-timezone midnight, once-per-date completion,
-Endless and Custom completed-day goals, and automatic archive after two fully
-missed dates during habit setup. Help SHALL remain discoverable without replaying onboarding.
+The frontend SHALL use short functional labels and validation without long daily-rule
+panels or repeated explanatory navigation. Optional private Why SHALL remain visible
+and empty in new onboarding, create, edit and Chain quick-create forms. Placeholders
+SHALL NOT be submitted as user motivation; editing SHALL retain the saved reason.
 
 #### Scenario: Create or edit a habit
 
 - **WHEN** an owner chooses a goal or edits a habit
-- **THEN** daily rules identify the account timezone and distinguish completed days from consecutive streaks
-- **AND** private motivation remains optional and secondary
+- **THEN** the optional Why control is visible without expanding details
+- **AND** existing account-calendar and completed-day goal behavior is unchanged
 
 ### Requirement: A clear return action
 
@@ -26,7 +27,8 @@ SHALL preserve explicit restore, new-invite acceptance, quiet support and perman
 #### Scenario: Return after weeks
 
 - **WHEN** the confirmed account has archived habits
-- **THEN** Dashboard links directly to their Restore actions in Journey
+- **THEN** Journey's archived list offers Restore, with trash at the right edge of its action row
+- **AND** Dashboard does not add an archived-return banner or redundant Restore navigation
 - **AND** restore preserves history and earned colors without reconnecting old Chains
 
 ### Requirement: Consistent dated effort
