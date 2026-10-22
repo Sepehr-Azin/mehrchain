@@ -6,8 +6,8 @@ to the October 21 product direction; historical handoffs remain unchanged.
 
 - Removed daily-rule/help panels, the Home archive-return banner and earned-color
   shortcut, repeated restore/dashboard links, Journey's progress essay and Profile's
-  repeated timezone/collection explanation. Introductory onboarding cards use short
-  copy. Bottom navigation and Journey's archived list remain available.
+  repeated timezone/collection explanation. Bottom navigation and Journey's archived
+  list remain available.
 - Optional Why controls are visible in onboarding, create/edit and Chain quick-create,
   with empty new state and an actual placeholder. Saved edit values are retained.
 - Git history (`023b42d`'s parent) proves onboarding previously initialized Why to
@@ -31,3 +31,13 @@ reflection, independent archive/delete and pending-choice checks. No local
 build, unit suite, typecheck, PWA/phone visual acceptance or strict OpenSpec
 validation was run. T09 still needs the exact deployed candidate, both themes,
 phone widths, authenticated collection refresh, reload and failed-write flows.
+
+## Owner scope clarification — October 22, 2026
+
+The requested explanation removal targets the recently added expandable help
+sections, not the established introduction. Restored the pre-T16 Why Walk Together,
+Meaning of MehrChain and Connected Habit Chains templates, including their cards,
+copy and next-step labels, plus the original welcome and invitation introduction.
+The daily-rules accordion stays removed; the optional personal Why input remains
+visible. No auth, habit or navigation behavior changed. Source/diff review only;
+no local build or tests were run for this correction.

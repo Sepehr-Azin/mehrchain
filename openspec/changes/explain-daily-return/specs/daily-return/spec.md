@@ -6,6 +6,15 @@ The frontend SHALL use short functional labels and validation without long daily
 panels or repeated explanatory navigation. Optional private Why SHALL remain visible
 and empty in new onboarding, create, edit and Chain quick-create forms. Placeholders
 SHALL NOT be submitted as user motivation; editing SHALL retain the saved reason.
+The established onboarding introduction about companionship, the meaning of
+MehrChain and how Chains work SHALL retain its explanatory cards and copy; the
+removal applies to the recently added expandable rule/help panels.
+
+#### Scenario: Read the onboarding introduction
+
+- **WHEN** a newcomer advances through the introduction
+- **THEN** the companionship, MehrChain meaning and Chain explanation cards remain visible
+- **AND** the removed daily-rules accordion is not reintroduced
 
 #### Scenario: Create or edit a habit
 
