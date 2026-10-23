@@ -46,14 +46,15 @@ describe('App', () => {
 
   it('should display blue version notification dot on Profile tab when new version is available', () => {
     component.showNavbar.set(true);
-    component.versionService.hasNewVersion.set(true);
+    component.versionService.availableUpdate.set({ kind: 'web', id: 'next', version: '1.0.1' });
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const versionDot = compiled.querySelector('span[aria-label="New version available"]');
     expect(versionDot).toBeTruthy();
 
-    component.versionService.hasNewVersion.set(false);
+    component.versionService.markVersionAsSeen();
+    component.versionService.availableUpdate.set(null);
     fixture.detectChanges();
     const versionDotRemoved = compiled.querySelector('span[aria-label="New version available"]');
     expect(versionDotRemoved).toBeFalsy();

@@ -315,6 +315,34 @@
   </div>
 
   <!-- 4. Appearance Theme & Account Settings -->
+  <section class="mb-4 p-4 rounded-2xl bg-card border border-border" aria-label="App updates">
+    <p class="text-sm">Installed version: {{ versionService.currentVersion }}</p>
+    @if (versionService.availableUpdate(); as update) {
+      <p class="text-sm mt-2">
+        {{ update.kind === 'android' ? 'Android' : 'Web' }} update: {{ update.version }}
+      </p>
+      <button
+        type="button"
+        class="min-h-11 px-4 mt-2 rounded-xl bg-primary text-primary-foreground"
+        (click)="versionService.activateUpdate()"
+      >
+        {{ update.kind === 'android' ? 'Download update' : 'Reload to update' }}
+      </button>
+    }
+    <button
+      type="button"
+      class="min-h-11 px-3 mt-2 rounded-xl bg-muted"
+      [disabled]="versionService.checking()"
+      (click)="versionService.checkForUpdates(true)"
+    >
+      {{ versionService.checking() ? 'Checking…' : 'Check for updates' }}
+    </button>
+    @if (versionService.checkError(); as error) {
+      <p role="status" class="text-sm mt-2">{{ error }}</p>
+    } @else if (versionService.checked() && !versionService.availableUpdate()) {
+      <p role="status" class="text-sm mt-2">No update is ready right now.</p>
+    }
+  </section>
   <div class="space-y-4 mb-4">
     <!-- Theme Selector -->
     <div class="bg-card border border-border/60 rounded-2xl p-4 shadow-xs">

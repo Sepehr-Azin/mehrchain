@@ -1,5 +1,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
+require('./android-release.cjs').validateVersion();
+const appVersion = require('../app-version.json');
+const swConfig = require('../ngsw-config.json');
+swConfig.appData = { ...swConfig.appData, version: appVersion.version };
+fs.mkdirSync(path.join(__dirname, '../tmp'), { recursive: true });
+fs.writeFileSync(
+  path.join(__dirname, '../tmp/ngsw-config.generated.json'),
+  JSON.stringify(swConfig, null, 2),
+);
 // This is a public OAuth identifier, never a client secret.
 const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
 if (

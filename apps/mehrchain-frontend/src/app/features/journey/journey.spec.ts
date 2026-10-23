@@ -193,6 +193,10 @@ describe('Journey', () => {
       link('c', 'walk', 1),
       link('foreign', 'foreign', 9, 'other'),
     ]);
+    // Establish the mocked signed-in session before computed signals are evaluated.
+    fixture.destroy();
+    fixture = TestBed.createComponent(Journey);
+    component = fixture.componentInstance;
     patchState(store, { activeUserId: 'owner', isStale: false });
     fixture.detectChanges();
     chains.supportStale.set(false);

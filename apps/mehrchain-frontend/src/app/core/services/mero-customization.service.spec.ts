@@ -142,6 +142,7 @@ describe('Mero server collection', () => {
       }),
     );
     habits.set([{ currentStreak: 99 }]);
+    TestBed.tick(); // Settle the guest habit change before the signed-in session starts.
     await login(snapshot({ currentStreak: 20 }));
     expect(service.isUnlocked()).toBe(false);
     expect(service.selectedThemeId()).toBe('golden');

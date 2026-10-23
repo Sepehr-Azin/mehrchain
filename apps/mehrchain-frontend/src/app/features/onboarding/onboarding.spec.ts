@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthService } from '../../core/services/auth.service';
 import { OnboardingComponent } from './onboarding';
+import { commonTestProviders } from '../../../testing/test-providers';
+import { importProvidersFrom } from '@angular/core';
+import { LucideAngularModule, Info } from 'lucide-angular';
 
 describe('OnboardingComponent', () => {
   let component: OnboardingComponent;
@@ -9,6 +12,7 @@ describe('OnboardingComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [OnboardingComponent],
+      providers: [...commonTestProviders, importProvidersFrom(LucideAngularModule.pick({ Info }))],
     }).compileComponents();
 
     fixture = TestBed.createComponent(OnboardingComponent);
@@ -18,6 +22,25 @@ describe('OnboardingComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('keeps persistent text resizing inside the sign-in dialog without clearing drafts', async () => {
+    component.loginEmail.set('draft@example.com');
+    component.openLoginModal('draft@example.com');
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    const size = dialog.querySelector('select[aria-label="Text size"]') as HTMLSelectElement;
+    expect(size).toBeTruthy();
+    size.value = '200';
+    size.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+    expect(document.documentElement.style.fontSize).toBe('200%');
+    expect(component.loginEmail()).toBe('draft@example.com');
+    component.closeLoginModal();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    document.documentElement.style.fontSize = '';
+    localStorage.removeItem('mehrchain_text_size');
   });
 
   it('should default to Endless Journey (-1) and allow proceeding to signup', () => {
