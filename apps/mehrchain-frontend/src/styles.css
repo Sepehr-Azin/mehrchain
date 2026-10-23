@@ -284,6 +284,96 @@ select {
 }
 
 /* Animations */
+/* Touch policy excludes pinch/double-tap scaling but retains both scroll axes.
+   Desktop zoom, keyboard shortcuts and OS magnification remain browser-owned. */
+@media (hover: none) and (pointer: coarse) {
+  html,
+  body,
+  app-root,
+  .app-shell,
+  .app-overlay,
+  .app-dialog,
+  [role='dialog'],
+  .overflow-y-auto,
+  .custom-scrollbar {
+    touch-action: pan-x pan-y;
+  }
+
+  /* iOS focuses small controls by zooming. Include all account/habit/modal forms. */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem) !important;
+  }
+}
+
+/* Existing arbitrary pixel text utilities must follow the user's root text size. */
+[class~='text-[9px]'] {
+  font-size: 0.5625rem;
+}
+[class~='text-[10px]'] {
+  font-size: 0.625rem;
+}
+[class~='text-[11px]'] {
+  font-size: 0.6875rem;
+}
+
+.text-size-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+  font-size: 0.875rem;
+}
+
+.text-size-control select {
+  min-height: 2.75rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  color: var(--color-foreground);
+  background: var(--color-card);
+}
+
+/* The toolbar participates in layout; keep T16's bottom-aligned introduction. */
+.onboarding-shell {
+  display: flex;
+  flex-direction: column;
+}
+.onboarding-shell > app-onboarding {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+.onboarding-shell .onboarding-page {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.onboarding-welcome app-mero {
+  max-width: 100%;
+}
+.onboarding-welcome app-mero > div {
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+/* Enlarged labels must wrap rather than overlap fixed navigation or controls. */
+button,
+label,
+nav a {
+  overflow-wrap: anywhere;
+}
+textarea {
+  min-height: 2.5em;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -2,134 +2,164 @@ name: Build & Release Android APK
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
     inputs:
       publish_release:
-        description: 'Publish official GitHub Release with downloadable APK'
-        required: false
+        description: Publish a verified signed APK
         type: boolean
         default: false
       version_tag:
-        description: 'Release Tag Name (e.g. v0.9.0-preview)'
-        required: false
+        description: Must match app-version.json (e.g. v1.0.0-rc.4)
         type: string
-        default: 'v0.9.0-preview'
+        required: false
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-apk:
-    name: 📱 Build & Package Android APK
     runs-on: ubuntu-latest
     env:
+      NX_DAEMON: 'false'
       GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID || '367374125567-qp8ooa1rrak6o49qs9sn8l9doiefrq76.apps.googleusercontent.com' }}
-
     steps:
-      - name: 🛎️ Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js 22 (LTS)
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
-
-      - name: ☕ Setup Java 21 (Temurin)
-        uses: actions/setup-java@v5
+          cache: npm
+      - uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
-          cache: 'gradle'
-
-      - name: 📦 Install Node Dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: 🧬 Generate Prisma Client
-        run: npx prisma generate --schema=apps/mehrchain-backend/prisma/schema.prisma || true
-
-      - name: 🧪 Run Backend Automated Tests
-        run: npx nx test mehrchain-backend
-
-      - name: 🧪 Run Frontend Automated Tests
-        run: npx nx test mehrchain-frontend
-
-      - name: 🛠️ Build Web App & Sync Capacitor Assets
-        run: npm run mobile:build
-
-      - name: 📱 Accept Android SDK Licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-      - name: 🤖 Build Android APKs (Debug & Release)
+          cache: gradle
+      - run: npm ci --legacy-peer-deps
+      - name: Validate shared version metadata
+        id: version
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version_tag }}
+        run: node scripts/android-release.cjs validate "$RELEASE_TAG"
+      - run: node --test scripts/release-policy.test.mjs scripts/android-release.test.cjs
+      - run: npx prisma generate --schema=apps/mehrchain-backend/prisma/schema.prisma
+      - run: npx nx test mehrchain-backend --skip-nx-cache
+      - run: npx nx test mehrchain-frontend --watch=false --skip-nx-cache
+      - name: Build web and sync Android
         run: |
-          cd android
+          npx nx build mehrchain-frontend --skip-nx-cache
+          npx cap sync android
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: |
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
+          result=${PIPESTATUS[1]}
+          exit "$result"
+      - name: Build debug and unsigned release for validation
+        working-directory: android
+        run: |
           chmod +x gradlew
           ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
-
-      - name: 🔏 Sign Release APK (If Keystore Secret Provided)
-        id: sign_release
-        run: |
-          RELEASE_DIR="android/app/build/outputs/apk/release"
-          DEBUG_DIR="android/app/build/outputs/apk/debug"
-          mkdir -p dist/apk
-
-          # Copy debug apk
-          if [ -f "$DEBUG_DIR/app-debug.apk" ]; then
-            cp "$DEBUG_DIR/app-debug.apk" dist/apk/mehrchain-debug.apk
-          fi
-
-          # Check if Keystore Base64 secret exists
-          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "🔐 Keystore secret found. Decoding and signing release APK..."
-            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > /tmp/release.keystore
-
-            # Find apksigner and zipalign in Android SDK
-            BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
-            echo "Using Android Build Tools: $BUILD_TOOLS_DIR"
-
-            # Align & Sign
-            $BUILD_TOOLS_DIR/zipalign -v -p 4 "$RELEASE_DIR/app-release-unsigned.apk" /tmp/app-release-aligned.apk || cp "$RELEASE_DIR/app-release-unsigned.apk" /tmp/app-release-aligned.apk
-            
-            $BUILD_TOOLS_DIR/apksigner sign --ks /tmp/release.keystore \
-              --ks-pass pass:"${{ secrets.KEYSTORE_PASSWORD }}" \
-              --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
-              --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
-              --out dist/apk/mehrchain-release.apk /tmp/app-release-aligned.apk
-
-            echo "✅ Release APK signed successfully!"
-            rm -f /tmp/release.keystore /tmp/app-release-aligned.apk
-          else
-            echo "ℹ️ No ANDROID_KEYSTORE_BASE64 secret provided. Exporting unsigned release APK and debug APK."
-            if [ -f "$RELEASE_DIR/app-release-unsigned.apk" ]; then
-              cp "$RELEASE_DIR/app-release-unsigned.apk" dist/apk/mehrchain-release-unsigned.apk
-            fi
-            # Use debug apk as default downloadable mehrchain.apk if not signed
-            cp "$DEBUG_DIR/app-debug.apk" dist/apk/mehrchain.apk
-          fi
-
-      - name: 🚀 Upload APK Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: mehrchain-apk-builds
-          path: dist/apk/*
+          name: mehrchain-debug-ci
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           retention-days: 14
 
-      - name: 🏷️ Publish Official GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish_release == true
+  publish:
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || inputs.publish_release == true)
+    needs: build-apk
+    runs-on: ubuntu-latest
+    # Official signing is confined to the canonical repository and release environment.
+    environment: android-release
+    permissions:
+      contents: write
+    concurrency:
+      group: android-official-publication
+      cancel-in-progress: false
+    env:
+      NX_DAEMON: 'false'
+      GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID || '367374125567-qp8ooa1rrak6o49qs9sn8l9doiefrq76.apps.googleusercontent.com' }}
+      ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require canonical release identity
+        env:
+          REPOSITORY: ${{ github.repository }}
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          test "$REPOSITORY" = 'farzad-bahadorifar/mehrchain'
+          test -n "$KEYSTORE"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          test -n "$ANDROID_SIGNING_CERT_SHA256"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - run: npm ci --legacy-peer-deps
+      - name: Validate tag and increasing versionCode
+        id: version
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version_tag }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          node scripts/android-release.cjs validate "$RELEASE_TAG"
+          node scripts/android-release.cjs publication "$RELEASE_TAG" "$REPOSITORY"
+      - name: Build the checked-out revision
+        run: |
+          npx nx build mehrchain-frontend --skip-nx-cache
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: Sign and verify the official APK
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          trap 'rm -f "$RUNNER_TEMP/release.keystore" "$RUNNER_TEMP/aligned.apk"' EXIT
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          mkdir -p dist/apk
+          "$TOOLS/zipalign" -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/release.keystore" --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
+            --out dist/apk/mehrchain-release.apk "$RUNNER_TEMP/aligned.apk"
+          node scripts/android-release.cjs verify dist/apk/mehrchain-release.apk "$TOOLS" "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+      - name: Publish verified assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version_tag }}
-          name: MehrChain ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version_tag }}
-          files: dist/apk/*
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: MehrChain ${{ steps.version.outputs.tag }}
+          files: |
+            dist/apk/mehrchain-release.apk
+            dist/apk/release-manifest.json
+            dist/apk/SHA256SUMS
+          fail_on_unmatched_files: true
           draft: false
-          prerelease: ${{ !startsWith(github.ref, 'refs/tags/v1.') }}
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

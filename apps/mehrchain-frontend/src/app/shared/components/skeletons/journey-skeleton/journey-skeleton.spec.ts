@@ -17,6 +17,8 @@ describe('JourneySkeletonComponent', () => {
 
   it('should create and render skeleton layout', () => {
     expect(component).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.animate-pulse')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[role="status"]')?.getAttribute('aria-label')).toBe(
+      'Loading your journey',
+    );
   });
 });

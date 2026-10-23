@@ -11,6 +11,7 @@ export class SwipeDirective {
   private startX = 0;
   private startY = 0;
   private startTime = 0;
+  private tracking = false;
 
   // Minimum horizontal movement required (pixels)
   private readonly minDistance = 45;
@@ -21,12 +22,12 @@ export class SwipeDirective {
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(event: TouchEvent): void {
+    this.reset();
     const target = event.target as HTMLElement | null;
     // Don't intercept swipe when interacting with text inputs or textareas
     if (
       target &&
-      (target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
+      (target.closest('input, textarea, select, button, a, [contenteditable]') ||
         target.isContentEditable)
     ) {
       this.startX = 0;
@@ -40,12 +41,24 @@ export class SwipeDirective {
       this.startX = touch.clientX;
       this.startY = touch.clientY;
       this.startTime = Date.now();
+      this.tracking = true;
     }
+  }
+
+  @HostListener('touchmove', ['$event'])
+  onTouchMove(event: TouchEvent): void {
+    if (event.touches.length !== 1) this.reset();
+  }
+
+  @HostListener('touchcancel')
+  onTouchCancel(): void {
+    this.reset();
   }
 
   @HostListener('touchend', ['$event'])
   onTouchEnd(event: TouchEvent): void {
-    if (!this.startX || !this.startY || !this.startTime) {
+    if (!this.tracking || event.touches.length !== 0 || event.changedTouches.length !== 1) {
+      this.reset();
       return;
     }
 
@@ -62,7 +75,11 @@ export class SwipeDirective {
     const absDeltaX = Math.abs(deltaX);
     const absDeltaY = Math.abs(deltaY);
 
-    if (absDeltaX >= this.minDistance && absDeltaY <= this.maxVerticalDrift) {
+    if (
+      absDeltaX >= this.minDistance &&
+      absDeltaY <= this.maxVerticalDrift &&
+      absDeltaX > absDeltaY
+    ) {
       if (deltaX < 0) {
         // Swiped Left (User pulled screen towards left -> Next step)
         this.swipeLeft.emit();
@@ -76,6 +93,7 @@ export class SwipeDirective {
   }
 
   private reset(): void {
+    this.tracking = false;
     this.startX = 0;
     this.startY = 0;
     this.startTime = 0;

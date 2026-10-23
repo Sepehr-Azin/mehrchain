@@ -65,8 +65,8 @@ describe('InviteSectionComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('mark a habit as Public');
-    expect(compiled.textContent).toContain('Go to Dashboard');
+    expect(compiled.textContent).toContain('Make a habit public to invite a partner.');
+    expect(compiled.querySelector('button')).toBeNull();
   });
 
   it('should display selected habit and toggle dropdown', () => {

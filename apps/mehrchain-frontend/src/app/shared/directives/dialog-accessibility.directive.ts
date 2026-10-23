@@ -1,5 +1,16 @@
 import { DOCUMENT } from '@angular/common';
-import { afterNextRender, DestroyRef, Directive, ElementRef, inject, output } from '@angular/core';
+import {
+  afterNextRender,
+  ApplicationRef,
+  createComponent,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  EnvironmentInjector,
+  inject,
+  output,
+} from '@angular/core';
+import { TextSizeComponent } from '../components/text-size/text-size';
 
 /** Keep keyboard focus in an open dialog and return it to its trigger on close. */
 @Directive({
@@ -17,9 +28,22 @@ export class DialogAccessibilityDirective {
   readonly dialogDismiss = output<void>();
 
   constructor() {
+    // Keep text resizing reachable inside the modal's focus boundary.
+    const host = this.document.createElement('app-text-size');
+    this.element.prepend(host);
+    const control = createComponent(TextSizeComponent, {
+      hostElement: host,
+      environmentInjector: inject(EnvironmentInjector),
+    });
+    const app = inject(ApplicationRef);
+    app.attachView(control.hostView);
+    control.changeDetectorRef.detectChanges();
     const previousFocus = this.document.activeElement as HTMLElement | null;
     afterNextRender(() => this.element.focus({ preventScroll: true }));
     inject(DestroyRef).onDestroy(() => {
+      app.detachView(control.hostView);
+      control.destroy();
+      host.remove();
       if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     });
   }

@@ -13,6 +13,17 @@
     },
     "build": {
       "dependsOn": ["configure"],
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/app-version.json",
+        "{workspaceRoot}/ngsw-config.json",
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/package-lock.json",
+        "{workspaceRoot}/scripts/configure-frontend.cjs",
+        "{workspaceRoot}/scripts/android-release.cjs",
+        { "env": "GOOGLE_CLIENT_ID" }
+      ],
       "executor": "@angular/build:application",
       "options": {
         "browser": "apps/mehrchain-frontend/src/main.ts",
@@ -61,7 +72,7 @@
             }
           ],
           "outputHashing": "all",
-          "serviceWorker": "ngsw-config.json"
+          "serviceWorker": "tmp/ngsw-config.generated.json"
         },
         "development": {
           "optimization": false,
@@ -89,6 +100,14 @@
     },
     "test": {
       "dependsOn": ["configure"],
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/app-version.json",
+        "{workspaceRoot}/scripts/configure-frontend.cjs",
+        "{workspaceRoot}/scripts/android-release.cjs",
+        { "env": "GOOGLE_CLIENT_ID" }
+      ],
       "executor": "@angular/build:unit-test"
     }
   }

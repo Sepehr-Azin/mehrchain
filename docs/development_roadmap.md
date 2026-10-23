@@ -440,7 +440,7 @@ Implementation follows the recommended **Active habits / Best current streak / A
 
 **Priority:** P1, after T16/T17 and before the signed public v1 release. The v1 app must contain discovery so it can offer v1.0.1 and later updates.
 
-**Status:** Planned; OpenSpec version/update proposal required before implementation. No GitHub issue yet.
+**Status:** Implementation prepared in `codex/t18-t19-updates-mobile`; see the [T18/T19 handoff](t18_t19_review_handoff.md) and [OpenSpec delta](../openspec/changes/add-release-updates-mobile-touch/proposal.md). Signing configuration, deployment and real same-key upgrade acceptance remain open. No GitHub issue yet.
 
 **Dependencies:** T13's functioning APK pipeline and T17's final app/schema contract before final acceptance.
 
@@ -458,7 +458,7 @@ Implementation follows the recommended **Active habits / Best current streak / A
 
 **Priority:** P1, owner-requested October 23; required before final mobile web/PWA acceptance.
 
-**Status:** Planned, documentation only. No GitHub issue yet. Prepare the affected OpenSpec UI/interaction delta before implementation.
+**Status:** Implementation prepared in `codex/t18-t19-updates-mobile`; see the [T18/T19 handoff and pending device matrix](t18_t19_review_handoff.md) and [OpenSpec interaction delta](../openspec/changes/add-release-updates-mobile-touch/specs/mobile-interaction/spec.md). Physical-device/browser/PWA acceptance remains open; automated checks do not close it. No GitHub issue yet.
 
 **Owner intent:** The page should stay at its intended scale when used on a phone, both in a browser tab and as an installed PWA. Cover deliberate pinch/double-tap page zoom as well as unintended zoom on focus; do not treat fixing only one trigger as completion.
 

@@ -4,6 +4,37 @@
   [class.onboarding-shell]="!showNavbar()"
 >
   <app-cold-start-banner />
+  <app-text-size />
+  @if (versionService.showUpdateNotice()) {
+    <section
+      class="m-4 p-4 rounded-2xl bg-card border border-border text-sm"
+      aria-label="App update"
+    >
+      <p role="status">
+        @if (versionService.availableUpdate()?.kind === 'android') {
+          MehrChain {{ versionService.availableUpdate()?.version }} is available for Android.
+        } @else {
+          A web update is ready. Reload when you have finished your work.
+        }
+      </p>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <button
+          type="button"
+          class="min-h-11 px-4 rounded-xl bg-primary text-primary-foreground"
+          (click)="versionService.activateUpdate()"
+        >
+          {{ versionService.availableUpdate()?.kind === 'android' ? 'Update' : 'Reload' }}
+        </button>
+        <button
+          type="button"
+          class="min-h-11 px-4 rounded-xl bg-muted"
+          (click)="versionService.dismissUpdate()"
+        >
+          Later
+        </button>
+      </div>
+    </section>
+  }
   @if (
     showNavbar() &&
     commitmentService.activeUserId() &&
@@ -85,7 +116,9 @@
         @if (versionService.hasNewVersion()) {
           <span
             class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full ring-2 ring-card animate-pulse"
-            aria-label="New version available"
+            [attr.aria-label]="
+              versionService.availableUpdate() ? 'New version available' : 'Unread release notes'
+            "
           ></span>
         }
       </div>

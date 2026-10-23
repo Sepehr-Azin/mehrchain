@@ -6,6 +6,7 @@ import { ChainService } from './core/services/chain.service';
 import { VersionService } from './core/services/version.service';
 import { CommitmentService } from './core/services/commitment.service';
 import { ColdStartBannerComponent } from './shared/components/cold-start-banner/cold-start-banner';
+import { TextSizeComponent } from './shared/components/text-size/text-size';
 
 @Component({
   selector: 'app-root',
@@ -15,6 +16,7 @@ import { ColdStartBannerComponent } from './shared/components/cold-start-banner/
     RouterLinkActive,
     LucideAngularModule,
     ColdStartBannerComponent,
+    TextSizeComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
