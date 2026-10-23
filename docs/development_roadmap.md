@@ -8,6 +8,7 @@
 > **New Stabilization Tasks Created:** T12 (#68) for pending migration deployment & release verification; T13 (#69) for backend Jest ESM CI fix; T14 (#71) for production Resend email configuration; T15 (#72) for cold-start latency & proxy timeout mitigation.
 > **October 21 Owner Additions:** T16's minimal UI/visible Why/direct delete and T17's optional username/password-access corrections are implemented locally. T18's opt-in GitHub release discovery remains planned. GitHub issues/Project items for these additions remain unsynchronized. The current handoffs distinguish implementation from operational/field acceptance.
 > **October 23 Owner Addition:** T19 plans prevention of page zoom in mobile web and installed PWA, with separate investigation of pinch, double-tap and input-focus zoom, browser limitations and readable/accessibility-preserving behavior. Documentation only; no zoom fix is implemented yet.
+> **October 23 UI/UX discovery:** T20–T25 add design-system/palette review, username diagnosis, Profile redesign, a dedicated Badge page, color-collection redesign and an exploratory Mero belly interaction. These require analysis, wireframes and visible HTML prototypes reviewed by the owner before product implementation. See [discovery brief](ui_ux_discovery_plan.md); no prototype or redesign has been implemented by this roadmap update.
 > **Android Evidence (October 21):** [APK workflow run 39544902232](https://github.com/farzad-bahadorifar/mehrchain/actions/runs/39544902232), for `752e199`, failed at backend tests; frontend tests, Capacitor sync, APK build and artifact upload were skipped. The local Android web bundle is dated August 30 (`main-SVIVLEG6.js`), whereas the local web build is dated October 20 (`main-6I3XOFP2.js`). Current native assets are not synchronized with the latest web changes. No fresh APK or native acceptance is claimed.
 > **Later October 21 live evidence:** T12 applied only the missing T05/T06 migrations with snapshot/rehearsal and restored matching Render/Pages backend identity on `c8d193d`. The existing APK run on that commit passed backend tests and failed frontend tests before packaging; local frontend-fixture corrections await rerun. T17's additional migration was rehearsed only on a disposable copy. No local suite/build or new code push was performed in this session. See T12–T17 handoffs below.
 
@@ -35,7 +36,7 @@ Implemented in T05 (`ed38dd6`): an explicit manual reason, Cancel, private previ
 
 ## Implementation order
 
-`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. T00–T15 map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72). T16–T19 are new local roadmap tasks with issue/Project synchronization pending. Task IDs are stable references, not execution order; use the release sequence below.
+`FE` = `apps/mehrchain-frontend/src/app`; `BE` = `apps/mehrchain-backend/src/app`. T00–T15 map to GitHub issues [#55](https://github.com/farzad-bahadorifar/mehrchain/issues/55)–[#72](https://github.com/farzad-bahadorifar/mehrchain/issues/72). T16–T25 are local roadmap tasks with issue/Project synchronization pending. Task IDs are stable references, not execution order; use the release sequence below.
 
 | Task | Issue | Implementation | Commit | Status | Acceptance evidence in repository |
 | --- | --- | --- | --- | --- | --- |
@@ -59,6 +60,12 @@ Implemented in T05 (`ed38dd6`): an explicit manual reason, Cancel, private previ
 | T17 | Pending issue | Local implementation and disposable migration rehearsal | See T17 handoff | Production/checks/delivery acceptance pending | Optional unique usernames, identifier login, verified password setup/recovery and session guards |
 | T18 | Pending issue | Planned | — | Planned (P1; v1 gate) | GitHub stable-release update notice, opt-in APK update and consistent release/version metadata |
 | T19 | Pending issue | Planned | — | Planned (P1; mobile web/PWA gate) | Prevent page zoom where supported; verify gestures, input focus, keyboard/layout and accessible text resizing on real devices |
+| T20 | Pending issue | Discovery planned | — | P1; owner review before implementation | Design-system audit, palette/Mero color alternatives and switchable HTML component/screen preview |
+| T21 | Pending issue | Diagnosis/design planned | — | P1; functional blocker first | Diagnose username availability/save routing and prototype a clear account edit/remove/error flow |
+| T22 | Pending issue | Discovery planned | — | P1; depends on T20/T21 | Full Profile architecture/wireframes and clickable compact Profile prototype |
+| T23 | Pending issue | Discovery planned | — | P1; coordinates with T22 | Badge summary card leading to a scalable dedicated Badge page prototype |
+| T24 | Pending issue | Discovery planned | — | P1; depends on T20/T22 | Redesign 21-day reward and color collection/studio without changing earning rules |
+| T25 | Pending issue | Feasibility planned | — | P2; optional exploration | Simple belly color-motion prototype, then optional Three.js spike and performance/fallback decision |
 
 The T00–T08 handoffs and OpenSpec checklists are historical notes. Their uncommitted/not-run wording is superseded only by evidence recorded here: T05's verified push; T06/T07/T08 commits and delivery to failed Render backend builds; successful remote Prisma generation in the inspected T06/T08 logs. No local build/test or successful later release is inferred. These historical files are not edited by T10. The October 18 backend results precede T05–T08 and do not validate their code/schema or prove frontend/provider/race acceptance.
 
@@ -470,9 +477,90 @@ Implementation follows the recommended **Active habits / Best current streak / A
 
 **Implementation references:** [WebKit's zoom policy](https://webkit.org/blog/7367/new-interaction-behaviors-in-ios-10/), [W3C viewport/resize-text rule](https://www.w3.org/WAI/standards-guidelines/act/rules/b4f0c3/) and [W3C mobile text-resizing guidance](https://www.w3.org/TR/mobile-accessibility-mapping/). Recheck current target-browser behavior during implementation; the historical WebKit article does not prove current standalone-PWA behavior.
 
+### T20 — Analyze and prototype the design system, palette and Mero colors
+
+**Status / priority:** Discovery planned, P1. No implementation or prototype yet.
+
+Audit the existing visual system and compare 2–3 coherent directions for palette,
+typography, hierarchy, controls and Mero's body/belly colors in light/dark themes.
+Deliver wireframes/specimens and a switchable `index.html` showing real screen
+compositions, not only swatches. Preserve Mero's identity and earned user colors.
+**Gate:** owner selects a direction/token mapping before shared styles change.
+
+### T21 — Diagnose username saving and prototype account editing
+
+**Status / priority:** Diagnosis and interaction design planned, P1; functional
+diagnosis can proceed alongside T20, ahead of cosmetic work.
+
+The owner's screenshot shows failed availability and `Cannot PATCH
+/api/auth/username`. Trace actual routes, proxy, auth, deployed revisions, schema
+and caches with T12/T17; do not assert the root cause from the screenshot. Deliver
+a sanitized diagnosis/repair plan and `index.html` demonstrating edit/save/cancel,
+intentional removal and accurate pending/conflict/retry feedback. Replace repeated
+`(optional)` copy with restrained labels; required fields use `*` and accessible
+semantics. **Gate:** review the diagnosis and chosen interaction before repair or
+UI implementation; simulated saves are not a working-backend claim.
+
+### T22 — Redesign Profile structure and reduce scrolling
+
+**Status / priority:** Discovery planned, P1; depends on T20 direction and T21 flow.
+
+Inventory/rank account, security, companion, colors, badges and settings. Compare
+at least two wireframes, move occasional edits into deliberate subflows, and
+deliver a clickable `index.html` with compact summaries and measured scroll/task
+access comparisons. A Badge card opens T23; the color entry opens T24. Retain
+theme/version/logout/account-deletion access and the restored onboarding content.
+**Gate:** owner approves structure and visual prototype before Profile is rebuilt.
+
+### T23 — Prototype a dedicated Badge page
+
+**Status / priority:** Discovery planned, P1; coordinates with T22.
+
+Replace Profile's growing full badge list with a summary entry opening a dedicated
+page. Prototype navigation/back, earned/locked/progress/detail states and a future
+large collection with synthetic data. Preserve current evidence-based earning
+rules and privacy. **Gate:** owner reviews the linked HTML flow and growth model
+before routes/components are implemented; no new achievement rules are implied.
+
+### T24 — Redesign the 21-day color reward and collection experience
+
+**Status / priority:** Discovery planned, P1; uses T20 tokens and T22 structure.
+
+Compare two visual approaches for locked/progress/unlocked and collection/studio
+states, including Mero preview, naming/selecting/saving a color and failed writes.
+Deliver clickable `index.html` plus a state map. Preserve T06's first 21-day habit
+streak, later collection-day/partner paths and permanent earned colors; preview is
+distinct from saved selection. **Gate:** owner approves the reward/collection
+experience before product implementation, with accessible reduced-motion states.
+
+### T25 — Explore interactive color movement inside Mero's belly
+
+**Status / priority:** Exploratory feasibility planned, P2; no v1 dependency yet.
+
+Start with a simple visible 2D/canvas `index.html` to review the feel of dragging
+color inside the belly. Only then consider an isolated Three.js shader/3D spike
+for welcome/login and Profile on capable devices. Keep the effect inside the
+belly, visual-only and independent of saved color/earned progress. Deliver a
+performance budget/results, gesture policy coordinated with T19, reduced-motion
+and static fallbacks, and a go/simplify/defer recommendation. Preserve scrolling,
+Mero identity/moods and existing device safeguards. **Gate:** owner approves both
+the effect and demonstrated performance before production integration.
+
+**Shared acceptance for T20–T25:** Follow the detailed [UI/UX discovery brief](ui_ux_discovery_plan.md),
+including screenshot observations, per-task checklists, HTML artifact locations,
+mobile/desktop/theme/error states and a recorded owner decision. These are
+analysis/prototype tasks, not authorization to implement their proposed designs.
+
 ## Next actions and release sequence
 
 The owner additions are ordered **T16 → T17 → T18 → T19**, after existing operational blockers. This ordering supersedes the older numeric implementation sequence. All four are included in the proposed public v1 baseline; the unspecified Why reminder engine remains the T05 follow-up described above.
+
+**Discovery track added October 23:** Start T21 diagnosis alongside T20, then review
+T22 Profile and linked T23/T24 prototypes. Explore T25 simply before deciding on
+3D. This design track can proceed while domain/release prerequisites are pending.
+Approve implementation scopes separately and explicitly add chosen redesigns to
+the release candidate; T25 does not automatically delay v1. Existing functional
+blockers, including username saving, still need verified resolution.
 
 | Order | Work | Exit condition |
 | --- | --- | --- |
@@ -501,4 +589,4 @@ The owner additions are ordered **T16 → T17 → T18 → T19**, after existing 
 
 ## Scope and completion
 
-The active roadmap spans **T00–T19**. T00–T15 retain their existing GitHub issue references; T16–T19 are local roadmap tasks awaiting issue/Project synchronization. T00–T04, T10 and T11 retain their recorded completed status. T05–T08 have historical implementations with release/field acceptance outstanding; T07 also requires T16's owner corrections. T09 is acceptance work, T12–T15 are stabilization, and T16–T19 are the newly requested v1 work. Completion requires evidence for the exact released revision, including the signed Android gate; documentation, a push, Capacitor dependency versions or a successful old build do not establish that result.
+The active roadmap spans **T00–T25**. T00–T15 retain their existing GitHub issue references; T16–T25 are local roadmap tasks awaiting issue/Project synchronization. T00–T04, T10 and T11 retain their recorded completed status. T05–T08 have historical implementations with release/field acceptance outstanding; T07 also requires T16's owner corrections. T09 is acceptance work, T12–T15 are stabilization, T16–T19 are the requested v1 work, and T20–T25 are analysis/prototype packages awaiting owner decisions before implementation. Completion requires evidence for the exact released revision, including the signed Android gate; documentation, a push, Capacitor dependency versions or a successful old build do not establish that result.
