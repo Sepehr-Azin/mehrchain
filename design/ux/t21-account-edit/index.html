@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>T21 · A little space for your identity</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #eeece7; --surface: #fffefa; --soft: #f4f1e9; --ink: #292b28;
+        --muted: #63665e; --line: #d5d8cd; --accent: #435b3b; --on-accent: #fff;
+        --error: #a33138; --good: #346143; --focus: #376ca8;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page: #161b19; --surface: #222925; --soft: #2c342e; --ink: #f0f1e9;
+        --muted: #b8c0b4; --line: #52604f; --accent: #c4d8ac; --on-accent: #22311c;
+        --error: #ffa4a9; --good: #a6d8b7; --focus: #96c7ff;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.55 system-ui, sans-serif; }
+      button, input, select { font: inherit; color: inherit; }
+      button, select { cursor: pointer; }
+      button { min-height: 46px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+      button:hover:not(:disabled) { border-color: var(--ink); }
+      button:disabled { opacity: .55; cursor: default; }
+      :focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+      a { color: var(--accent); text-underline-offset: 4px; }
+      h1, h2, h3, p { margin: 0; }
+      h1 { font: 500 clamp(32px, 4vw, 52px)/1.12 Georgia, serif; letter-spacing: -.035em; }
+      h2 { font-size: 23px; letter-spacing: -.04em; }
+      h3 { font-size: 16px; }
+      .muted { color: var(--muted); }
+      .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+      .wrap { max-width: 1120px; margin: auto; padding: 36px 32px 64px; }
+      .masthead { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--line); padding-bottom: 22px; }
+      .brand { font-weight: 750; letter-spacing: -.04em; font-size: 20px; }
+      .pill { display: inline-block; border: 1px solid var(--line); border-radius: 30px; padding: 5px 11px; font-size: 12px; }
+      .intro { margin: 38px 0; max-width: 690px; }
+      .intro p { margin-top: 18px; max-width: 570px; }
+      .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 390px); gap: 64px; align-items: start; }
+      .controls { display: grid; gap: 24px; }
+      .panel { border-top: 1px solid var(--line); padding-top: 20px; }
+      .panel h2 { font-size: 18px; margin-bottom: 12px; }
+      .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .option { text-align: left; font-size: 14px; }
+      .option span { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+      .option[aria-pressed="true"] { border: 2px solid var(--accent); padding: 9px 15px; background: var(--soft); }
+      .field { display: grid; gap: 7px; }
+      select, input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; background: var(--surface); min-height: 48px; }
+      label { font-size: 14px; font-weight: 650; }
+      .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .fine { font-size: 13px; }
+      .control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .phone { background: var(--surface); border: 1px solid var(--line); border-radius: 30px; overflow: clip; box-shadow: 0 24px 64px #0000000b; min-width: 0; }
+      .phone-top { padding: 16px 22px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+      .screen { padding: 22px; min-height: 530px; }
+      .screen header { display: flex; gap: 14px; align-items: center; margin-bottom: 26px; }
+      .back { padding: 0 12px; font-size: 20px; }
+      .avatar { width: 54px; height: 54px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: var(--soft); font: 26px Georgia, serif; border: 1px solid var(--line); }
+      .identity { display: flex; align-items: center; gap: 14px; margin-bottom: 25px; }
+      .identity p, .handle { overflow-wrap: anywhere; }
+      .card { border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+      .card + .card { margin-top: 14px; }
+      .card-header { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+      .handle { font-size: 21px; font-weight: 600; margin-top: 6px; }
+      .description { margin-top: 10px; font-size: 13px; color: var(--muted); }
+      .primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+      .secondary { background: var(--soft); }
+      .danger { color: var(--error); }
+      .full { width: 100%; }
+      .space { margin-top: 18px; }
+      .status { min-height: 26px; margin-top: 8px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+      .status[data-tone="error"] { color: var(--error); }
+      .status[data-tone="success"] { color: var(--good); }
+      .notice { padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); margin-top: 16px; font-size: 13px; overflow-wrap: anywhere; }
+      .notice[data-tone="error"] { border-color: var(--error); }
+      .actions { display: flex; gap: 8px; margin-top: 18px; }
+      .actions > button { flex: 1; }
+      .remove { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 18px; }
+      .trace { padding: 14px 20px; border-top: 1px solid var(--line); background: var(--soft); font: 12px/1.6 ui-monospace, monospace; overflow-wrap: anywhere; }
+      .trace strong { font-weight: 500; color: var(--accent); }
+      .footnote { margin: 16px 4px 0; font-size: 12px; color: var(--muted); }
+      .checklist { padding-left: 20px; font-size: 14px; color: var(--muted); }
+      .checklist li { margin: 8px 0; }
+      .comparison { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 22px; font-size: 14px; }
+      .comparison p { margin-top: 8px; }
+      @media (max-width: 780px) {
+        .wrap { padding: 22px 16px 40px; }
+        .grid { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+        .preview { grid-row: 1; max-width: 390px; width: 100%; margin: auto; }
+        .intro { margin: 28px 0; }
+        .screen { min-height: 0; padding: 18px; }
+        .options, .control-row { grid-template-columns: minmax(0, 1fr); }
+        .masthead { align-items: start; }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        button { transition: background-color .15s, border-color .15s; }
+      }
+      @media (forced-colors: active) { .option[aria-pressed="true"] { outline: 2px solid Highlight; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="masthead"><div class="brand">MehrChain<span class="muted"> / studies</span></div><span class="pill">T21 · Prototype 01</span></div>
+      <div class="intro"><p class="eyebrow muted">Account · A smaller, clearer edit</p><h1>A little space<br />for your identity.</h1><p class="muted">A quiet account summary. A deliberate edit. Feedback that explains what happened, and keeps your work safe.</p></div>
+      <main class="grid">
+        <aside class="controls" aria-label="Prototype controls">
+          <section class="panel"><h2>01 / Compare the flow</h2><div class="options">
+            <button class="option" data-pattern="page" aria-pressed="true">A · Dedicated edit <span>Recommended · room for feedback</span></button>
+            <button class="option" data-pattern="inline" aria-pressed="false">B · Edit in the card <span>Fewer transitions · taller Profile</span></button>
+          </div><p class="fine muted space">Both keep removal separate from saving. No new design-system direction is implied.</p></section>
+          <section class="panel"><h2>02 / Try an outcome</h2><div class="field"><label for="scenario">Simulated service response</label><select id="scenario">
+            <option value="success">Available → saved</option><option value="taken">Already taken (availability)</option>
+            <option value="conflict">Available → claimed before save (409)</option><option value="offline">Network unavailable</option>
+            <option value="expired">Session expired (401)</option><option value="route">Route unavailable (404)</option>
+            <option value="slow">Slow response (3 seconds)</option><option value="failure">Server unavailable (503)</option>
+            <option value="limited">Too many requests (429)</option>
+          </select></div><p class="fine muted space">Choose an outcome, tap Edit, then change the name. Switch to “Available → saved” to retry the same draft.</p></section>
+          <section class="panel control-row"><div class="field"><label for="theme">Appearance</label><select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="field"><label for="fixture">Synthetic account</label><select id="fixture"><option value="existing">Mira · existing handle</option><option value="empty">No username yet</option><option value="long">Long display name</option></select></div></section>
+          <div class="row"><button id="switch-account">Switch account</button><button id="reset">Reset demo</button></div>
+          <section class="panel"><h2>03 / Review the behavior</h2><ul class="checklist"><li>Cancel restores the saved value.</li><li>Availability is advice; a concurrent save can still fail.</li><li>Failed writes keep the draft. Retry never claims an earlier request succeeded.</li><li>Remove confirms the loss of the handle, while email/Google access and account data stay.</li><li>Switch accounts during a slow request: its late result is discarded.</li></ul><p class="fine muted">Use a 320/390 px viewport, short landscape, keyboard navigation and both themes. Physical phone acceptance remains pending.</p></section>
+          <p class="fine"><a href="README.md">Diagnosis, evidence &amp; repair plan</a> · <a href="decisions.md">Owner decision log</a></p>
+        </aside>
+        <section class="preview" aria-label="Interactive account preview">
+          <div class="phone">
+            <div class="phone-top"><span>MehrChain</span><span>Simulated · no API calls</span></div>
+            <div class="screen">
+              <header><button id="back" class="back" aria-label="Back to account" hidden>←</button><div><p id="breadcrumb" class="eyebrow muted">Profile / Account</p><h2 id="screen-title">Your account</h2></div></header>
+              <div class="identity" id="identity"><div class="avatar" aria-hidden="true">m</div><div><h3 id="display-name">Mira Chen</h3><p class="fine muted" id="email">mira@example.com</p></div></div>
+              <section id="summary" class="card"><div class="card-header"><div><h3>Username</h3><p class="handle" id="saved-handle">@mira_days</p></div><button id="edit">Edit</button></div><p class="description">An extra way to sign in. You can use email or Google without a username.</p></section>
+              <section id="editor" class="card" hidden aria-labelledby="edit-heading">
+                <h3 id="edit-heading">Choose your username</h3><p class="description">Use 3–20 English letters, numbers or underscores. Names are saved in lowercase.</p>
+                <form id="form" class="space" novalidate><label for="username">Username</label><input id="username" name="username" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20" aria-describedby="availability" />
+                  <p class="status" id="availability" role="status" aria-live="polite"></p>
+                  <button id="retry-check" type="button" class="secondary full" hidden>Retry availability check</button>
+                  <div class="actions"><button id="cancel" type="button">Cancel</button><button id="save" type="submit" class="primary" disabled>Save username</button></div>
+                </form>
+                <div id="remove-section" class="remove"><button id="remove" class="danger full">Remove username…</button><p class="description">This keeps your account, habits and email/Google access.</p></div>
+              </section>
+              <section id="confirmation" class="card" hidden aria-labelledby="remove-heading"><h3 id="remove-heading" tabindex="-1">Remove your username?</h3><p class="description">You will no longer sign in with <strong id="remove-handle"></strong>. Someone else may claim it. Your email/Google access, habits, Chains and colors stay.</p><div class="actions"><button id="keep">Keep username</button><button id="confirm-remove" class="danger">Remove username</button></div></section>
+              <p id="feedback" class="notice" role="status" aria-live="polite" hidden></p>
+              <p id="error" class="notice" role="alert" hidden></p>
+              <button id="signin" class="secondary full space" hidden>Simulate signing in again</button>
+              <p class="description space">A username is not required. Account identity and progress use a separate, permanent account ID.</p>
+            </div>
+            <div class="trace" aria-label="Simulation state"><strong id="state">view</strong><br /><span id="event">Synthetic data · nothing is sent or stored.</span></div>
+          </div>
+          <p class="footnote">Study only. All names, delays and responses are synthetic. Reload resets the demo. This is not proof that production saving works.</p>
+        </section>
+      </main>
+      <footer class="comparison"><p><strong>Recommendation / A · Dedicated edit</strong></p><p class="muted">Keeps Profile compact and gives errors, keyboard input and deliberate removal one clear home. Option B saves a transition but expands the card. Owner review is pending; production UI, API and earning rules are unchanged.</p></footer>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let pattern = 'page', view = 'summary', saved = 'mira_days', draft = saved;
+      let availability = 'idle', busy = false, expired = false, account = 0, epoch = 0;
+      let timer, isAlternate = false;
+      const clean = () => draft.trim().toLowerCase();
+      const valid = () => /^[a-z0-9_]{3,20}$/.test(clean());
+      const changed = () => clean() !== (saved || '');
+      const scenario = () => $('scenario').value;
+      function invalidate() { epoch++; clearTimeout(timer); busy = false; }
+      function state(name, event) { $('state').textContent = name; $('event').textContent = event; }
+      function clearMessages() { $('feedback').hidden = true; $('error').hidden = true; }
+      function message(id, text) { $(id).textContent = text; $(id).hidden = false; }
+      function controls() {
+        $('username').disabled = busy;
+        $('form').setAttribute('aria-busy', String(busy));
+        $('save').disabled = busy || expired || !valid() || !changed() || ['checking', 'taken'].includes(availability);
+        $('save').textContent = busy && view === 'editor' ? 'Saving…' : 'Save username';
+        $('cancel').disabled = busy; $('back').disabled = busy; $('remove').disabled = busy;
+        $('keep').disabled = busy; $('confirm-remove').disabled = busy || expired;
+        $('retry-check').disabled = busy;
+        $('confirm-remove').textContent = busy && view === 'confirmation' ? 'Removing…' : 'Remove username';
+        $('signin').hidden = !expired;
+      }
+      function paint() {
+        $('summary').hidden = view !== 'summary'; $('editor').hidden = view !== 'editor';
+        $('confirmation').hidden = view !== 'confirmation';
+        $('identity').hidden = pattern === 'page' && view !== 'summary';
+        $('back').hidden = pattern !== 'page' || view === 'summary';
+        $('screen-title').textContent = pattern === 'page' && view !== 'summary' ? 'Username' : 'Your account';
+        $('saved-handle').textContent = saved ? '@' + saved : 'Not set';
+        $('edit').textContent = saved ? 'Edit' : 'Add'; $('remove-section').hidden = !saved;
+        $('remove-handle').textContent = saved ? '@' + saved : '';
+        $('username').value = draft;
+        controls();
+      }
+      function setAvailability(kind, text) {
+        availability = kind; $('availability').textContent = text;
+        $('availability').dataset.tone = ['taken', 'invalid', 'error', 'expired'].includes(kind) ? 'error' : kind === 'available' ? 'success' : '';
+        $('username').setAttribute('aria-invalid', String(['taken', 'invalid'].includes(kind)));
+        $('retry-check').hidden = kind !== 'error';
+        controls();
+      }
+      function check() {
+        invalidate(); clearMessages(); const ticket = epoch;
+        if (expired) { setAvailability('expired', 'Sign in again to check or save. Your draft is here.'); state('expired', 'Session recovery is simulated.'); return; }
+        if (!clean()) { setAvailability('idle', saved ? 'To stop using a username, choose Remove username below.' : 'You can leave your account without a username.'); state('pristine', 'No availability request for an empty value.'); return; }
+        if (!valid()) { setAvailability('invalid', 'Use 3–20 English letters, numbers or underscores.'); state('invalid', 'Local validation · no simulated request.'); return; }
+        if (!changed()) { setAvailability('idle', 'This is your saved username.'); state('pristine', 'No changes to save.'); return; }
+        setAvailability('checking', 'Checking availability…'); state('checking', 'Simulated debounce + response; editing cancels the old result.');
+        timer = setTimeout(() => {
+          if (ticket !== epoch) return;
+          const outcome = scenario();
+          if (outcome === 'expired') { expired = true; setAvailability('expired', 'Sign in again. Your draft is here.'); state('expired', 'Simulated 401 · no account change.'); }
+          else if (outcome === 'taken') { setAvailability('taken', 'That username is taken. Try another.'); state('taken', 'Availability is advisory; no save attempted.'); }
+          else if (['offline', 'route', 'failure', 'limited'].includes(outcome)) {
+            const text = {offline: 'Could not connect. Check your network and retry.', route: 'Username service is unavailable. Retry after the release is checked.', failure: 'The service is temporarily unavailable. Retry shortly.', limited: 'Too many checks. Wait a minute, then retry.'}[outcome];
+            setAvailability('error', text); state(outcome, 'Availability failed · draft retained. Saving still requires a separate response.');
+          } else { setAvailability('available', 'Available · confirmed when you save.'); state('available', 'Simulated availability only · nothing saved yet.'); }
+        }, scenario() === 'slow' ? 3000 : 650);
+      }
+      function openEditor() { view = 'editor'; draft = saved || ''; expired = false; paint(); check(); $('username').focus(); }
+      function cancel() { invalidate(); draft = saved || ''; view = 'summary'; expired = false; clearMessages(); state('view', 'Edit cancelled · saved value restored.'); paint(); $('edit').focus(); }
+      function write(remove) {
+        if (busy || expired || (!remove && $('save').disabled)) return;
+        invalidate(); clearMessages(); busy = true; const ticket = epoch, owner = account, value = remove ? null : clean(), outcome = scenario();
+        controls(); state(remove ? 'removing' : 'saving', 'Waiting for a simulated service response · no optimistic success.');
+        timer = setTimeout(() => {
+          if (ticket !== epoch || owner !== account) return;
+          busy = false;
+          const failure = {offline: 'Could not connect. Nothing is confirmed. Your draft is here; check the connection and retry.', expired: 'Your session expired. Sign in again, then retry. Your draft is here.', route: 'Username service is unavailable. Retry after the release is checked.', failure: 'Could not save right now. Your draft is here. Retry shortly.', limited: 'Too many requests. Wait a minute, then retry.'}[outcome];
+          if (failure || (!remove && ['conflict', 'taken'].includes(outcome))) {
+            expired = outcome === 'expired'; message('error', failure || 'That username was just claimed. Try another.');
+            if (!remove && ['conflict', 'taken'].includes(outcome)) setAvailability('taken', 'That username is no longer available.');
+            state(outcome === 'conflict' ? 'conflict' : outcome, 'Simulated write rejected · saved value unchanged.'); controls(); return;
+          }
+          saved = value; draft = saved || ''; view = 'summary'; paint();
+          message('feedback', remove ? 'Username removed. Email/Google access and account data stay. (Simulated)' : 'Username saved. (Simulated)');
+          state(remove ? 'removed' : 'saved', 'Simulated response confirmed · reload resets this fixture.'); $('edit').focus();
+        }, outcome === 'slow' ? 3000 : 800);
+      }
+      $('edit').onclick = openEditor;
+      $('username').oninput = (e) => { draft = e.target.value; check(); };
+      $('form').onsubmit = (e) => { e.preventDefault(); write(false); };
+      $('cancel').onclick = cancel;
+      $('back').onclick = () => { if (view === 'confirmation') { view = 'editor'; paint(); check(); $('remove').focus(); } else cancel(); };
+      $('retry-check').onclick = check;
+      $('remove').onclick = () => { invalidate(); clearMessages(); view = 'confirmation'; paint(); state('confirm-removal', 'A separate action · no deletion of the account.'); $('remove-heading').focus(); };
+      $('keep').onclick = () => { view = 'editor'; paint(); check(); $('remove').focus(); };
+      $('confirm-remove').onclick = () => write(true);
+      $('signin').onclick = () => { expired = false; $('scenario').value = 'success'; clearMessages(); if (view === 'editor') check(); else state('confirm-removal', 'Simulated reauthentication · retry removal deliberately.'); controls(); };
+      $('scenario').onchange = () => { invalidate(); expired = false; clearMessages(); if (view === 'editor') check(); else { state(view === 'confirmation' ? 'confirm-removal' : 'view', 'Scenario changed · no account write.'); controls(); } };
+      document.querySelectorAll('[data-pattern]').forEach(button => button.onclick = () => {
+        pattern = button.dataset.pattern; document.querySelectorAll('[data-pattern]').forEach(b => b.setAttribute('aria-pressed', String(b === button))); paint();
+      });
+      function fixture(switching = false) {
+        invalidate(); account++; isAlternate = switching; expired = false; view = 'summary'; clearMessages();
+        const kind = $('fixture').value;
+        saved = kind === 'empty' ? null : switching ? 'rowan_steps' : 'mira_days'; draft = saved || '';
+        $('display-name').textContent = kind === 'long' ? 'Mira Alexandra Chen-Williams' : switching ? 'Rowan Ellis' : 'Mira Chen';
+        $('email').textContent = switching ? 'rowan@example.com' : 'mira@example.com';
+        state('view', switching ? 'Account switched · pending responses invalidated; previous drafts cleared.' : 'Synthetic fixture reset · no persistence.'); paint();
+      }
+      $('fixture').onchange = () => fixture(); $('switch-account').onclick = () => fixture(!isAlternate);
+      $('reset').onclick = () => { $('scenario').value = 'success'; $('fixture').value = 'existing'; fixture(); };
+      const media = matchMedia('(prefers-color-scheme: dark)');
+      function theme() { document.documentElement.dataset.theme = $('theme').value === 'system' ? (media.matches ? 'dark' : 'light') : $('theme').value; }
+      $('theme').onchange = theme; media.addEventListener('change', theme); theme(); paint();
+    </script>
+  </body>
+</html>
